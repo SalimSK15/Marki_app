@@ -1,6 +1,6 @@
 /* components/patient-details.scss */
 .patient-details {
-  width: 20%;
+  width: 25%;
   padding: $spacing-md;
   flex-shrink: 0;
   background-color: $bg-primary;
@@ -21,14 +21,11 @@
     align-items: center;
     gap: $spacing-sm;
     padding: $spacing-lg;
-    // border-bottom: 1px solid $border-color;
     
     img {
       width: 24px;
       height: 24px;
       font-size: 1.25rem;
-      // filter: invert(24%) sepia(90%) saturate(1960%) 
-      //         hue-rotate(267deg) brightness(94%) contrast(93%);
       transition: filter 0.3s;
     }
     
