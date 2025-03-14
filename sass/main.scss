@@ -11,6 +11,7 @@
 // Components
 @import 'components/header';
 @import 'components/sidebar';
-@import 'components/patientDetails';
-@import 'components/waitingList';
-@import 'components/statusCounters';
+@import 'components/dashboard';
+@import 'components/dashboardPatientDetails';
+@import 'components/dashboardStatusCounters';
+@import 'components/settings';
