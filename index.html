@@ -2,32 +2,66 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="Marki, gestion patients, liste patients,simplifier, organisation médicale, rendez-vous médicaux, suivi patients, application médicale, gestion des données, médecins, santé, Algérie">
-    <meta name="description" content="Simplifiez la gestion de vos patients avec Marki. Une application intuitive et efficace pour organiser vos listes, suivre les informations et optimiser vos rendez-vous médicaux.">
+    <title>Gestion de patients</title>
     <link rel="stylesheet" href="css/styles.css">
-    <title>Marki</title>
 </head>
 <body>
-    <nav class="nav">
-        <div class="Dr">
-            <div class="nom_Dr">
-                <p>Name of doctor</p>
-                <div class="ligne_"></div>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__profile">
+                <div class="avatar">
+                    <img src="assets/images/avatar_docteur01.svg" alt="MD">
+                </div>
+                <div class="profile-info">
+                    <h1>Dr. Martin Durant</h1>
+                    <p>Médecin Généraliste</p>
+                </div>
+            </div>
+            <div class="header__datetime">
+                <p class="date">vendredi 28 février</p>
+                <p class="time">16:09</p>
+            </div>
+        </header>
+
+        <div class="layout">
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <ul class="sidebar__menu ">
+                    <li class="sidebar__item active" data-page="dashboard">
+                        <i class="icon">
+                            <img src="assets/icons_nav/dashboard03.svg" ></img>
+                        </i>
+                        <span>Dashboard</span>
+                    </li>
+                    <li class="sidebar__item" data-page="patients">
+                        <i  class="icon">
+                            <img src="assets/icons_nav/patient01.png" alt="">
+                        </i>
+                        <span>Mes Patients</span>
+                    </li>
+                    <li class="sidebar__item" data-page="lists">
+                        <i class="icon">
+                            <img src="assets/icons_nav/listPatients.png" alt="">
+                        </i>
+                        <span>Toutes les listes</span>
+                    </li>
+                    <li class="sidebar__item" data-page="settings">
+                        <i class="icon">
+                            <img src="assets/icons_nav/parametres.png" alt="">
+                        </i>
+                        <span>Paramètres</span>
+                    </li>
+                </ul>
+            </nav>
+            <!-- Contenu principal -->
+            <div class="main-content" id="main-content">
+                <!-- Le contenu de la page sera chargé ici -->
             </div>
         </div>
-        <div class="nav_menu">
-            <a href="#"><img src="assets/images/icons_nav/computer.svg" alt="icon_tableau_bord">Tableau de Bord</a>
-            <a href="#"><img src="assets/images/icons_nav/notifications.svg" alt="icon_Notification">Notification</a>
-            <a href="#"><img src="assets/images/icons_nav/checked-list.svg" alt="icon_lists">Liste</a>
-            <a href="#"><img src="assets/images/icons_nav/stats.svg" alt="icon_statistique">Statistique</a>
-            <a href="#"><img src="assets/images/icons_nav/calendar.svg" alt="icon_calendrier">Calendrier</a>
-            <a href="#"><img src="assets/images/icons_nav/setting.svg" alt="icon_parametres">paramètres</a>
-        </div>
-    </nav>
-    <section>
+    </div>
 
-    </section>
+    <script src="js/app.js"></script>
 </body>
 </html>
