@@ -47,4 +47,5 @@ document.querySelectorAll('.sidebar__item').forEach(item => {
 });
 
 // Charge la page par défaut ( dashboard )
-loadPage('dashboard');
+// loadPage('dashboard');
+loadPage('settings');

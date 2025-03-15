@@ -1,10 +1,10 @@
 /* components/_settings.scss */
 .settings-page {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-lg;
-    padding: $spacing-lg;
-    max-width: 1200px;
+    // display: flex;
+    // flex-direction: column;
+    // gap: $spacing-lg;
+    // padding: $spacing-lg;
+    // max-width: 1200px;
     width: 100%;
   }
   
@@ -47,9 +47,9 @@
         justify-content: center;
         
         img {
-          width: 20px;
-          height: 20px;
-          filter: invert(24%) sepia(90%) saturate(1960%) hue-rotate(267deg) brightness(94%) contrast(93%);
+          width: 40px;
+          height: 40px;
+          // filter: invert(24%) sepia(90%) saturate(1960%) hue-rotate(267deg) brightness(94%) contrast(93%);
         }
       }
       
