@@ -11,12 +11,6 @@ function activateMenuItem(event) {
     event.currentTarget.classList.add('active');
 }
 
-// Ajoutez des écouteurs d'événements à chaque élément du menu
-document.querySelectorAll('.sidebar__item').forEach(item => {
-    item.addEventListener('click', activateMenuItem);
-});
-
-
 // Fonction pour charger le contenu d'une page
 function loadPage(page) {
     const mainContent = document.getElementById('main-content');
@@ -31,12 +25,17 @@ function loadPage(page) {
         })
         .then(html => {
             mainContent.innerHTML = html; // Insère le contenu dans le conteneur
+            addSaveButtonListener();
         })
         .catch(error => {
             console.error('Erreur:', error);
             mainContent.innerHTML = '<p>Erreur de chargement de la page.</p>';
         });
 }
+// Ajoutez des écouteurs d'événements à chaque élément du menu
+document.querySelectorAll('.sidebar__item').forEach(item => {
+    item.addEventListener('click', activateMenuItem);
+});
 
 // Ajoutez des écouteurs d'événements aux éléments de la sidebar
 document.querySelectorAll('.sidebar__item').forEach(item => {
@@ -49,3 +48,39 @@ document.querySelectorAll('.sidebar__item').forEach(item => {
 // Charge la page par défaut ( dashboard )
 // loadPage('dashboard');
 loadPage('settings');
+
+// la partie de sauvgarde des mise a jour des infos du medecin
+// Ajoutez l'écouteur d'événements pour le bouton "Enregistrer"
+// Fonction pour ajouter l'écouteur d'événements au bouton "Enregistrer"
+function addSaveButtonListener() {
+    const saveButton = document.getElementById('save-button');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const nom = document.getElementById('nom-prenom').value;
+            const specialite = document.getElementById('specialite').value;
+            const telephone = document.getElementById('telephone').value;
+            const email = document.getElementById('email').value;
+            const adresse = document.getElementById('adresse').value;
+
+            // Ici, vous pouvez envoyer ces données à votre base de données
+            console.log('Nom et Prénom:', nom);
+            console.log('Spécialité:', specialite);
+            console.log('Téléphone:', telephone);
+            console.log('Email:', email);
+            console.log('Adresse du cabinet:', adresse);
+
+            // Affichez un message de confirmation ou effectuez d'autres actions
+            // alert('Modifications enregistrées !');
+
+            // Ajoute la classe pour l'animation
+            this.classList.toggle('clicked');
+
+            // Retire la classe après un court délai pour permettre la réanimation
+            setTimeout(() => {
+                this.classList.remove('clicked');
+            }, 300); // Correspond à la durée de l'animation
+        });
+    } else {
+        console.error("Le bouton 'Enregistrer' n'a pas été trouvé.");
+    }
+}
