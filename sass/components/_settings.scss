@@ -24,7 +24,9 @@
       font-size: $font-size-small;
     }
   }
-  
+  .titre_section{
+    padding: $spacing-xs 0;
+  }
   .settings-card {
     background-color: $bg-primary;
     border-radius: $radius;
@@ -115,15 +117,15 @@
   }
   
   .settings-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: $spacing-lg;
-    padding: $spacing-md;
+    // display: flex;
+    // justify-content: flex-end;
+    // margin-bottom: 0;
+    margin-bottom: $spacing-lg;
+    // padding: $spacing-md;
   }
   
   .btn {
     display: flex;
-    align-items: center;
     padding: $spacing-sm $spacing-lg;
     border-radius: $radius-full;
     font-weight: $font-weight-medium;
