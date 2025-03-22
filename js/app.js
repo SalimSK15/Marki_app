@@ -25,7 +25,8 @@ function loadPage(page) {
         })
         .then(html => {
             mainContent.innerHTML = html; // Insère le contenu dans le conteneur
-            addSaveButtonListener();
+            if(page === "settings")
+                addSaveButtonListener();
         })
         .catch(error => {
             console.error('Erreur:', error);
@@ -47,7 +48,9 @@ document.querySelectorAll('.sidebar__item').forEach(item => {
 
 // Charge la page par défaut ( dashboard )
 // loadPage('dashboard');
-loadPage('settings');
+// loadPage('settings');
+loadPage('patients');
+// loadPage('lists');
 
 // la partie de sauvgarde des mise a jour des infos du medecin
 // Ajoutez l'écouteur d'événements pour le bouton "Enregistrer"
