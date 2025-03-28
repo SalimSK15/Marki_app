@@ -252,12 +252,13 @@ p {
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
+  background-color: #FFFFFF;
 }
 
 .main-content-center {
   flex: 1;
   display: flex;
-  width: 100%;
+  width: 75%;
   padding: 1.5rem;
   flex-direction: column;
   background-color: #FFFFFF;
@@ -471,13 +472,12 @@ p {
 .patients-page .patients-header h1 {
   font-size: 1.5rem;
   font-weight: bold;
-  margin-bottom: 0.25rem;
   color: #1F2937;
+  margin-bottom: 0.25rem;
 }
 .patients-page .patients-header p {
-  font-size: 16px;
+  font-size: 0.875rem;
   color: #6B7280;
-  margin: 0;
 }
 .patients-page .search-container {
   margin-bottom: 1.5rem;

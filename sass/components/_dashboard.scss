@@ -4,11 +4,12 @@
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
+  background-color: $bg-primary;
 }
 .main-content-center {
   flex: 1;
   display: flex;
-  width: 100%;
+  width: 75%;
   padding: $spacing-lg;
   flex-direction: column;
   background-color: $bg-primary;
