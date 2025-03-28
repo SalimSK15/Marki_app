@@ -1,0 +1,149 @@
+// Page Patients
+.patients-page {
+    background-color: $bg-primary;
+    padding: $spacing-lg;
+    width: 100%;
+    max-height: 80vh;
+
+  .patients-header {
+    // margin-bottom: $spacing-md;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    h1 {
+      font-size: $font-size-h4;
+      font-weight: bold;
+      color: $text-primary;
+      margin-bottom: $spacing-xs;
+    }
+    
+    p {
+      font-size: $font-size-small;
+      color: $text-secondary;
+    }
+  }
+  
+  .search-container {
+    margin-bottom: $spacing-lg;
+    
+    .search-box {
+      position: relative;
+      width: 100%;
+      
+      .search-icon {
+        position: absolute;
+        left: $spacing-md;
+        top: 50%;
+        transform: translateY(-50%);
+        
+        img {
+          width: 20px;
+          height: 20px;
+          opacity: 0.6;
+        }
+      }
+      
+      input {
+        width: 100%;
+        padding: $spacing-md $spacing-md $spacing-md 48px;
+        border: 1px solid transparent;
+        border-radius: $radius;
+        font-size: 16px;
+        
+        &:focus {
+          outline: none;
+          border-color: $primary;
+        }
+        
+        &::placeholder {
+          color: $text-color;
+        }
+      }
+    }
+  }
+  
+  .patients-list-container {
+    display: flex;
+    gap: $spacing-lg;
+    
+    .patients-list {
+      flex: 2;
+      background: white;
+      border-radius: $radius;
+      border: 1px solid $text-color;
+      overflow: hidden;
+      
+      .patients-list-header {
+        display: flex;
+        padding: $spacing-md;
+        background-color: $text-secondary;
+        border-bottom: 1px solid $primary;
+        
+        .column-header {
+          font-weight: 600;
+          font-size: 14px;
+          color: $primary;
+        }
+        
+        .patient-column {
+          flex: 2;
+        }
+        
+        .passage-column {
+          flex: 1;
+          text-align: center;
+        }
+        
+        .status-column {
+          flex: 1;
+          text-align: center;
+        }
+      }
+      
+      .patients-list-empty {
+        padding: $spacing-lg * 2;
+        text-align: center;
+        color: $text-color;
+        font-size: 16px;
+      }
+    }
+    
+    .patient-details-placeholder {
+      flex: 1;
+      background: white;
+      border-radius: $radius;
+      border: 1px solid $text-color;
+      padding: $spacing-lg * 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      
+      .placeholder-icon {
+        width: 80px;
+        height: 80px;
+        background-color: $text-color;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: $spacing-md;
+        
+        img {
+          width: 40px;
+          height: 40px;
+          opacity: 0.5;
+        }
+      }
+      
+      p {
+        color: $text-color;
+        font-size: 16px;
+        max-width: 200px;
+        margin: 0;
+      }
+    }
+  }
+}
