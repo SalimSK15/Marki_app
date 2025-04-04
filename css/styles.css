@@ -248,6 +248,7 @@ p {
 
 /* components/waiting-list.scss */
 .main-content {
+  padding: 0.25rem;
   display: flex;
   flex-direction: row;
   height: 100vh;
@@ -462,27 +463,31 @@ p {
 
 .patients-page {
   background-color: #FFFFFF;
-  padding: 1.5rem;
+  padding: 1rem;
   width: 100%;
   max-height: 80vh;
+  overflow-y: scroll;
 }
 .patients-page .patients-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-bottom: 1rem;
 }
 .patients-page .patients-header h1 {
+  padding-top: 0.25rem;
   font-size: 1.5rem;
   font-weight: bold;
   color: #1F2937;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 .patients-page .patients-header p {
+  margin-top: -0.25rem;
   font-size: 0.875rem;
   color: #6B7280;
 }
 .patients-page .search-container {
   margin-bottom: 1.5rem;
+  border: 2px solid rgba(135, 206, 235, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .patients-page .search-container .search-box {
   position: relative;
@@ -502,41 +507,44 @@ p {
 .patients-page .search-container .search-box input {
   width: 100%;
   padding: 1rem 1rem 1rem 48px;
-  border: 1px solid transparent;
-  border-radius: 0.5rem;
-  font-size: 16px;
+  border: 1px inset transparent;
+  font-size: 1rem;
+  outline: rgba(138, 43, 226, 0.9);
 }
 .patients-page .search-container .search-box input:focus {
-  outline: none;
-  border-color: rgb(138, 43, 226);
+  outline: 2px double #E5E7EB;
+  border-radius: 1rem;
+  border-color: rgba(138, 43, 226, 0.1);
 }
 .patients-page .search-container .search-box input::placeholder {
-  color: #333;
+  color: #6B7280;
 }
 .patients-page .patients-list-container {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 .patients-page .patients-list-container .patients-list {
-  flex: 2;
+  width: 70%;
   background: white;
   border-radius: 0.5rem;
-  border: 1px solid #333;
+  border: 1px solid rgba(138, 43, 226, 0.1);
   overflow: hidden;
 }
 .patients-page .patients-list-container .patients-list .patients-list-header {
   display: flex;
   padding: 1rem;
-  background-color: #6B7280;
-  border-bottom: 1px solid rgb(138, 43, 226);
+  background-color: #F3F4F6;
+  border-bottom: 1px solid rgba(138, 43, 226, 0.1);
 }
 .patients-page .patients-list-container .patients-list .patients-list-header .column-header {
   font-weight: 600;
-  font-size: 14px;
-  color: rgb(138, 43, 226);
+  font-size: 0.75rem;
+  color: #6B7280;
 }
 .patients-page .patients-list-container .patients-list .patients-list-header .patient-column {
-  flex: 2;
+  flex: 1;
+  padding-left: 10px;
+  text-align: left;
 }
 .patients-page .patients-list-container .patients-list .patients-list-header .passage-column {
   flex: 1;
@@ -544,19 +552,27 @@ p {
 }
 .patients-page .patients-list-container .patients-list .patients-list-header .status-column {
   flex: 1;
-  text-align: center;
+  padding-right: 10px;
+  text-align: right;
 }
 .patients-page .patients-list-container .patients-list .patients-list-empty {
+  display: flex;
+  justify-content: center;
+  vertical-align: auto;
+  align-items: center;
   padding: 3rem;
-  text-align: center;
-  color: #333;
+  color: #6B7280;
   font-size: 16px;
 }
+.patients-page .patients-list-container .patients-list .patients-list-empty p {
+  margin: auto 0;
+  padding: 15px;
+}
 .patients-page .patients-list-container .patient-details-placeholder {
-  flex: 1;
+  width: 35%;
   background: white;
   border-radius: 0.5rem;
-  border: 1px solid #333;
+  border: 1px solid rgba(138, 43, 226, 0.1);
   padding: 4.5rem;
   display: flex;
   flex-direction: column;
@@ -564,32 +580,22 @@ p {
   justify-content: center;
   text-align: center;
 }
-.patients-page .patients-list-container .patient-details-placeholder .placeholder-icon {
+.patients-page .patients-list-container .patient-details-placeholder img {
   width: 80px;
   height: 80px;
-  background-color: #333;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-.patients-page .patients-list-container .patient-details-placeholder .placeholder-icon img {
-  width: 40px;
-  height: 40px;
-  opacity: 0.5;
+  opacity: 0.7;
 }
 .patients-page .patients-list-container .patient-details-placeholder p {
-  color: #333;
+  color: #6B7280;
   font-size: 16px;
-  max-width: 200px;
+  max-width: 100%;
   margin: 0;
 }
 
 /* components/_settings.scss */
 .settings-page {
   background-color: #FFFFFF;
-  padding: 1.5rem;
+  padding: 1rem;
   width: 100%;
   max-height: 80vh;
   overflow: auto;
