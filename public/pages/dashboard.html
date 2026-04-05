@@ -292,27 +292,43 @@
     </div>
 <!-- modal pour btn ajouter patient -->
     <div class="marki-modal" id="addPatientModal" aria-hidden="true">
-  <div class="marki-modal__backdrop" data-close-add-patient-modal></div>
+        <div class="marki-modal__backdrop" data-close-add-patient-modal></div>
 
-  <div
-    class="marki-modal__dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="addPatientModalTitle"
-  >
-    <div class="marki-modal__header">
-      <h2 id="addPatientModalTitle">Nouveau patient</h2>
-      <button
-        type="button"
-        class="marki-modal__close"
-        id="closeAddPatientModalBtn"
-        aria-label="Fermer la fenêtre"
-      >
-        X
-      </button>
+        <div
+        class="marki-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="addPatientModalTitle">
+        <div class="marki-modal__header">
+        <h2 id="addPatientModalTitle">Nouveau patient</h2>
+
+        <button
+            type="button"
+            class="marki-modal__close"
+            id="closeAddPatientModalBtn"
+            aria-label="Fermer la fenêtre"
+        >
+            ×
+        </button>
     </div>
 
     <form id="addPatientForm" class="marki-modal__form" novalidate>
+      <!--
+      |--------------------------------------------------------------------------
+      | Champs techniques cachés
+      |--------------------------------------------------------------------------
+      | form_mode :
+      | - create = création
+      | - edit   = modification
+      |
+      | entry_id :
+      | - utilisé plus tard pour modifier une entrée existante
+      |--------------------------------------------------------------------------
+      -->
+      <input type="hidden" id="addPatientFormMode" name="form_mode" value="create" />
+      <input type="hidden" id="addPatientEntryId" name="entry_id" value="" />
+      <input type="hidden" name="source" value="secretary" />
+
       <div class="marki-form__group">
         <label for="addPatientFullName">Nom complet</label>
         <input
@@ -343,9 +359,34 @@
         />
       </div>
 
-      <input type="hidden" name="source" value="secretary" />
-
+      <!--
+      |--------------------------------------------------------------------------
+      | Message normal de formulaire
+      |--------------------------------------------------------------------------
+      -->
       <div id="addPatientFormMessage" class="marki-form__message" aria-live="polite"></div>
+
+      <!--
+      |--------------------------------------------------------------------------
+      | Zone de confirmation métier
+      |--------------------------------------------------------------------------
+      | On l'affiche seulement si le backend répond :
+      | PHONE_ALREADY_USED_BY_ANOTHER_PATIENT
+      |--------------------------------------------------------------------------
+      -->
+      <div id="sharedPhoneConfirmBox" class="marki-confirm-box" hidden>
+        <p id="sharedPhoneConfirmText" class="marki-confirm-box__text"></p>
+
+        <div class="marki-confirm-box__actions">
+          <button type="button" id="cancelSharedPhoneConfirmBtn" class="btn btn-secondary">
+            Annuler
+          </button>
+
+          <button type="button" id="confirmSharedPhoneBtn" class="btn btn-primary">
+            Confirmer quand même
+          </button>
+        </div>
+      </div>
 
       <div class="marki-modal__actions">
         <button type="button" class="btn btn-secondary" id="cancelAddPatientBtn">
