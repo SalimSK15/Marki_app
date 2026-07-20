@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| API : queue_update_patient.php
+| API : modifier une entrée patient
 |--------------------------------------------------------------------------
-| Rôle :
-| - modifier une entrée de la liste du jour
-| - corriger une erreur de saisie
-| - mettre à jour aussi la fiche patient liée si patient_id existe
-|--------------------------------------------------------------------------
-|
-| IMPORTANT :
-| Cette version reste simple et cohérente avec la V1.
+| Règles :
+| - correction simple autorisée
+| - même nom + autre téléphone autorisé
+| - copie exacte d’une autre fiche refusée
+| - téléphone d’un autre patient : confirmation familiale
 |--------------------------------------------------------------------------
 */
 
@@ -25,6 +22,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $config = require __DIR__ . '/../../app/config.php';
 
+require_once __DIR__ . '/../../app/helpers/PatientDataNormalizer.php';
 require_once __DIR__ . '/../../app/repositories/QueueRepository.php';
 require_once __DIR__ . '/../../app/repositories/QueueEntryRepository.php';
 require_once __DIR__ . '/../../app/repositories/PatientRepository.php';
@@ -34,43 +32,61 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
     echo json_encode([
         'ok' => false,
-        'message' => 'Méthode non autorisée. Utilisez POST.',
+        'message' => 'Méthode non autorisée.',
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
-function normalizePersonName(string $value): string
-{
-    $value = trim($value);
-
-    if ($value === '') {
-        return '';
-    }
-
-    $value = preg_replace('/\s+/', ' ', $value) ?? $value;
-
-    return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
-}
-
 try {
-    $clinicId = (int) $config['dev_context']['clinic_id'];
-    $doctorId = (int) $config['dev_context']['doctor_id'];
-    $userId   = (int) $config['dev_context']['user_id'];
-    $today    = date('Y-m-d');
+    $clinicId =
+        (int) $config['dev_context']['clinic_id'];
 
-    $rawInput = file_get_contents('php://input');
-    $jsonInput = json_decode($rawInput, true);
+    $doctorId =
+        (int) $config['dev_context']['doctor_id'];
 
-    $input = is_array($jsonInput) && !empty($jsonInput)
+    $userId =
+        (int) $config['dev_context']['user_id'];
+
+    $today = date('Y-m-d');
+
+    $rawInput =
+        file_get_contents('php://input');
+
+    $jsonInput =
+        json_decode($rawInput, true);
+
+    $input = is_array($jsonInput)
         ? $jsonInput
         : $_POST;
 
-    $entryId = (int) ($input['entry_id'] ?? 0);
-    $fullName = normalizePersonName((string) ($input['full_name'] ?? ''));
-    $phone = isset($input['phone']) ? trim((string) $input['phone']) : null;
-    $birthDate = isset($input['birth_date']) ? trim((string) $input['birth_date']) : null;
+    $entryId =
+        (int) ($input['entry_id'] ?? 0);
 
+    $fullName =
+        PatientDataNormalizer::normalizeName(
+            (string) ($input['full_name'] ?? '')
+        );
+
+    $phone =
+        PatientDataNormalizer::normalizePhone(
+            (string) ($input['phone'] ?? '')
+        );
+
+    $birthDate = isset($input['birth_date'])
+        ? trim((string) $input['birth_date'])
+        : null;
+
+    $allowSharedPhone = filter_var(
+        $input['allow_shared_phone'] ?? false,
+        FILTER_VALIDATE_BOOLEAN
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validations
+    |--------------------------------------------------------------------------
+    */
     if ($entryId <= 0) {
         http_response_code(422);
 
@@ -87,26 +103,55 @@ try {
 
         echo json_encode([
             'ok' => false,
-            'message' => 'Le nom complet est obligatoire.',
+            'message' =>
+            'Le nom complet est obligatoire.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
     }
 
     if ($phone === '') {
-        $phone = null;
+        http_response_code(422);
+
+        echo json_encode([
+            'ok' => false,
+            'message' =>
+            'Le numéro de téléphone est obligatoire.',
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    if (
+        !PatientDataNormalizer::isValidPhone($phone)
+    ) {
+        http_response_code(422);
+
+        echo json_encode([
+            'ok' => false,
+            'message' =>
+            'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.',
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
     }
 
     if ($birthDate !== null && $birthDate !== '') {
-        $date = DateTime::createFromFormat('Y-m-d', $birthDate);
-        $isValidBirthDate = $date && $date->format('Y-m-d') === $birthDate;
+        $date = DateTimeImmutable::createFromFormat(
+            'Y-m-d',
+            $birthDate
+        );
 
-        if (!$isValidBirthDate) {
+        if (
+            !$date
+            || $date->format('Y-m-d') !== $birthDate
+        ) {
             http_response_code(422);
 
             echo json_encode([
                 'ok' => false,
-                'message' => 'La date de naissance est invalide. Format attendu : YYYY-MM-DD.',
+                'message' =>
+                'La date de naissance est invalide.',
             ], JSON_UNESCAPED_UNICODE);
 
             exit;
@@ -115,29 +160,42 @@ try {
         $birthDate = null;
     }
 
-    $queueRepository = new QueueRepository();
-    $queue = $queueRepository->getOrCreateTodayQueue(
-        $clinicId,
-        $doctorId,
-        $userId,
-        $today
-    );
+    $queueRepository =
+        new QueueRepository();
+
+    $queueEntryRepository =
+        new QueueEntryRepository();
+
+    $patientRepository =
+        new PatientRepository();
+
+    $queue =
+        $queueRepository->getOrCreateTodayQueue(
+            $clinicId,
+            $doctorId,
+            $userId,
+            $today
+        );
 
     if (($queue['status'] ?? '') !== 'open') {
         http_response_code(409);
 
         echo json_encode([
             'ok' => false,
-            'message' => 'La liste du jour est fermée. Impossible de modifier une entrée.',
+            'message' =>
+            'La liste du jour est fermée.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
     }
 
-    $queueEntryRepository = new QueueEntryRepository();
-    $entry = $queueEntryRepository->findById($entryId, $clinicId);
+    $entry =
+        $queueEntryRepository->findById(
+            $entryId,
+            $clinicId
+        );
 
-    if (!$entry) {
+    if ($entry === null) {
         http_response_code(404);
 
         echo json_encode([
@@ -148,36 +206,60 @@ try {
         exit;
     }
 
-    if ((int) $entry['queue_id'] !== (int) $queue['id']) {
+    if (
+        (int) $entry['queue_id']
+        !== (int) $queue['id']
+    ) {
         http_response_code(403);
 
         echo json_encode([
             'ok' => false,
-            'message' => 'Cette entrée ne fait pas partie de la liste du jour.',
+            'message' =>
+            'Cette entrée ne fait pas partie de la liste du jour.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
     }
 
+    $currentPatientId =
+        !empty($entry['patient_id'])
+        ? (int) $entry['patient_id']
+        : 0;
+
     /*
     |--------------------------------------------------------------------------
-    | Vérifier qu'on ne crée pas un doublon visible dans la même journée
-    |--------------------------------------------------------------------------
-    | Si on change le nom et qu'une autre entrée waiting a déjà ce même nom,
-    | on bloque pour éviter la confusion.
+    | Refuser une copie exacte d’une autre fiche patient
     |--------------------------------------------------------------------------
     */
-    $existingSameNameEntry = $queueEntryRepository->findWaitingByQueueAndDisplayName(
-        (int) $queue['id'],
-        $fullName
-    );
+    $duplicateIdentity =
+        $patientRepository->findByPhoneAndName(
+            $clinicId,
+            $phone,
+            $fullName,
+            $currentPatientId > 0
+                ? $currentPatientId
+                : null
+        );
 
-    if ($existingSameNameEntry !== null && (int) $existingSameNameEntry['id'] !== $entryId) {
+    if ($duplicateIdentity !== null) {
         http_response_code(409);
 
         echo json_encode([
             'ok' => false,
-            'message' => 'Une autre entrée du jour utilise déjà ce même nom. Vérifie avant de modifier.',
+            'error_code' =>
+            'PATIENT_IDENTITY_ALREADY_EXISTS',
+            'message' =>
+            'Une autre fiche patient possède déjà exactement ce nom et ce numéro.',
+            'data' => [
+                'existing_patient' => [
+                    'id' =>
+                    (int) $duplicateIdentity['id'],
+                    'full_name' =>
+                    $duplicateIdentity['full_name'],
+                    'phone' =>
+                    $duplicateIdentity['phone'],
+                ],
+            ],
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -185,28 +267,82 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | Mise à jour de queue_entries
+    | Vérifier si le téléphone a réellement changé
+    |--------------------------------------------------------------------------
+    | Modifier seulement le nom ne doit pas redemander une confirmation
+    | pour un numéro familial déjà partagé.
     |--------------------------------------------------------------------------
     */
-    $updatedEntry = $queueEntryRepository->updatePatientIdentity(
-        $entryId,
-        $clinicId,
-        $fullName,
-        $phone,
-        $birthDate,
-        $userId
-    );
+    $currentPhone =
+        PatientDataNormalizer::normalizePhone(
+            (string) ($entry['phone'] ?? '')
+        );
+
+    $phoneChanged =
+        $currentPhone !== $phone;
+
+    if ($phoneChanged) {
+        $otherPhoneOwner =
+            $patientRepository
+            ->findByPhoneExcludingPatientId(
+                $clinicId,
+                $phone,
+                $currentPatientId
+            );
+
+        if (
+            $otherPhoneOwner !== null
+            && !$allowSharedPhone
+        ) {
+            http_response_code(409);
+
+            echo json_encode([
+                'ok' => false,
+                'error_code' =>
+                'PHONE_SHARED_CONFIRMATION_REQUIRED',
+                'message' => sprintf(
+                    'Ce numéro est déjà utilisé par « %s ». Confirmez uniquement s’il s’agit d’un numéro familial partagé.',
+                    $otherPhoneOwner['full_name']
+                ),
+                'data' => [
+                    'existing_patient' => [
+                        'id' =>
+                        (int) $otherPhoneOwner['id'],
+                        'full_name' =>
+                        $otherPhoneOwner['full_name'],
+                        'phone' =>
+                        $otherPhoneOwner['phone'],
+                    ],
+                ],
+            ], JSON_UNESCAPED_UNICODE);
+
+            exit;
+        }
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | Si l'entrée est liée à un patient réel, on met aussi à jour sa fiche
+    | Mettre à jour l’entrée affichée
     |--------------------------------------------------------------------------
     */
-    if (!empty($entry['patient_id'])) {
-        $patientRepository = new PatientRepository();
+    $updatedEntry =
+        $queueEntryRepository->updatePatientIdentity(
+            $entryId,
+            $clinicId,
+            $fullName,
+            $phone,
+            $birthDate,
+            $userId
+        );
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mettre à jour la fiche patient durable
+    |--------------------------------------------------------------------------
+    */
+    if ($currentPatientId > 0) {
         $patientRepository->updateIdentity(
-            (int) $entry['patient_id'],
+            $currentPatientId,
             $clinicId,
             $fullName,
             $phone,
@@ -216,27 +352,27 @@ try {
 
     echo json_encode([
         'ok' => true,
-        'message' => 'Entrée mise à jour avec succès.',
+        'message' =>
+        'Patient mis à jour avec succès.',
         'data' => [
             'queue' => $queue,
             'entry' => $updatedEntry,
         ],
     ], JSON_UNESCAPED_UNICODE);
-
-} catch (InvalidArgumentException $e) {
+} catch (InvalidArgumentException $exception) {
     http_response_code(422);
 
     echo json_encode([
         'ok' => false,
-        'message' => $e->getMessage(),
+        'message' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
-
-} catch (Throwable $e) {
+} catch (Throwable $exception) {
     http_response_code(500);
 
     echo json_encode([
         'ok' => false,
-        'message' => 'Impossible de modifier le patient.',
-        'error' => $e->getMessage(),
+        'message' =>
+        'Impossible de modifier le patient.',
+        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

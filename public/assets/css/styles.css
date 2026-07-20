@@ -761,10 +761,12 @@ p {
   inset: 0;
   display: none;
   z-index: 9999;
+  padding: 16px;
 }
 
 .marki-modal.is-open {
-  display: block;
+  display: grid;
+  place-items: center;
 }
 
 .marki-modal__backdrop {
@@ -775,12 +777,17 @@ p {
 
 .marki-modal__dialog {
   position: relative;
-  width: min(92vw, 520px);
-  margin: 6vh auto 0;
+  z-index: 1;
+  width: min(92vw, 780px);
+  max-width: 780px;
+  max-height: calc(100vh - 32px);
   background: #fff;
   border-radius: 20px;
-  padding: 24px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .marki-modal__header {
@@ -788,12 +795,14 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
 }
 
 .marki-modal__header h2 {
   margin: 0;
   font-size: 28px;
+  line-height: 1.1;
 }
 
 .marki-modal__close {
@@ -802,16 +811,22 @@ p {
   font-size: 30px;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .marki-modal__form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .marki-form__group {
   display: grid;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .marki-form__group label {
@@ -820,16 +835,22 @@ p {
 
 .marki-form__group input {
   width: 100%;
-  min-height: 48px;
+  min-height: 52px;
   border: 1px solid #d9d9e3;
   border-radius: 12px;
-  padding: 0 14px;
+  padding: 0 16px;
   font: inherit;
 }
 
 .marki-form__message {
-  min-height: 24px;
+  min-height: 0;
   font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.marki-form__message:empty {
+  display: none;
 }
 
 .marki-form__message.is-error {
@@ -840,13 +861,167 @@ p {
   color: #1b8f5a;
 }
 
+/* ---------------------------------------------------------
+   Avertissement de téléphone familial
+--------------------------------------------------------- */
+.marki-modal .marki-confirm-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  background-color: #fffbeb;
+  color: #92400e;
+  flex-shrink: 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Garantir que l'attribut hidden masque réellement le bloc
+|--------------------------------------------------------------------------
+*/
+.marki-modal .marki-confirm-box[hidden] {
+  display: none;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Icône warning sans devoir modifier le HTML
+|--------------------------------------------------------------------------
+*/
+.marki-modal .marki-confirm-box::before {
+  content: "⚠";
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.marki-modal .marki-confirm-box__text {
+  margin: 0;
+  color: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------
+   Bouton principal pendant la confirmation familiale
+--------------------------------------------------------- */
+.marki-modal .btn.btn-primary.is-confirmation {
+  background-color: #ea580c;
+  color: #fff;
+  border-color: #ea580c;
+}
+
+.marki-modal .btn.btn-primary.is-confirmation:hover {
+  background-color: #c2410c;
+  border-color: #c2410c;
+}
+
+/* ---------------------------------------------------------
+   Indication du champ facultatif
+--------------------------------------------------------- */
+.optional-label {
+  margin-left: 0.25rem;
+  color: #6B7280;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* ---------------------------------------------------------
+   Focus visible sur les champs
+--------------------------------------------------------- */
+.marki-form__group input:focus {
+  border-color: rgb(138, 43, 226);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.12);
+}
+
+/* Astérisque des champs obligatoires */
+.required-mark {
+  margin-left: 0.15rem;
+  color: #EF4444;
+  font-weight: 700;
+}
+
 .marki-modal__actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
+  padding-top: 4px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  background: #fff;
 }
 
+/* ---------------------------------------------------------
+   Bouton Nouveau patient lorsque la liste est fermée
+--------------------------------------------------------- */
+.day-list-page__top-actions .btn-primary:disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+.day-list-page__top-actions .btn-primary:disabled:hover {
+  background-color: #d1d5db;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .marki-modal {
+    padding: 12px;
+  }
+  .marki-modal__dialog {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .marki-modal__header h2 {
+    font-size: 22px;
+  }
+  .marki-form__group input {
+    min-height: 46px;
+  }
+  .marki-modal__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .marki-modal__actions button {
+    width: 100%;
+  }
+}
+@media (max-height: 760px) {
+  .marki-modal {
+    padding: 10px;
+  }
+  .marki-modal__dialog {
+    max-height: calc(100vh - 20px);
+    padding: 16px;
+  }
+  .marki-modal__header {
+    margin-bottom: 12px;
+  }
+  .marki-modal__header h2 {
+    font-size: 22px;
+  }
+  .marki-modal__form {
+    gap: 12px;
+  }
+  .marki-form__group input {
+    min-height: 44px;
+  }
+  .marki-confirm-box {
+    padding: 14px;
+  }
+}
 /* =========================================================
    DÉTAILS DU PATIENT
    ---------------------------------------------------------
@@ -1440,7 +1615,15 @@ p {
   margin-bottom: 24px;
 }
 
-.btn {
+/*
+|--------------------------------------------------------------------------
+| Boutons de la page Paramètres uniquement
+|--------------------------------------------------------------------------
+| Le préfixe .settings-page empêche ces styles d'écraser
+| les boutons utilisés dans le dashboard et les autres pages.
+|--------------------------------------------------------------------------
+*/
+.settings-page .btn {
   display: flex;
   padding: 0.5rem 24px;
   border-radius: 9999px;
@@ -1449,23 +1632,23 @@ p {
   transition: background-color 0.3s, transform 0.2s;
   border: none;
 }
-.btn-primary {
+.settings-page .btn-primary {
   background-color: rgb(138, 43, 226);
   color: white;
 }
-.btn-primary:hover {
+.settings-page .btn-primary:hover {
   background-color: rgb(125.2863070539, 29.3008298755, 214.1991701245);
 }
-.btn-primary:active {
+.settings-page .btn-primary:active {
   transform: scale(0.95);
 }
-.btn-primary .icon {
+.settings-page .btn-primary .icon {
   width: 24px;
   height: 24px;
   font-size: 1.2rem;
   transition: transform 0.3s, color 0.3s;
 }
-.btn-primary.clicked .icon {
+.settings-page .btn-primary.clicked .icon {
   transform: rotate(180deg);
   color: rgb(135, 206, 235);
 }

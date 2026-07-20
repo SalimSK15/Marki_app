@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| API : queue_add_patient.php
+| API : ajouter un patient à la liste du jour
 |--------------------------------------------------------------------------
-| Rôle :
-| - valider les données envoyées
-| - normaliser le nom
-| - retrouver ou créer le patient
-| - gérer les cas métier de doublon
-| - ajouter l'entrée dans la liste du jour
+| Règles :
+| - nom obligatoire
+| - téléphone obligatoire
+| - date facultative
+| - même nom + même téléphone = patient existant
+| - même patient déjà waiting = refus
+| - même nom + téléphone différent = autorisé
+| - nom différent + même téléphone = confirmation familiale
 |--------------------------------------------------------------------------
 */
 
@@ -23,6 +25,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $config = require __DIR__ . '/../../app/config.php';
 
+require_once __DIR__ . '/../../app/helpers/PatientDataNormalizer.php';
 require_once __DIR__ . '/../../app/repositories/QueueRepository.php';
 require_once __DIR__ . '/../../app/repositories/QueueEntryRepository.php';
 require_once __DIR__ . '/../../app/repositories/PatientRepository.php';
@@ -32,90 +35,116 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
     echo json_encode([
         'ok' => false,
-        'message' => 'Méthode non autorisée. Utilisez POST.',
+        'message' => 'Méthode non autorisée.',
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Normaliser un nom de personne
-|--------------------------------------------------------------------------
-*/
-function normalizePersonName(string $value): string
-{
-    $value = trim($value);
-
-    if ($value === '') {
-        return '';
-    }
-
-    $value = preg_replace('/\s+/', ' ', $value) ?? $value;
-
-    return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
-}
-
 try {
-    $clinicId = (int) $config['dev_context']['clinic_id'];
-    $doctorId = (int) $config['dev_context']['doctor_id'];
-    $userId   = (int) $config['dev_context']['user_id'];
-    $today    = date('Y-m-d');
+    $clinicId =
+        (int) $config['dev_context']['clinic_id'];
 
-    $rawInput = file_get_contents('php://input');
-    $jsonInput = json_decode($rawInput, true);
+    $doctorId =
+        (int) $config['dev_context']['doctor_id'];
 
-    $input = is_array($jsonInput) && !empty($jsonInput)
+    $userId =
+        (int) $config['dev_context']['user_id'];
+
+    $today = date('Y-m-d');
+
+    $rawInput =
+        file_get_contents('php://input');
+
+    $jsonInput =
+        json_decode($rawInput, true);
+
+    $input = is_array($jsonInput)
         ? $jsonInput
         : $_POST;
 
-    $fullName = normalizePersonName((string) ($input['full_name'] ?? $input['display_name'] ?? ''));
-    $phone = isset($input['phone']) ? trim((string) $input['phone']) : null;
-    $birthDate = isset($input['birth_date']) ? trim((string) $input['birth_date']) : null;
-    $source = isset($input['source']) ? trim((string) $input['source']) : 'secretary';
+    $fullName =
+        PatientDataNormalizer::normalizeName(
+            (string) ($input['full_name'] ?? '')
+        );
+
+    $phone =
+        PatientDataNormalizer::normalizePhone(
+            (string) ($input['phone'] ?? '')
+        );
+
+    $birthDate = isset($input['birth_date'])
+        ? trim((string) $input['birth_date'])
+        : null;
+
+    $source = trim(
+        (string) ($input['source'] ?? 'secretary')
+    );
+
+    $allowSharedPhone = filter_var(
+        $input['allow_shared_phone'] ?? false,
+        FILTER_VALIDATE_BOOLEAN
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Permettre une confirmation explicite côté front plus tard
-    |--------------------------------------------------------------------------
-    | Exemple d'usage futur :
-    | - téléphone déjà utilisé par une autre personne
-    | - la secrétaire confirme manuellement
+    | Validations
     |--------------------------------------------------------------------------
     */
-    $allowSharedPhone = (bool) ($input['allow_shared_phone'] ?? false);
-
     if ($fullName === '') {
         http_response_code(422);
 
         echo json_encode([
             'ok' => false,
-            'message' => 'Le nom complet est obligatoire.',
-            'errors' => [
-                'full_name' => 'Le nom complet est obligatoire.',
-            ],
+            'message' =>
+            'Le nom complet est obligatoire.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
     }
 
     if ($phone === '') {
-        $phone = null;
+        http_response_code(422);
+
+        echo json_encode([
+            'ok' => false,
+            'message' =>
+            'Le numéro de téléphone est obligatoire.',
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    if (
+        !PatientDataNormalizer::isValidPhone($phone)
+    ) {
+        http_response_code(422);
+
+        echo json_encode([
+            'ok' => false,
+            'message' =>
+            'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.',
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
     }
 
     if ($birthDate !== null && $birthDate !== '') {
-        $date = DateTime::createFromFormat('Y-m-d', $birthDate);
-        $isValidBirthDate = $date && $date->format('Y-m-d') === $birthDate;
+        $date = DateTimeImmutable::createFromFormat(
+            'Y-m-d',
+            $birthDate
+        );
 
-        if (!$isValidBirthDate) {
+        if (
+            !$date
+            || $date->format('Y-m-d') !== $birthDate
+        ) {
             http_response_code(422);
 
             echo json_encode([
                 'ok' => false,
-                'message' => 'La date de naissance est invalide. Format attendu : YYYY-MM-DD.',
-                'errors' => [
-                    'birth_date' => 'Format attendu : YYYY-MM-DD.',
-                ],
+                'message' =>
+                'La date de naissance est invalide.',
             ], JSON_UNESCAPED_UNICODE);
 
             exit;
@@ -124,36 +153,40 @@ try {
         $birthDate = null;
     }
 
-    $patientRepository = new PatientRepository();
-    $queueRepository = new QueueRepository();
-    $queueEntryRepository = new QueueEntryRepository();
+    if (
+        !in_array(
+            $source,
+            ['secretary', 'doctor', 'qr', 'link'],
+            true
+        )
+    ) {
+        $source = 'secretary';
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Récupérer ou créer la liste du jour
-    |--------------------------------------------------------------------------
-    */
-    $queue = $queueRepository->getOrCreateTodayQueue(
-        $clinicId,
-        $doctorId,
-        $userId,
-        $today
-    );
+    $queueRepository =
+        new QueueRepository();
 
-    /*
-    |--------------------------------------------------------------------------
-    | Bloquer si la liste est fermée
-    |--------------------------------------------------------------------------
-    */
+    $queueEntryRepository =
+        new QueueEntryRepository();
+
+    $patientRepository =
+        new PatientRepository();
+
+    $queue =
+        $queueRepository->getOrCreateTodayQueue(
+            $clinicId,
+            $doctorId,
+            $userId,
+            $today
+        );
+
     if (($queue['status'] ?? '') !== 'open') {
         http_response_code(409);
 
         echo json_encode([
             'ok' => false,
-            'message' => 'La liste du jour est fermée. Impossible d’ajouter un nouveau patient.',
-            'data' => [
-                'queue' => $queue,
-            ],
+            'message' =>
+            'La liste du jour est fermée.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -161,186 +194,144 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | CAS 1 : téléphone présent
-    |--------------------------------------------------------------------------
-    | On regarde d'abord s'il existe déjà un patient avec ce numéro.
+    | Chercher une fiche ayant exactement le même nom et téléphone
     |--------------------------------------------------------------------------
     */
-    $existingPatientByPhone = null;
+    $exactPatient =
+        $patientRepository->findByPhoneAndName(
+            $clinicId,
+            $phone,
+            $fullName
+        );
 
-    if ($phone !== null) {
-        $existingPatientByPhone = $patientRepository->findByPhone($clinicId, $phone);
-    }
-
-    if ($existingPatientByPhone !== null) {
+    if ($exactPatient !== null) {
         /*
-        |--------------------------------------------------------------
-        | Même téléphone + nom différent
-        |--------------------------------------------------------------
-        | On ne bloque pas définitivement.
-        | On demande une confirmation explicite future côté front.
+        |----------------------------------------------------------------------
+        | Même nom + même téléphone = même patient
+        |----------------------------------------------------------------------
         */
-        if (!$patientRepository->sameNormalizedName($existingPatientByPhone['full_name'], $fullName)) {
-            if (!$allowSharedPhone) {
-                http_response_code(409);
+        $patient = $exactPatient;
 
-                echo json_encode([
-                    'ok' => false,
-                    'message' => 'Ce numéro de téléphone est déjà utilisé par un autre patient. Si c’est normal (parent/enfant, famille), confirme l’ajout.',
-                    'error_code' => 'PHONE_ALREADY_USED_BY_ANOTHER_PATIENT',
-                    'data' => [
-                        'existing_patient' => [
-                            'id' => (int) $existingPatientByPhone['id'],
-                            'full_name' => $existingPatientByPhone['full_name'],
-                            'phone' => $existingPatientByPhone['phone'],
-                            'birth_date' => $existingPatientByPhone['birth_date'],
-                        ],
-                    ],
-                ], JSON_UNESCAPED_UNICODE);
-
-                exit;
-            }
-
-            /*
-            |----------------------------------------------------------
-            | Si confirmé, on crée un nouveau patient malgré le téléphone partagé
-            |----------------------------------------------------------
-            */
-            $patient = $patientRepository->create(
-                $clinicId,
-                $fullName,
-                $phone,
-                $birthDate
+        $existingWaitingEntry =
+            $queueEntryRepository
+            ->findWaitingByQueueAndPatientId(
+                (int) $queue['id'],
+                (int) $patient['id']
             );
-        } else {
-            /*
-            |----------------------------------------------------------
-            | Même téléphone + même nom => on considère même patient
-            |----------------------------------------------------------
-            */
-            $patient = $existingPatientByPhone;
-        }
-    } else {
-        /*
-        |--------------------------------------------------------------
-        | CAS 2 : pas de téléphone déjà trouvé
-        |--------------------------------------------------------------
-        | On essaie la logique standard de rapprochement
-        */
-        $existingPatient = $patientRepository->findExisting(
-            $clinicId,
-            $phone,
-            $fullName,
-            $birthDate
-        );
-
-        $patient = $existingPatient ?: $patientRepository->create(
-            $clinicId,
-            $fullName,
-            $phone,
-            $birthDate
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Bloquer si le même patient est déjà en attente dans la liste du jour
-    |--------------------------------------------------------------------------
-    */
-    if (!empty($patient['id'])) {
-        $existingWaitingEntry = $queueEntryRepository->findWaitingByQueueAndPatientId(
-            (int) $queue['id'],
-            (int) $patient['id']
-        );
 
         if ($existingWaitingEntry !== null) {
             http_response_code(409);
 
             echo json_encode([
                 'ok' => false,
-                'message' => 'Ce patient est déjà inscrit aujourd’hui avec ce numéro de téléphone.',
+                'error_code' =>
+                'PATIENT_ALREADY_WAITING',
+                'message' =>
+                'Ce patient est déjà en attente dans la liste du jour.',
                 'data' => [
-                    'patient' => $patient,
-                    'queue' => $queue,
-                    'existing_entry' => $existingWaitingEntry,
+                    'existing_entry' =>
+                    $existingWaitingEntry,
                 ],
             ], JSON_UNESCAPED_UNICODE);
 
             exit;
         }
-    }
+    } else {
+        /*
+        |----------------------------------------------------------------------
+        | Vérifier si le téléphone est utilisé par un autre nom
+        |----------------------------------------------------------------------
+        */
+        $phoneOwner =
+            $patientRepository->findByPhone(
+                $clinicId,
+                $phone
+            );
 
-    /*
-    |--------------------------------------------------------------------------
-    | CAS 3 : pas de téléphone
-    |--------------------------------------------------------------------------
-    | Si aucun téléphone n'est fourni, on bloque au moins le même nom
-    | déjà en attente aujourd'hui.
-    |--------------------------------------------------------------------------
-    */
-    if ($phone === null) {
-        $existingSameNameEntry = $queueEntryRepository->findWaitingByQueueAndDisplayName(
-            (int) $queue['id'],
-            $fullName
-        );
-
-        if ($existingSameNameEntry !== null) {
+        if (
+            $phoneOwner !== null
+            && !$allowSharedPhone
+        ) {
             http_response_code(409);
 
             echo json_encode([
                 'ok' => false,
-                'message' => 'Un patient avec le même nom est déjà présent aujourd’hui. Ajoute un numéro ou une date de naissance pour mieux distinguer les patients.',
-                'error_code' => 'SAME_NAME_ALREADY_WAITING_TODAY',
+                'error_code' =>
+                'PHONE_SHARED_CONFIRMATION_REQUIRED',
+                'message' => sprintf(
+                    'Ce numéro est déjà utilisé par « %s ». Confirmez uniquement s’il s’agit d’un numéro familial partagé.',
+                    $phoneOwner['full_name']
+                ),
                 'data' => [
-                    'queue' => $queue,
-                    'existing_entry' => $existingSameNameEntry,
+                    'existing_patient' => [
+                        'id' =>
+                        (int) $phoneOwner['id'],
+                        'full_name' =>
+                        $phoneOwner['full_name'],
+                        'phone' =>
+                        $phoneOwner['phone'],
+                    ],
                 ],
             ], JSON_UNESCAPED_UNICODE);
 
             exit;
         }
+
+        /*
+        |----------------------------------------------------------------------
+        | Téléphone libre ou partage familial confirmé
+        |----------------------------------------------------------------------
+        */
+        $patient =
+            $patientRepository->create(
+                $clinicId,
+                $fullName,
+                $phone,
+                $birthDate
+            );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Créer l'entrée dans la queue du jour
+    | Ajouter le patient dans la liste
     |--------------------------------------------------------------------------
     */
-    $createdEntry = $queueEntryRepository->create(
-        (int) $queue['id'],
-        $clinicId,
-        (int) $patient['id'],
-        $patient['full_name'],
-        $patient['phone'] ?? null,
-        $patient['birth_date'] ?? null,
-        $source !== '' ? $source : 'secretary',
-        $userId
-    );
+    $createdEntry =
+        $queueEntryRepository->create(
+            (int) $queue['id'],
+            $clinicId,
+            (int) $patient['id'],
+            $patient['full_name'],
+            $patient['phone'],
+            $patient['birth_date'] ?? null,
+            $source,
+            $userId
+        );
 
     echo json_encode([
         'ok' => true,
-        'message' => 'Patient ajouté à la liste du jour avec succès.',
+        'message' =>
+        'Patient ajouté à la liste du jour.',
         'data' => [
             'patient' => $patient,
             'queue' => $queue,
             'entry' => $createdEntry,
         ],
     ], JSON_UNESCAPED_UNICODE);
-
-} catch (InvalidArgumentException $e) {
+} catch (InvalidArgumentException $exception) {
     http_response_code(422);
 
     echo json_encode([
         'ok' => false,
-        'message' => $e->getMessage(),
+        'message' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
-
-} catch (Throwable $e) {
+} catch (Throwable $exception) {
     http_response_code(500);
 
     echo json_encode([
         'ok' => false,
-        'message' => 'Impossible d’ajouter le patient à la liste du jour.',
-        'error' => $e->getMessage(),
+        'message' =>
+        'Impossible d’ajouter le patient.',
+        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

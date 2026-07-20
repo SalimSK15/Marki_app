@@ -5,21 +5,20 @@ const TOGGLE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_
 
 /*
 |--------------------------------------------------------------------------
-| État temporaire de confirmation téléphone partagé
+| État temporaire de confirmation d’un téléphone partagé
 |--------------------------------------------------------------------------
-| On stocke ici le payload en attente si le backend demande
-| une confirmation explicite avant insertion.
-|--------------------------------------------------------------------------
-|--------------------------------------------------------------------------
-| Récupérer tous les éléments de la modal patient
-|--------------------------------------------------------------------------
-| Pourquoi centraliser ça ?
-| - évite de refaire les mêmes querySelector partout
-| - facilite la maintenance
+| Le premier submit affiche un avertissement.
+| Le deuxième submit confirme l’utilisation du numéro partagé.
 |--------------------------------------------------------------------------
 */
 let pendingSharedPhonePayload = null;
+let pendingSharedPhoneMode = null;
 
+/*
+|--------------------------------------------------------------------------
+| Récupérer les éléments de la modal patient
+|--------------------------------------------------------------------------
+*/
 function getAddPatientModalElements() {
   return {
     modal: document.getElementById('addPatientModal'),
@@ -36,10 +35,12 @@ function getAddPatientModalElements() {
     phoneInput: document.getElementById('addPatientPhone'),
     birthDateInput: document.getElementById('addPatientBirthDate'),
     backdrop: document.querySelector('[data-close-add-patient-modal]'),
-    sharedPhoneConfirmBox: document.getElementById('sharedPhoneConfirmBox'),
-    sharedPhoneConfirmText: document.getElementById('sharedPhoneConfirmText'),
-    confirmSharedPhoneBtn: document.getElementById('confirmSharedPhoneBtn'),
-    cancelSharedPhoneConfirmBtn: document.getElementById('cancelSharedPhoneConfirmBtn')
+    sharedPhoneConfirmBox: document.getElementById(
+      'sharedPhoneConfirmBox'
+    ),
+    sharedPhoneConfirmText: document.getElementById(
+      'sharedPhoneConfirmText'
+    )
   };
 }
 /*
@@ -72,7 +73,49 @@ function normalizePersonName(value) {
     })
     .join(' ');
 }
+/*
+|--------------------------------------------------------------------------
+| Normaliser un numéro de téléphone côté front
+|--------------------------------------------------------------------------
+| Exemples :
+| +213 551 70 07 10  -> 0551700710
+| 00213 551700710    -> 0551700710
+|--------------------------------------------------------------------------
+*/
+function normalizePhoneNumber(value) {
+  let digits = String(value ?? '').replace(/\D+/g, '');
 
+  let hadAlgerianCountryCode = false;
+
+  if (digits.startsWith('00213')) {
+    digits = digits.slice(5);
+    hadAlgerianCountryCode = true;
+  } else if (
+    digits.startsWith('213')
+    && digits.length >= 12
+  ) {
+    digits = digits.slice(3);
+    hadAlgerianCountryCode = true;
+  }
+
+  if (
+    hadAlgerianCountryCode
+    && digits.length === 9
+  ) {
+    digits = `0${digits}`;
+  }
+
+  return digits;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Vérifier le format général du téléphone
+|--------------------------------------------------------------------------
+*/
+function isValidPhoneNumber(phone) {
+  return /^\d{8,15}$/.test(phone);
+}
 /*
 |--------------------------------------------------------------------------
 | Lire une réponse HTTP en JSON robuste
@@ -204,7 +247,27 @@ function closeAddPatientModal() {
   resetSharedPhoneConfirmation();
   setPatientModalMode('create');
 }
+/*
+|--------------------------------------------------------------------------
+| Fermer la modal patient avec la touche Échap
+|--------------------------------------------------------------------------
+| La fonction est enregistrée une seule fois pour toute l’application.
+| Elle récupère toujours la modal actuellement présente dans le DOM.
+|--------------------------------------------------------------------------
+*/
+function handlePatientModalKeydown(event) {
+  if (event.key !== 'Escape') {
+    return;
+  }
 
+  const { modal } = getAddPatientModalElements();
+
+  if (!modal?.classList.contains('is-open')) {
+    return;
+  }
+
+  closeAddPatientModal();
+}
 /*
 |--------------------------------------------------------------------------
 | Mettre à jour le message utilisateur dans la modal
@@ -219,13 +282,135 @@ function setAddPatientFormMessage(message, type = 'error') {
 }
 /*
 |--------------------------------------------------------------------------
-| Soumettre le formulaire d'ajout patient
+| Texte normal du bouton selon le mode
 |--------------------------------------------------------------------------
-| Cette version est robuste :
-| - anti double-submit
-| - normalisation du nom
-| - parsing backend sécurisé
-| - messages métier fiables
+*/
+function getPatientDefaultSubmitLabel(mode) {
+  return mode === 'edit'
+    ? 'Mettre à jour'
+    : 'Ajouter le patient';
+}
+
+/*
+|--------------------------------------------------------------------------
+| Texte explicite du bouton après avertissement familial
+|--------------------------------------------------------------------------
+*/
+function getSharedPhoneSubmitLabel(mode) {
+  return mode === 'edit'
+    ? 'Confirmer et mettre à jour'
+    : 'Confirmer et ajouter';
+}
+
+/*
+|--------------------------------------------------------------------------
+| Réinitialiser l’avertissement de téléphone partagé
+|--------------------------------------------------------------------------
+*/
+function resetSharedPhoneConfirmation() {
+  const {
+    sharedPhoneConfirmBox,
+    sharedPhoneConfirmText,
+    submitBtn,
+    formModeInput
+  } = getAddPatientModalElements();
+
+  pendingSharedPhonePayload = null;
+  pendingSharedPhoneMode = null;
+
+  if (sharedPhoneConfirmBox) {
+    sharedPhoneConfirmBox.hidden = true;
+  }
+
+  if (sharedPhoneConfirmText) {
+    sharedPhoneConfirmText.textContent = '';
+  }
+
+  if (submitBtn) {
+    /*
+    |--------------------------------------------------------------------------
+    | Retirer l’apparence orange du bouton de confirmation
+    |--------------------------------------------------------------------------
+    */
+    submitBtn.classList.remove('is-confirmation');
+
+    const mode = formModeInput?.value || 'create';
+
+    submitBtn.textContent = getPatientDefaultSubmitLabel(mode);
+  }
+}
+/*
+|--------------------------------------------------------------------------
+| Afficher l’avertissement de téléphone familial
+|--------------------------------------------------------------------------
+| Le bouton principal devient le bouton de confirmation.
+|--------------------------------------------------------------------------
+*/
+function showSharedPhoneConfirmation(message, mode, payload) {
+  const {
+    sharedPhoneConfirmBox,
+    sharedPhoneConfirmText,
+    submitBtn
+  } = getAddPatientModalElements();
+
+  if (
+    !sharedPhoneConfirmBox
+    || !sharedPhoneConfirmText
+    || !submitBtn
+  ) {
+    return;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Préparer le payload du deuxième clic
+  |--------------------------------------------------------------------------
+  */
+  pendingSharedPhonePayload = {
+    ...payload,
+    allow_shared_phone: true
+  };
+
+  pendingSharedPhoneMode = mode;
+
+  sharedPhoneConfirmText.textContent = message;
+  sharedPhoneConfirmBox.hidden = false;
+
+  /*
+  |--------------------------------------------------------------------------
+  | Faire passer le bouton principal en mode confirmation orange
+  |--------------------------------------------------------------------------
+  */
+  submitBtn.classList.add('is-confirmation');
+  submitBtn.textContent = getSharedPhoneSubmitLabel(mode);
+}
+/*
+|--------------------------------------------------------------------------
+| Effacer les messages quand l’utilisateur modifie un champ
+|--------------------------------------------------------------------------
+| Modifier une valeur annule aussi la confirmation précédente.
+|--------------------------------------------------------------------------
+*/
+function clearPatientFormFeedback() {
+  const { messageBox } = getAddPatientModalElements();
+
+  if (messageBox) {
+    messageBox.textContent = '';
+    messageBox.className = 'marki-form__message';
+  }
+
+  resetSharedPhoneConfirmation();
+}
+/*
+|--------------------------------------------------------------------------
+| Soumettre la modal patient
+|--------------------------------------------------------------------------
+| Première requête :
+| - ajout normal
+| - ou réponse serveur demandant une confirmation
+|
+| Deuxième requête :
+| - envoie allow_shared_phone = true
 |--------------------------------------------------------------------------
 */
 async function handleAddPatientSubmit(event) {
@@ -241,7 +426,12 @@ async function handleAddPatientSubmit(event) {
     entryIdInput
   } = getAddPatientModalElements();
 
-  if (!form || !submitBtn || !fullNameInput) {
+  if (
+    !form
+    || !submitBtn
+    || !fullNameInput
+    || !phoneInput
+  ) {
     return;
   }
 
@@ -249,171 +439,181 @@ async function handleAddPatientSubmit(event) {
     return;
   }
 
-  const mode = formModeInput ? formModeInput.value : 'create';
+  const mode = formModeInput?.value || 'create';
   const fullName = normalizePersonName(fullNameInput.value);
-  const phone = phoneInput ? phoneInput.value.trim() : '';
-  const birthDate = birthDateInput ? birthDateInput.value.trim() : '';
+  const phone = normalizePhoneNumber(phoneInput.value);
+  const birthDate = birthDateInput?.value.trim() || '';
 
   fullNameInput.value = fullName;
-
+  /*
+  |--------------------------------------------------------------------------
+  | Afficher le téléphone normalisé dans le formulaire
+  |--------------------------------------------------------------------------
+  */
+  phoneInput.value = phone;
+  /*
+  |--------------------------------------------------------------------------
+  | Validation du nom
+  |--------------------------------------------------------------------------
+  */
   if (!fullName) {
-    setAddPatientFormMessage('Le nom complet est obligatoire.', 'error');
+    setAddPatientFormMessage(
+      'Le nom complet est obligatoire.',
+      'error'
+    );
+
     fullNameInput.focus();
     return;
   }
 
-  resetSharedPhoneConfirmation();
+  /*
+  |--------------------------------------------------------------------------
+  | Validation du téléphone
+  |--------------------------------------------------------------------------
+  */
+  if (!phone) {
+    setAddPatientFormMessage('Le numéro de téléphone est obligatoire.', 'error');
+
+    phoneInput.focus();
+    return;
+  }
+  /*
+  |--------------------------------------------------------------------------
+  | Vérifier le nombre de chiffres
+  |--------------------------------------------------------------------------
+  */
+  if (!isValidPhoneNumber(phone)) {
+    setAddPatientFormMessage(
+      'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.',
+      'error'
+    );
+
+    phoneInput.focus();
+    return;
+  }
+  /*
+  |--------------------------------------------------------------------------
+  | Construire les données normales du formulaire
+  |--------------------------------------------------------------------------
+  */
+  const currentPayload = {
+    full_name: fullName,
+    phone,
+    birth_date: birthDate || null,
+    source: 'secretary'
+  };
+
+  if (mode === 'edit' && entryIdInput?.value) {
+    currentPayload.entry_id = Number(entryIdInput.value);
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Si un avertissement a déjà été affiché, le deuxième clic utilise
+  | le payload confirmé avec allow_shared_phone = true.
+  |--------------------------------------------------------------------------
+  */
+  const isSharedPhoneConfirmation =
+    pendingSharedPhonePayload !== null
+    && pendingSharedPhoneMode === mode;
+
+  const payloadToSend = isSharedPhoneConfirmation
+    ? pendingSharedPhonePayload
+    : currentPayload;
 
   form.dataset.submitting = 'true';
   submitBtn.disabled = true;
-  submitBtn.textContent = mode === 'edit' ? 'Mise à jour...' : 'Ajout en cours...';
+
+  submitBtn.textContent = isSharedPhoneConfirmation
+    ? 'Confirmation...'
+    : mode === 'edit'
+      ? 'Mise à jour...'
+      : 'Ajout en cours...';
+
   setAddPatientFormMessage('', 'error');
 
   try {
-    /*
-    |--------------------------------------------------------------------------
-    | Pour l'instant, seul le mode création est branché réellement
-    |--------------------------------------------------------------------------
-    | Le mode édition est préparé pour la prochaine étape.
-    */
-    const payload = {
-      full_name: fullName,
-      phone: phone || null,
-      birth_date: birthDate || null,
-      source: 'secretary'
-    };
-
-    if (mode === 'edit' && entryIdInput && entryIdInput.value) {
-      payload.entry_id = Number(entryIdInput.value);
-    }
-
-    const { response, data } = await submitPatientModalPayload(mode, payload);
+    const { response, data } = await submitPatientModalPayload(
+      mode,
+      payloadToSend
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Cas spécial : téléphone déjà utilisé par un autre patient
+    | Le numéro appartient déjà à un autre nom
     |--------------------------------------------------------------------------
-    | Ici on n'affiche pas juste une erreur :
-    | on propose une confirmation explicite.
+    | On affiche un avertissement orange et on attend un deuxième clic.
+    |--------------------------------------------------------------------------
     */
-    if (!response.ok && data?.error_code === 'PHONE_ALREADY_USED_BY_ANOTHER_PATIENT') {
-      pendingSharedPhonePayload = {
-        ...payload,
-        allow_shared_phone: true
-      };
-
-      setAddPatientFormMessage('', 'error');
+    if (
+      !response.ok
+      && data?.error_code === 'PHONE_SHARED_CONFIRMATION_REQUIRED'
+    ) {
       showSharedPhoneConfirmation(
-        data?.message || 'Ce numéro est déjà utilisé. Confirme si tu veux continuer.'
+        data.message,
+        mode,
+        currentPayload
       );
 
       return;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Erreur normale : doublon de nom, validation, liste fermée...
+    |--------------------------------------------------------------------------
+    */
     if (!response.ok) {
+      resetSharedPhoneConfirmation();
+
       setAddPatientFormMessage(
         data?.message || 'Impossible de traiter la demande.',
         'error'
       );
-      return;
-    }
 
-    setAddPatientFormMessage(
-      data?.message || (mode === 'edit'
-        ? 'Patient mis à jour avec succès.'
-        : 'Patient ajouté avec succès.'),
-      'success'
-    );
-
-    if (typeof loadDashboardData === 'function') {
-      await loadDashboardData();
-    }
-
-    setTimeout(() => {
-      closeAddPatientModal();
-    }, 400);
-
-  } catch (error) {
-    console.error('Erreur modal patient :', error);
-
-    setAddPatientFormMessage(
-      error.message || 'Une erreur réseau est survenue. Réessaie.',
-      'error'
-    );
-  } finally {
-    form.dataset.submitting = 'false';
-    submitBtn.disabled = false;
-
-    const mode = formModeInput ? formModeInput.value : 'create';
-    submitBtn.textContent = mode === 'edit' ? 'Mettre à jour' : 'Ajouter le patient';
-  }
-}
-/*
-|--------------------------------------------------------------------------
-| Confirmer un ajout malgré un téléphone déjà utilisé
-|--------------------------------------------------------------------------
-*/
-async function handleConfirmSharedPhone() {
-  const {
-    form,
-    submitBtn,
-    formModeInput
-  } = getAddPatientModalElements();
-
-  if (!pendingSharedPhonePayload || !form || !submitBtn) {
-    return;
-  }
-
-  if (form.dataset.submitting === 'true') {
-    return;
-  }
-
-  form.dataset.submitting = 'true';
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Confirmation...';
-  setAddPatientFormMessage('', 'error');
-
-  try {
-    const { response, data } = await submitAddPatientPayload('create', pendingSharedPhonePayload);
-
-    if (!response.ok) {
-      setAddPatientFormMessage(
-        data?.message || 'Impossible de confirmer l’ajout.',
-        'error'
-      );
       return;
     }
 
     resetSharedPhoneConfirmation();
 
     setAddPatientFormMessage(
-      data?.message || 'Patient ajouté avec succès.',
+      data?.message || (
+        mode === 'edit'
+          ? 'Patient mis à jour avec succès.'
+          : 'Patient ajouté avec succès.'
+      ),
       'success'
     );
 
-    if (typeof loadDashboardData === 'function') {
-      await loadDashboardData();
-    }
+    await loadDashboardData();
 
     setTimeout(() => {
       closeAddPatientModal();
     }, 400);
-
   } catch (error) {
-    console.error('Erreur confirmation téléphone partagé :', error);
+    console.error('Erreur formulaire patient :', error);
+
+    resetSharedPhoneConfirmation();
 
     setAddPatientFormMessage(
-      error.message || 'Une erreur est survenue pendant la confirmation.',
+      error.message || 'Une erreur réseau est survenue.',
       'error'
     );
   } finally {
     form.dataset.submitting = 'false';
     submitBtn.disabled = false;
 
-    const mode = formModeInput ? formModeInput.value : 'create';
-    submitBtn.textContent = mode === 'edit' ? 'Mettre à jour' : 'Ajouter le patient';
+    if (
+      pendingSharedPhonePayload !== null
+      && pendingSharedPhoneMode === mode
+    ) {
+      submitBtn.textContent = getSharedPhoneSubmitLabel(mode);
+    } else {
+      submitBtn.textContent = getPatientDefaultSubmitLabel(mode);
+    }
   }
 }
+
 async function updateQueueEntryStatus(entryId, status) {
     const response = await fetch(UPDATE_QUEUE_STATUS_API_URL, {
         method: 'POST',
@@ -426,7 +626,7 @@ async function updateQueueEntryStatus(entryId, status) {
         })
     });
 
-    const data = await response.json();
+    const data = await parseJsonResponseSafely(response);
 
     if (!response.ok) {
         throw new Error(data?.message || 'Impossible de mettre à jour le statut.');
@@ -466,7 +666,7 @@ async function toggleTodayQueueStatus() {
         body: JSON.stringify({})
     });
 
-    const data = await response.json();
+    const data = await parseJsonResponseSafely(response);
 
     /*
     |--------------------------------------------------------------
@@ -479,6 +679,11 @@ async function toggleTodayQueueStatus() {
 
     return data;
 }
+/*
+|--------------------------------------------------------------------------
+| Brancher les événements de la modal patient
+|--------------------------------------------------------------------------
+*/
 function bindAddPatientModalEvents() {
   const {
     openBtn,
@@ -486,47 +691,55 @@ function bindAddPatientModalEvents() {
     cancelBtn,
     backdrop,
     form,
-    modal,
-    confirmSharedPhoneBtn,
-    cancelSharedPhoneConfirmBtn
+    fullNameInput,
+    phoneInput,
+    birthDateInput
   } = getAddPatientModalElements();
 
-  if (openBtn) {
-    openBtn.addEventListener('click', openAddPatientModal);
-  }
+  openBtn?.addEventListener(
+    'click',
+    openAddPatientModal
+  );
 
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeAddPatientModal);
-  }
+  closeBtn?.addEventListener(
+    'click',
+    closeAddPatientModal
+  );
 
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', closeAddPatientModal);
-  }
+  cancelBtn?.addEventListener(
+    'click',
+    closeAddPatientModal
+  );
 
-  if (backdrop) {
-    backdrop.addEventListener('click', closeAddPatientModal);
-  }
+  backdrop?.addEventListener(
+    'click',
+    closeAddPatientModal
+  );
 
-  if (form) {
-    form.addEventListener('submit', handleAddPatientSubmit);
-  }
+  form?.addEventListener(
+    'submit',
+    handleAddPatientSubmit
+  );
 
-  if (confirmSharedPhoneBtn) {
-    confirmSharedPhoneBtn.addEventListener('click', handleConfirmSharedPhone);
-  }
+  /*
+  |--------------------------------------------------------------------------
+  | Toute modification annule l’ancienne confirmation
+  |--------------------------------------------------------------------------
+  */
+  fullNameInput?.addEventListener(
+    'input',
+    clearPatientFormFeedback
+  );
 
-  if (cancelSharedPhoneConfirmBtn) {
-    cancelSharedPhoneConfirmBtn.addEventListener('click', () => {
-      resetSharedPhoneConfirmation();
-      setAddPatientFormMessage('Ajout annulé.', 'error');
-    });
-  }
+  phoneInput?.addEventListener(
+    'input',
+    clearPatientFormFeedback
+  );
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modal?.classList.contains('is-open')) {
-      closeAddPatientModal();
-    }
-  });
+  birthDateInput?.addEventListener(
+    'change',
+    clearPatientFormFeedback
+  );
 }
 /*
 |--------------------------------------------------------------------------
@@ -605,17 +818,15 @@ function bindToggleListButton() {
             |------------------------------------------------------
             */
             console.error('Erreur toggle liste :', error);
+            toggleButton.textContent = previousLabel;
             alert(error.message || 'Impossible de modifier le statut de la liste.');
         } finally {
-            /*
-            |------------------------------------------------------
-            | Réactiver le bouton
-            |------------------------------------------------------
-            | Le vrai texte sera ensuite recalculé par
-            | updateQueueStatusBadge(queue) après loadDashboardData()
-            */
-            toggleButton.disabled = false;
-            toggleButton.textContent = previousLabel;
+           /*
+          |--------------------------------------------------------------------------
+          | Le texte est déjà recalculé par updateQueueStatusBadge()
+          |--------------------------------------------------------------------------
+          */
+          toggleButton.disabled = false;
         }
     });
 }
@@ -691,49 +902,49 @@ function initDashboardPage() {
 
 /*
 |--------------------------------------------------------------------------
-| Charger les données du dashboard depuis l'API
-|--------------------------------------------------------------------------
-| Cette fonction :
-| - appelle queue_entries.php
-| - récupère la queue, les entrées, les compteurs
-| - met à jour l'interface
+| Charger les données du dashboard
 |--------------------------------------------------------------------------
 */
-function loadDashboardData() {
-    fetch('api/queue_entries.php')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erreur HTTP lors du chargement du dashboard');
-            }
-            return response.json();
-        })
-        .then(result => {
-            if (!result.ok) {
-                throw new Error(result.message || 'Erreur API');
-            }
+async function loadDashboardData() {
+  try {
+    const response = await fetch(
+      'api/queue_entries.php'
+    );
 
-            const queue = result.data.queue;
-            const entries = result.data.entries;
-            const counts = result.data.counts;
+    const result =
+      await parseJsonResponseSafely(response);
 
-            updateQueueStatusBadge(queue);
-            renderDashboardTable(entries);
-            renderDashboardCounters(counts);
-        })
-        .catch(error => {
-            console.error('Erreur dashboard:', error);
+    if (!response.ok || !result.ok) {
+      throw new Error(
+        result?.message
+          || 'Impossible de charger le dashboard.'
+      );
+    }
 
-            const tableBody = document.getElementById('day-list-table-body');
-            if (tableBody) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="table-empty-state">
-                            Impossible de charger les données.
-                        </td>
-                    </tr>
-                `;
-            }
-        });
+    const queue = result.data.queue;
+    const entries = result.data.entries;
+    const counts = result.data.counts;
+
+    updateQueueStatusBadge(queue);
+    renderDashboardTable(entries);
+    renderDashboardCounters(counts);
+  } catch (error) {
+    console.error('Erreur dashboard :', error);
+
+    const tableBody = document.getElementById(
+      'day-list-table-body'
+    );
+
+    if (tableBody) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="table-empty-state">
+            Impossible de charger les données.
+          </td>
+        </tr>
+      `;
+    }
+  }
 }
 /*
 |--------------------------------------------------------------------------
@@ -963,13 +1174,6 @@ function formatSourceLabel(source) {
     return escapeHtml(String(source));
 }
 
-function getStatusLabel(status) {
-    if (status === 'waiting') return 'En attente';
-    if (status === 'no_show') return 'Absent';
-    if (status === 'done') return 'Terminé';
-    return status || '-';
-}
-
 function renderDetailStatusPill(status) {
     return renderStatusPill(status);
 }
@@ -1172,59 +1376,27 @@ document.querySelectorAll('.sidebar__item').forEach(item => {
 // PAGE PAR DÉFAUT AU REFRESH
 // ==========================================================
 
+/*
+|--------------------------------------------------------------------------
+| Initialisation globale de l’application
+|--------------------------------------------------------------------------
+| Le listener clavier est installé une seule fois.
+| Les pages internes peuvent ensuite être rechargées sans duplication.
+|--------------------------------------------------------------------------
+*/
 document.addEventListener('DOMContentLoaded', function () {
-    setActiveMenuItem('dashboard');
-    loadPage('dashboard');
+  document.addEventListener(
+    'keydown',
+    handlePatientModalKeydown
+  );
+
+  setActiveMenuItem('dashboard');
+  loadPage('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Réinitialiser la zone de confirmation téléphone partagé
-|--------------------------------------------------------------------------
-*/
-function resetSharedPhoneConfirmation() {
-  const {
-    sharedPhoneConfirmBox,
-    sharedPhoneConfirmText
-  } = getAddPatientModalElements();
-
-  pendingSharedPhonePayload = null;
-
-  if (sharedPhoneConfirmBox) {
-    sharedPhoneConfirmBox.hidden = true;
-  }
-
-  if (sharedPhoneConfirmText) {
-    sharedPhoneConfirmText.textContent = '';
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| Afficher la zone de confirmation téléphone partagé
-|--------------------------------------------------------------------------
-*/
-function showSharedPhoneConfirmation(message) {
-  const {
-    sharedPhoneConfirmBox,
-    sharedPhoneConfirmText
-  } = getAddPatientModalElements();
-
-  if (!sharedPhoneConfirmBox || !sharedPhoneConfirmText) {
-    return;
-  }
-
-  sharedPhoneConfirmText.textContent = message;
-  sharedPhoneConfirmBox.hidden = false;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Définir le mode de la modal
-|--------------------------------------------------------------------------
-| Modes :
-| - create : ajout patient
-| - edit   : modification d'une entrée
+| Configurer la modal en création ou en modification
 |--------------------------------------------------------------------------
 */
 function setPatientModalMode(mode = 'create', entry = null) {
@@ -1247,17 +1419,39 @@ function setPatientModalMode(mode = 'create', entry = null) {
   }
 
   if (mode === 'edit') {
-    if (titleEl) titleEl.textContent = 'Modifier le patient';
-    if (submitBtn) submitBtn.textContent = 'Mettre à jour';
+    if (titleEl) {
+      titleEl.textContent = 'Modifier le patient';
+    }
 
-    if (fullNameInput) fullNameInput.value = entry?.display_name ?? '';
-    if (phoneInput) phoneInput.value = entry?.phone ?? '';
-    if (birthDateInput) birthDateInput.value = entry?.birth_date ?? '';
-  } else {
-    if (titleEl) titleEl.textContent = 'Nouveau patient';
-    if (submitBtn) submitBtn.textContent = 'Ajouter le patient';
+    if (submitBtn) {
+      submitBtn.textContent = getPatientDefaultSubmitLabel('edit');
+    }
 
-    if (entryIdInput) entryIdInput.value = '';
+    if (fullNameInput) {
+      fullNameInput.value = entry?.display_name ?? '';
+    }
+
+    if (phoneInput) {
+      phoneInput.value = entry?.phone ?? '';
+    }
+
+    if (birthDateInput) {
+      birthDateInput.value = entry?.birth_date ?? '';
+    }
+
+    return;
+  }
+
+  if (titleEl) {
+    titleEl.textContent = 'Nouveau patient';
+  }
+
+  if (submitBtn) {
+    submitBtn.textContent = getPatientDefaultSubmitLabel('create');
+  }
+
+  if (entryIdInput) {
+    entryIdInput.value = '';
   }
 }
 /*

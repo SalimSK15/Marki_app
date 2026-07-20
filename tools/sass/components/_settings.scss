@@ -120,36 +120,49 @@
     margin-bottom: $spacing-lg;
   }
   
-  .btn {
-    display: flex;
-    padding: $spacing-sm $spacing-lg;
-    border-radius: $radius-full;
-    font-weight: $font-weight-medium;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    border: none;
-    
-    &-primary {
-      background-color: $primary;
-      color: white;
-      
-      &:hover {
-        background-color: darken($primary, 5%);
-      }
-      &:active {
-        transform: scale(0.95); // Réduit légèrement la taille du bouton lors du clic
-      }
+  /*
+|--------------------------------------------------------------------------
+| Boutons de la page Paramètres uniquement
+|--------------------------------------------------------------------------
+| Le préfixe .settings-page empêche ces styles d'écraser
+| les boutons utilisés dans le dashboard et les autres pages.
+|--------------------------------------------------------------------------
+*/
+.settings-page .btn {
+  display: flex;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-full;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition:
+    background-color 0.3s,
+    transform 0.2s;
+  border: none;
 
-      .icon {
-        width: 24px;
-        height: 24px;
-        font-size: 1.2rem;
-        transition: transform 0.3s, color 0.3s; // Transition pour l'icône
-      }
+  &-primary {
+    background-color: $primary;
+    color: white;
 
-      &.clicked .icon {
-        transform: rotate(180deg); // Fait tourner l'icône
-        color: $secondary; // Change la couleur de l'icône
-      }
+    &:hover {
+      background-color: darken($primary, 5%);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      font-size: 1.2rem;
+      transition:
+        transform 0.3s,
+        color 0.3s;
+    }
+
+    &.clicked .icon {
+      transform: rotate(180deg);
+      color: $secondary;
     }
   }
+}
