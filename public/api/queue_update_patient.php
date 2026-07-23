@@ -177,13 +177,20 @@ try {
             $today
         );
 
-    if (($queue['status'] ?? '') !== 'open') {
+    /*
+    |--------------------------------------------------------------------------
+    | Une fermeture des inscriptions ne bloque pas les corrections
+    |--------------------------------------------------------------------------
+    | Seule une journée définitivement clôturée rend la liste en lecture seule.
+    |--------------------------------------------------------------------------
+    */
+    if (($queue['day_status'] ?? '') === 'completed') {
         http_response_code(409);
 
         echo json_encode([
             'ok' => false,
             'message' =>
-            'La liste du jour est fermée.',
+            'La journée est clôturée. La liste est en lecture seule.',
         ], JSON_UNESCAPED_UNICODE);
 
         exit;

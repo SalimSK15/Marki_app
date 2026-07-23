@@ -2,6 +2,8 @@ const ADD_PATIENT_API_URL = '/Marki_app/Partie_medecin/public/api/queue_add_pati
 const UPDATE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_update_status.php';
 const UPDATE_PATIENT_API_URL = '/Marki_app/Partie_medecin/public/api/queue_update_patient.php';
 const TOGGLE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_toggle_status.php';
+const CHANGE_QUEUE_DAY_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_change_day_status.php';
+const QUEUE_ENTRIES_API_URL = '/Marki_app/Partie_medecin/public/api/queue_entries.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,45 @@ const TOGGLE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_
 let pendingSharedPhonePayload = null;
 let pendingSharedPhoneMode = null;
 
+/*
+|--------------------------------------------------------------------------
+| Action métier en attente de confirmation
+|--------------------------------------------------------------------------
+*/
+let pendingQueueAction = null;
+/*
+|--------------------------------------------------------------------------
+| État central de la Liste du jour
+|--------------------------------------------------------------------------
+| entries :
+| toutes les entrées reçues de l’API, dans l’ordre FIFO.
+|
+| selectedEntryId :
+| patient actuellement affiché dans le panneau de détails.
+|
+| Le patient actuel, lui, est toujours calculé comme le premier
+| patient ayant le statut waiting.
+|--------------------------------------------------------------------------
+*/
+const dashboardState = {
+  entries: [],
+  queue: null,
+  searchTerm: '',
+  statusFilter: 'all',
+  pageSize: 12,
+  currentPage: 1,
+  selectedEntryId: null,
+  scrollToEntryId: null
+};
+
+/*
+|--------------------------------------------------------------------------
+| Temporisation légère de la recherche
+|--------------------------------------------------------------------------
+| On évite de recalculer le tableau à chaque frappe extrêmement rapide.
+|--------------------------------------------------------------------------
+*/
+let dashboardSearchTimer = null;
 /*
 |--------------------------------------------------------------------------
 | Récupérer les éléments de la modal patient
@@ -261,6 +302,12 @@ function handlePatientModalKeydown(event) {
   }
 
   const { modal } = getAddPatientModalElements();
+  const queueActionModal = document.getElementById('queueActionModal');
+
+  if (queueActionModal?.classList.contains('is-open')) {
+    closeQueueActionModal();
+    return;
+  }
 
   if (!modal?.classList.contains('is-open')) {
     return;
@@ -614,71 +661,316 @@ async function handleAddPatientSubmit(event) {
   }
 }
 
-async function updateQueueEntryStatus(entryId, status) {
-    const response = await fetch(UPDATE_QUEUE_STATUS_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            entry_id: entryId,
-            status: status
-        })
-    });
 
-    const data = await parseJsonResponseSafely(response);
+/*
+|--------------------------------------------------------------------------
+| Afficher une notification non bloquante
+|--------------------------------------------------------------------------
+*/
+function showToast(message, type = 'info') {
+  const container = document.getElementById('marki-toast-container');
 
-    if (!response.ok) {
-        throw new Error(data?.message || 'Impossible de mettre à jour le statut.');
-    }
+  if (!container) {
+    console.log(message);
+    return;
+  }
 
-    return data;
+  const toast = document.createElement('div');
+  toast.className = `marki-toast marki-toast--${type}`;
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  toast.textContent = message;
+
+  container.append(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  window.setTimeout(() => {
+    toast.classList.remove('is-visible');
+    window.setTimeout(() => toast.remove(), 250);
+  }, 3500);
 }
 
 /*
 |--------------------------------------------------------------------------
-| Basculer le statut de la liste du jour
+| Récupérer les éléments de la modal de confirmation métier
 |--------------------------------------------------------------------------
-| Cette fonction appelle l'API backend qui fait :
-| - open   -> closed
-| - closed -> open
-|
-| Pourquoi une fonction dédiée ?
-| - code plus lisible
-| - réutilisable
-| - plus simple à maintenir
+*/
+function getQueueActionModalElements() {
+  return {
+    modal: document.getElementById('queueActionModal'),
+    title: document.getElementById('queueActionModalTitle'),
+    message: document.getElementById('queueActionModalMessage'),
+    closeBtn: document.getElementById('closeQueueActionModalBtn'),
+    cancelBtn: document.getElementById('cancelQueueActionBtn'),
+    secondaryBtn: document.getElementById('secondaryQueueActionBtn'),
+    confirmBtn: document.getElementById('confirmQueueActionBtn'),
+    reasonGroup: document.getElementById('queueActionReasonGroup'),
+    reasonSelect: document.getElementById('queueActionReason'),
+    backdrop: document.querySelector('[data-close-queue-action-modal]')
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| Fermer la modal de confirmation métier
+|--------------------------------------------------------------------------
+*/
+function closeQueueActionModal() {
+  const {
+    modal,
+    secondaryBtn,
+    confirmBtn,
+    reasonGroup,
+    reasonSelect
+  } = getQueueActionModalElements();
+
+  if (!modal) return;
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+
+  if (secondaryBtn) {
+    secondaryBtn.hidden = true;
+    secondaryBtn.textContent = 'Mettre en pause';
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirmer';
+    confirmBtn.classList.remove('btn-primary');
+    confirmBtn.classList.add('btn-danger');
+  }
+
+  if (reasonGroup) {
+    reasonGroup.hidden = true;
+  }
+
+  if (reasonSelect) {
+    reasonSelect.innerHTML = '';
+  }
+
+  pendingQueueAction = null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Ouvrir une confirmation métier réutilisable
+|--------------------------------------------------------------------------
+*/
+function openQueueActionConfirmation(options) {
+  const {
+    modal,
+    title,
+    message,
+    secondaryBtn,
+    confirmBtn,
+    reasonGroup,
+    reasonSelect
+  } = getQueueActionModalElements();
+
+  if (!modal || !title || !message || !confirmBtn) {
+    return;
+  }
+
+  pendingQueueAction = options;
+  title.textContent = options.title || 'Confirmer l’action';
+  message.textContent = options.message || '';
+  confirmBtn.textContent = options.confirmLabel || 'Confirmer';
+  confirmBtn.classList.toggle(
+    'btn-primary',
+    options.confirmType === 'primary'
+  );
+  confirmBtn.classList.toggle(
+    'btn-danger',
+    options.confirmType !== 'primary'
+  );
+
+  if (secondaryBtn) {
+    secondaryBtn.hidden = typeof options.onSecondary !== 'function';
+    secondaryBtn.textContent = options.secondaryLabel || 'Mettre en pause';
+  }
+
+  const reasonOptions = Array.isArray(options.reasonOptions)
+    ? options.reasonOptions
+    : [];
+
+  if (reasonGroup && reasonSelect) {
+    reasonGroup.hidden = reasonOptions.length === 0;
+    reasonSelect.innerHTML = '';
+
+    reasonOptions.forEach(optionData => {
+      const option = document.createElement('option');
+      option.value = optionData.value;
+      option.textContent = optionData.label;
+      option.selected = optionData.value === options.defaultReason;
+      reasonSelect.append(option);
+    });
+  }
+
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+
+  window.setTimeout(() => confirmBtn.focus(), 0);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Brancher la modal de confirmation métier
+|--------------------------------------------------------------------------
+*/
+function bindQueueActionModalEvents() {
+  const {
+    closeBtn,
+    cancelBtn,
+    secondaryBtn,
+    confirmBtn,
+    reasonSelect,
+    backdrop
+  } = getQueueActionModalElements();
+
+  closeBtn?.addEventListener('click', closeQueueActionModal);
+  cancelBtn?.addEventListener('click', closeQueueActionModal);
+  backdrop?.addEventListener('click', closeQueueActionModal);
+
+  secondaryBtn?.addEventListener('click', async () => {
+    const callback = pendingQueueAction?.onSecondary;
+
+    if (typeof callback !== 'function') return;
+
+    secondaryBtn.disabled = true;
+
+    try {
+      await callback();
+      closeQueueActionModal();
+    } catch (error) {
+      console.error('Erreur action secondaire :', error);
+      showToast(
+        error.message || 'Impossible d’exécuter cette action.',
+        'error'
+      );
+    } finally {
+      secondaryBtn.disabled = false;
+    }
+  });
+
+  confirmBtn?.addEventListener('click', async () => {
+    const callback = pendingQueueAction?.onConfirm;
+
+    if (typeof callback !== 'function') return;
+
+    confirmBtn.disabled = true;
+    const previousLabel = confirmBtn.textContent;
+    confirmBtn.textContent = 'Traitement...';
+
+    try {
+      await callback({
+        reason: reasonSelect?.value || null
+      });
+      closeQueueActionModal();
+    } catch (error) {
+      console.error('Erreur action confirmée :', error);
+      showToast(
+        error.message || 'Impossible d’exécuter cette action.',
+        'error'
+      );
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = previousLabel;
+    }
+  });
+}
+
+async function updateQueueEntryStatus(
+  entryId,
+  status,
+  extraPayload = {}
+) {
+  const response = await fetch(UPDATE_QUEUE_STATUS_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      entry_id: entryId,
+      status,
+      ...extraPayload
+    })
+  });
+
+  const data = await parseJsonResponseSafely(response);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || 'Impossible de mettre à jour le statut.'
+    );
+  }
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Ouvrir ou fermer les nouvelles inscriptions
+|--------------------------------------------------------------------------
+| Cette action ne clôture pas la journée et ne bloque pas les patients
+| déjà présents dans la file.
 |--------------------------------------------------------------------------
 */
 async function toggleTodayQueueStatus() {
-    const response = await fetch(TOGGLE_QUEUE_STATUS_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+  const response = await fetch(TOGGLE_QUEUE_STATUS_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+  });
 
-        /*
-        |--------------------------------------------------------------
-        | Ici on n’a pas besoin d’envoyer de body pour la V1
-        |--------------------------------------------------------------
-        | Le backend sait déjà retrouver la queue du jour grâce au
-        | contexte dev + à la date du jour.
-        */
-        body: JSON.stringify({})
-    });
+  const data = await parseJsonResponseSafely(response);
 
-    const data = await parseJsonResponseSafely(response);
+  if (!response.ok) {
+    throw new Error(
+      data?.message || 'Impossible de modifier l’état des inscriptions.'
+    );
+  }
 
-    /*
-    |--------------------------------------------------------------
-    | Si l'API répond en erreur, on remonte un vrai message utile
-    |--------------------------------------------------------------
-    */
-    if (!response.ok) {
-        throw new Error(data?.message || 'Impossible de modifier le statut de la liste.');
-    }
-
-    return data;
+  return data;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Modifier l'état opérationnel de la Liste du jour
+|--------------------------------------------------------------------------
+*/
+async function changeTodayQueueDayStatus(
+  action,
+  cancellationReason = null
+) {
+  const payload = { action };
+
+  if (cancellationReason) {
+    payload.cancellation_reason = cancellationReason;
+  }
+
+  const response = await fetch(CHANGE_QUEUE_DAY_STATUS_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await parseJsonResponseSafely(response);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || 'Impossible de modifier l’état de la liste.'
+    );
+  }
+
+  return data;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Brancher les événements de la modal patient
@@ -743,92 +1035,185 @@ function bindAddPatientModalEvents() {
 }
 /*
 |--------------------------------------------------------------------------
-| Binder le bouton Fermer / Réouvrir la liste
-|--------------------------------------------------------------------------
-| Ce binder :
-| - récupère le bouton #toggle-list-btn
-| - empêche les doubles clics pendant la requête
-| - appelle l'API
-| - recharge le dashboard après succès
+| Brancher l'ouverture / fermeture des inscriptions
 |--------------------------------------------------------------------------
 */
 function bindToggleListButton() {
-    const toggleButton = document.getElementById('toggle-list-btn');
+  const toggleButton = document.getElementById('toggle-list-btn');
 
-    /*
-    |--------------------------------------------------------------
-    | Sécurité : si le bouton n'existe pas, on ne fait rien
-    |--------------------------------------------------------------
-    */
-    if (!toggleButton) {
-        return;
+  if (!toggleButton) return;
+
+  toggleButton.addEventListener('click', () => {
+    const registrationIsOpen =
+      dashboardState.queue?.registration_status === 'open';
+
+    const title = registrationIsOpen
+      ? 'Fermer les inscriptions ?'
+      : 'Rouvrir les inscriptions ?';
+
+    const message = registrationIsOpen
+      ? 'Aucun nouveau patient ne pourra s’inscrire manuellement, par QR code ou par lien public. Les patients déjà inscrits resteront traitables.'
+      : 'Les nouvelles inscriptions seront de nouveau autorisées.';
+
+    openQueueActionConfirmation({
+      title,
+      message,
+      confirmLabel: registrationIsOpen
+        ? 'Fermer les inscriptions'
+        : 'Rouvrir les inscriptions',
+      confirmType: registrationIsOpen ? 'danger' : 'primary',
+      onConfirm: async () => {
+        const result = await toggleTodayQueueStatus();
+        showToast(result.message, 'success');
+        await loadDashboardData();
+      }
+    });
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Ouvrir / fermer le menu de gestion de la journée
+|--------------------------------------------------------------------------
+*/
+function closeQueueDayMenu() {
+  const menu = document.getElementById('queue-day-menu');
+  const button = document.getElementById('queue-day-menu-btn');
+
+  if (menu) menu.hidden = true;
+  if (button) button.setAttribute('aria-expanded', 'false');
+}
+
+function handleDocumentQueueDayMenuClick(event) {
+  if (!event.target.closest('.queue-day-menu-wrapper')) {
+    closeQueueDayMenu();
+  }
+}
+
+function bindQueueDayControls() {
+  const menuButton = document.getElementById('queue-day-menu-btn');
+  const menu = document.getElementById('queue-day-menu');
+  const pauseButton = document.getElementById('pause-day-btn');
+  const resumeButton = document.getElementById('resume-day-btn');
+  const completeButton = document.getElementById('complete-day-btn');
+  const reopenButton = document.getElementById(
+    'reopen-completed-day-btn'
+  );
+
+  menuButton?.addEventListener('click', event => {
+    event.stopPropagation();
+
+    if (!menu) return;
+
+    menu.hidden = !menu.hidden;
+    menuButton.setAttribute(
+      'aria-expanded',
+      menu.hidden ? 'false' : 'true'
+    );
+  });
+
+  document.removeEventListener(
+    'click',
+    handleDocumentQueueDayMenuClick
+  );
+  document.addEventListener(
+    'click',
+    handleDocumentQueueDayMenuClick
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Bouton de secours : annuler immédiatement la clôture
+  |--------------------------------------------------------------------------
+  | Aucun message de confirmation n'est affiché. Le backend restaure la queue
+  | et uniquement les patients annulés automatiquement par la clôture.
+  |--------------------------------------------------------------------------
+  */
+  reopenButton?.addEventListener('click', async () => {
+    if (reopenButton.disabled) return;
+
+    reopenButton.disabled = true;
+
+    try {
+      const result = await changeTodayQueueDayStatus('reopen');
+      showToast(result.message, 'success');
+      await loadDashboardData({ focusCurrent: true });
+    } catch (error) {
+      console.error('Erreur annulation de clôture :', error);
+      showToast(
+        error.message || 'Impossible d’annuler la clôture.',
+        'error'
+      );
+    } finally {
+      reopenButton.disabled = false;
+    }
+  });
+
+  pauseButton?.addEventListener('click', () => {
+    closeQueueDayMenu();
+
+    openQueueActionConfirmation({
+      title: 'Mettre la liste en pause ?',
+      message: 'Les patients conserveront leur position. Les nouvelles inscriptions seront fermées et le traitement pourra reprendre plus tard.',
+      confirmLabel: 'Mettre en pause',
+      onConfirm: async () => {
+        const result = await changeTodayQueueDayStatus('pause');
+        showToast(result.message, 'info');
+        await loadDashboardData();
+      }
+    });
+  });
+
+  resumeButton?.addEventListener('click', async () => {
+    closeQueueDayMenu();
+
+    try {
+      const result = await changeTodayQueueDayStatus('resume');
+      showToast(result.message, 'success');
+      await loadDashboardData({ focusCurrent: true });
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  completeButton?.addEventListener('click', async () => {
+    closeQueueDayMenu();
+
+    const waitingCount = Number(
+      document.getElementById('counter-waiting')?.textContent || 0
+    );
+
+    const completeDay = async () => {
+      const result = await changeTodayQueueDayStatus(
+        'complete',
+        'end_of_day'
+      );
+      showToast(result.message, 'success');
+      await loadDashboardData();
+    };
+
+    if (waitingCount === 0) {
+      try {
+        await completeDay();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+      return;
     }
 
-    /*
-    |--------------------------------------------------------------
-    | On attache le click handler
-    |--------------------------------------------------------------
-    */
-    toggleButton.addEventListener('click', async function () {
-        /*
-        |----------------------------------------------------------
-        | Empêcher le double clic pendant la requête
-        |----------------------------------------------------------
-        */
-        toggleButton.disabled = true;
-
-        /*
-        |----------------------------------------------------------
-        | Sauvegarder le texte actuel pour pouvoir le restaurer
-        |----------------------------------------------------------
-        */
-        const previousLabel = toggleButton.textContent;
-        toggleButton.textContent = 'Mise à jour...';
-
-        try {
-            /*
-            |------------------------------------------------------
-            | Appel backend : bascule du statut de la liste
-            |------------------------------------------------------
-            */
-            const result = await toggleTodayQueueStatus();
-
-            /*
-            |------------------------------------------------------
-            | Recharger complètement le dashboard
-            |------------------------------------------------------
-            | Pourquoi reload complet ?
-            | - met à jour le badge
-            | - met à jour le texte du bouton
-            | - garde une source de vérité unique côté API
-            */
-            await loadDashboardData();
-
-            /*
-            |------------------------------------------------------
-            | Option simple V1 : feedback utilisateur minimal
-            |------------------------------------------------------
-            */
-            console.log(result?.message || 'Statut de la liste mis à jour.');
-
-        } catch (error) {
-            /*
-            |------------------------------------------------------
-            | Erreur : on log + on affiche une alerte simple V1
-            |------------------------------------------------------
-            */
-            console.error('Erreur toggle liste :', error);
-            toggleButton.textContent = previousLabel;
-            alert(error.message || 'Impossible de modifier le statut de la liste.');
-        } finally {
-           /*
-          |--------------------------------------------------------------------------
-          | Le texte est déjà recalculé par updateQueueStatusBadge()
-          |--------------------------------------------------------------------------
-          */
-          toggleButton.disabled = false;
-        }
+    openQueueActionConfirmation({
+      title: 'Clôturer la journée ?',
+      message: `${waitingCount} patient(s) sont encore en attente. Ils seront tous marqués « Annulés — fin de journée » et devront s’inscrire de nouveau lors d’une prochaine journée.`,
+      confirmLabel: `Clôturer et annuler ${waitingCount} inscription(s)`,
+      secondaryLabel: 'Mettre en pause',
+      onSecondary: async () => {
+        const result = await changeTodayQueueDayStatus('pause');
+        showToast(result.message, 'info');
+        await loadDashboardData();
+      },
+      onConfirm: completeDay
     });
+  });
 }
 // ==========================================================
 // MENU / NAVIGATION
@@ -880,35 +1265,718 @@ function initPage(page) {
     }
 }
 
+
 // ==========================================================
 // DASHBOARD / LISTE DU JOUR
 // ==========================================================
+/*
+|--------------------------------------------------------------------------
+| Réinitialiser la vue du dashboard
+|--------------------------------------------------------------------------
+| Utilisé lorsque la page Dashboard est chargée à nouveau.
+|--------------------------------------------------------------------------
+*/
+function resetDashboardViewState() {
+  dashboardState.entries = [];
+  dashboardState.queue = null;
+  dashboardState.searchTerm = '';
+  dashboardState.statusFilter = 'all';
+  dashboardState.pageSize = 12;
+  dashboardState.currentPage = 1;
+  dashboardState.selectedEntryId = null;
+  dashboardState.scrollToEntryId = null;
+}
 
 /*
 |--------------------------------------------------------------------------
-| Initialisation spécifique à la page dashboard
+| Trouver le patient actuel selon la logique FIFO
 |--------------------------------------------------------------------------
-| Ordre choisi :
-| 1. binder la modal nouveau patient
-| 2. binder le bouton fermer / réouvrir la liste
-| 3. charger les données de la page
+| La liste reçue de l’API est déjà triée par position_number.
+| Le premier patient waiting est donc le patient actuel.
+|--------------------------------------------------------------------------
+*/
+function getCurrentWaitingEntry() {
+  return dashboardState.entries.find(
+    entry => entry.status === 'waiting'
+  ) || null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Normaliser une valeur utilisée dans la recherche
+|--------------------------------------------------------------------------
+*/
+function normalizeDashboardSearchValue(value) {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('fr');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Appliquer la recherche et le filtre de statut
+|--------------------------------------------------------------------------
+*/
+function getFilteredDashboardEntries() {
+  const searchTerm = normalizeDashboardSearchValue(
+    dashboardState.searchTerm
+  );
+
+  const searchedPhone = searchTerm.replace(/\D+/g, '');
+
+  return dashboardState.entries.filter(entry => {
+    /*
+    |--------------------------------------------------------------------------
+    | Filtre par statut
+    |--------------------------------------------------------------------------
+    */
+    const matchesStatus =
+      dashboardState.statusFilter === 'all'
+      || entry.status === dashboardState.statusFilter;
+
+    if (!matchesStatus) {
+      return false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sans recherche, le statut suffit
+    |--------------------------------------------------------------------------
+    */
+    if (searchTerm === '') {
+      return true;
+    }
+
+    const patientName =
+      normalizeDashboardSearchValue(
+        entry.display_name
+      );
+
+    const patientPhone = String(
+      entry.phone ?? ''
+    ).replace(/\D+/g, '');
+
+    const matchesName =
+      patientName.includes(searchTerm);
+
+    const matchesPhone =
+      searchedPhone !== ''
+      && patientPhone.includes(searchedPhone);
+
+    return matchesName || matchesPhone;
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Calculer le nombre de pages
+|--------------------------------------------------------------------------
+*/
+function getDashboardTotalPages(filteredEntries) {
+  return Math.max(
+    1,
+    Math.ceil(
+      filteredEntries.length / dashboardState.pageSize
+    )
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Récupérer les entrées de la page actuelle
+|--------------------------------------------------------------------------
+*/
+function getCurrentDashboardPageEntries(filteredEntries) {
+  const startIndex =
+    (dashboardState.currentPage - 1)
+    * dashboardState.pageSize;
+
+  const endIndex =
+    startIndex + dashboardState.pageSize;
+
+  return filteredEntries.slice(
+    startIndex,
+    endIndex
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Synchroniser les contrôles HTML avec l’état JavaScript
+|--------------------------------------------------------------------------
+*/
+function syncDashboardControls() {
+  const searchInput =
+    document.getElementById('day-list-search');
+
+  const filterSelect =
+    document.getElementById('day-list-filter');
+
+  if (
+    searchInput
+    && searchInput.value !== dashboardState.searchTerm
+  ) {
+    searchInput.value = dashboardState.searchTerm;
+  }
+
+  if (filterSelect) {
+    filterSelect.value =
+      dashboardState.statusFilter;
+  }
+
+  document
+    .querySelectorAll('[data-page-size]')
+    .forEach(button => {
+      const pageSize =
+        Number(button.dataset.pageSize);
+
+      button.classList.toggle(
+        'is-active',
+        pageSize === dashboardState.pageSize
+      );
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Rendre une entrée visible dans la pagination
+|--------------------------------------------------------------------------
+| Si la recherche ou le filtre cache le patient actuel,
+| on revient à la vue générale pour pouvoir le retrouver.
+|--------------------------------------------------------------------------
+*/
+function ensureDashboardEntryIsVisible(entryId) {
+  let filteredEntries =
+    getFilteredDashboardEntries();
+
+  const isPresent =
+    filteredEntries.some(
+      entry => String(entry.id) === String(entryId)
+    );
+
+  if (!isPresent) {
+    dashboardState.searchTerm = '';
+    dashboardState.statusFilter = 'all';
+
+    filteredEntries =
+      getFilteredDashboardEntries();
+  }
+
+  const entryIndex =
+    filteredEntries.findIndex(
+      entry => String(entry.id) === String(entryId)
+    );
+
+  if (entryIndex === -1) {
+    return;
+  }
+
+  dashboardState.currentPage =
+    Math.floor(
+      entryIndex / dashboardState.pageSize
+    ) + 1;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Faire défiler uniquement la zone du tableau
+|--------------------------------------------------------------------------
+| On ne déplace pas toute la page.
+|--------------------------------------------------------------------------
+*/
+function scrollDashboardEntryIntoView(
+  entryId,
+  useSmoothScroll = true
+) {
+  const container =
+    document.querySelector('.waiting-list');
+
+  const row = document.querySelector(
+    `.patient-row[data-entry-id="${entryId}"]`
+  );
+
+  if (!container || !row) {
+    return;
+  }
+
+  const containerRect =
+    container.getBoundingClientRect();
+
+  const rowRect =
+    row.getBoundingClientRect();
+
+  const targetScrollTop =
+    container.scrollTop
+    + rowRect.top
+    - containerRect.top
+    - (
+      container.clientHeight
+      - row.clientHeight
+    ) / 2;
+
+  container.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior: useSmoothScroll
+      ? 'smooth'
+      : 'auto'
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Revenir au patient actuel
+|--------------------------------------------------------------------------
+*/
+function focusCurrentPatient() {
+  const currentEntry =
+    getCurrentWaitingEntry();
+
+  if (!currentEntry) {
+    return;
+  }
+
+  ensureDashboardEntryIsVisible(
+    currentEntry.id
+  );
+
+  dashboardState.selectedEntryId =
+    currentEntry.id;
+
+  dashboardState.scrollToEntryId =
+    currentEntry.id;
+
+  syncDashboardControls();
+  renderDashboardView();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Sélectionner un patient pour afficher ses détails
+|--------------------------------------------------------------------------
+| Cette action ne change pas le patient actuel FIFO.
+|--------------------------------------------------------------------------
+*/
+function selectDashboardEntry(entryId) {
+  dashboardState.selectedEntryId =
+    Number(entryId);
+
+  document
+    .querySelectorAll('.patient-row')
+    .forEach(row => {
+      row.classList.toggle(
+        'is-selected',
+        String(row.dataset.entryId)
+          === String(entryId)
+      );
+    });
+
+  const selectedEntry = findEntryById(
+    dashboardState.entries,
+    entryId
+  );
+
+  updatePatientDetails(selectedEntry);
+  renderCurrentPatientButton();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mettre à jour le nombre de résultats
+|--------------------------------------------------------------------------
+*/
+function renderDashboardResultsCount(totalResults) {
+  const resultElement =
+    document.getElementById(
+      'day-list-results-count'
+    );
+
+  if (!resultElement) {
+    return;
+  }
+
+  resultElement.textContent =
+    totalResults <= 1
+      ? `${totalResults} patient`
+      : `${totalResults} patients`;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Construire une pagination compacte
+|--------------------------------------------------------------------------
+| Exemple :
+| 1 2 3 4 5
+|
+| Pour un grand nombre de pages :
+| 1 … 6 7 8 … 15
+|--------------------------------------------------------------------------
+*/
+function buildPaginationItems(
+  totalPages,
+  currentPage
+) {
+  if (totalPages <= 7) {
+    return Array.from(
+      { length: totalPages },
+      (_, index) => index + 1
+    );
+  }
+
+  const pages = new Set([
+    1,
+    totalPages,
+    currentPage - 1,
+    currentPage,
+    currentPage + 1
+  ]);
+
+  if (currentPage <= 3) {
+    pages.add(2);
+    pages.add(3);
+    pages.add(4);
+  }
+
+  if (currentPage >= totalPages - 2) {
+    pages.add(totalPages - 1);
+    pages.add(totalPages - 2);
+    pages.add(totalPages - 3);
+  }
+
+  const validPages = [...pages]
+    .filter(page => page >= 1 && page <= totalPages)
+    .sort((left, right) => left - right);
+
+  const items = [];
+
+  validPages.forEach((page, index) => {
+    const previousPage =
+      validPages[index - 1];
+
+    if (
+      previousPage !== undefined
+      && page - previousPage > 1
+    ) {
+      items.push('ellipsis');
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Afficher la pagination
+|--------------------------------------------------------------------------
+*/
+function renderDashboardPagination(totalPages) {
+  const pagination =
+    document.getElementById(
+      'day-list-pagination'
+    );
+
+  if (!pagination) {
+    return;
+  }
+
+  const pageItems = buildPaginationItems(
+    totalPages,
+    dashboardState.currentPage
+  );
+
+  const previousDisabled =
+    dashboardState.currentPage === 1;
+
+  const nextDisabled =
+    dashboardState.currentPage === totalPages;
+
+  const pageButtons = pageItems
+    .map(item => {
+      if (item === 'ellipsis') {
+        return `
+          <span
+            class="pagination__ellipsis"
+            aria-hidden="true"
+          >
+            …
+          </span>
+        `;
+      }
+
+      const isActive =
+        item === dashboardState.currentPage;
+
+      return `
+        <button
+          class="pagination__item ${isActive ? 'is-active' : ''}"
+          type="button"
+          data-page="${item}"
+          ${isActive ? 'aria-current="page"' : ''}
+        >
+          ${item}
+        </button>
+      `;
+    })
+    .join('');
+
+  pagination.innerHTML = `
+    <button
+      class="pagination__item pagination__item--navigation"
+      type="button"
+      data-page="${dashboardState.currentPage - 1}"
+      ${previousDisabled ? 'disabled' : ''}
+      aria-label="Page précédente"
+    >
+      ‹
+    </button>
+
+    ${pageButtons}
+
+    <button
+      class="pagination__item pagination__item--navigation"
+      type="button"
+      data-page="${dashboardState.currentPage + 1}"
+      ${nextDisabled ? 'disabled' : ''}
+      aria-label="Page suivante"
+    >
+      ›
+    </button>
+  `;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mettre à jour le bouton Patient actuel
+|--------------------------------------------------------------------------
+*/
+function renderCurrentPatientButton() {
+  const button =
+    document.getElementById(
+      'focus-current-patient-btn'
+    );
+
+  const label =
+    document.getElementById(
+      'focus-current-patient-label'
+    );
+
+  if (!button || !label) {
+    return;
+  }
+
+  const currentEntry =
+    getCurrentWaitingEntry();
+
+  if (!currentEntry) {
+    button.disabled = true;
+    label.textContent =
+      'Aucun patient en attente';
+
+    return;
+  }
+
+  button.disabled = false;
+
+  label.textContent =
+    `Voir le patient actuel · N° ${currentEntry.number}`;
+}
+/*
+|--------------------------------------------------------------------------
+| Brancher les contrôles de la Liste du jour
+|--------------------------------------------------------------------------
+*/
+function bindDashboardListControls() {
+  const searchInput =
+    document.getElementById(
+      'day-list-search'
+    );
+
+  const filterSelect =
+    document.getElementById(
+      'day-list-filter'
+    );
+
+  const currentPatientButton =
+    document.getElementById(
+      'focus-current-patient-btn'
+    );
+
+  const pagination =
+    document.getElementById(
+      'day-list-pagination'
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Recherche avec une temporisation légère de 150 ms
+  |--------------------------------------------------------------------------
+  */
+  searchInput?.addEventListener(
+    'input',
+    event => {
+      clearTimeout(dashboardSearchTimer);
+
+      dashboardSearchTimer = setTimeout(
+        () => {
+          dashboardState.searchTerm =
+            event.target.value;
+
+          dashboardState.currentPage = 1;
+          dashboardState.scrollToEntryId = null;
+
+          renderDashboardView();
+        },
+        150
+      );
+    }
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Filtre par statut
+  |--------------------------------------------------------------------------
+  */
+  filterSelect?.addEventListener(
+    'change',
+    event => {
+      dashboardState.statusFilter =
+        event.target.value;
+
+      dashboardState.currentPage = 1;
+      dashboardState.scrollToEntryId = null;
+
+      renderDashboardView();
+    }
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Affichage 12, 24 ou 48
+  |--------------------------------------------------------------------------
+  */
+  document
+    .querySelectorAll('[data-page-size]')
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        () => {
+          const pageSize =
+            Number(button.dataset.pageSize);
+
+          if (![12, 24, 48].includes(pageSize)) {
+            return;
+          }
+
+          dashboardState.pageSize = pageSize;
+          dashboardState.currentPage = 1;
+          dashboardState.scrollToEntryId = null;
+
+          renderDashboardView();
+
+          document
+            .querySelector('.waiting-list')
+            ?.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+        }
+      );
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | Pagination avec délégation d’événement
+  |--------------------------------------------------------------------------
+  */
+  pagination?.addEventListener(
+    'click',
+    event => {
+      const pageButton =
+        event.target.closest('[data-page]');
+
+      if (
+        !pageButton
+        || pageButton.disabled
+      ) {
+        return;
+      }
+
+      const requestedPage =
+        Number(pageButton.dataset.page);
+
+      if (
+        !Number.isInteger(requestedPage)
+        || requestedPage < 1
+      ) {
+        return;
+      }
+
+      dashboardState.currentPage =
+        requestedPage;
+
+      dashboardState.scrollToEntryId = null;
+
+      renderDashboardView();
+
+      document
+        .querySelector('.waiting-list')
+        ?.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+    }
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Retour immédiat au patient actuel FIFO
+  |--------------------------------------------------------------------------
+  */
+  currentPatientButton?.addEventListener(
+    'click',
+    focusCurrentPatient
+  );
+}
+/*
+|--------------------------------------------------------------------------
+| Initialiser la page Liste du jour
 |--------------------------------------------------------------------------
 */
 function initDashboardPage() {
-    bindAddPatientModalEvents();
-    bindToggleListButton();
-    loadDashboardData();
+  resetDashboardViewState();
+
+  bindAddPatientModalEvents();
+  bindQueueActionModalEvents();
+  bindToggleListButton();
+  bindQueueDayControls();
+  bindDashboardListControls();
+  bindPatientDetailsEvents();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Au premier affichage, sélectionner automatiquement
+  | le premier patient en attente.
+  |--------------------------------------------------------------------------
+  */
+  loadDashboardData({
+    focusCurrent: true
+  });
 }
 
 /*
 |--------------------------------------------------------------------------
 | Charger les données du dashboard
 |--------------------------------------------------------------------------
+| focusCurrent :
+| demande à l’interface de revenir automatiquement au prochain patient
+| en attente après Terminer ou Absent.
+|--------------------------------------------------------------------------
 */
-async function loadDashboardData() {
+async function loadDashboardData({ focusCurrent = false } = {}) {
   try {
     const response = await fetch(
-      'api/queue_entries.php'
+      QUEUE_ENTRIES_API_URL
     );
 
     const result =
@@ -917,28 +1985,98 @@ async function loadDashboardData() {
     if (!response.ok || !result.ok) {
       throw new Error(
         result?.message
-          || 'Impossible de charger le dashboard.'
+        || 'Impossible de charger le dashboard.'
       );
     }
 
-    const queue = result.data.queue;
-    const entries = result.data.entries;
-    const counts = result.data.counts;
+    dashboardState.queue =
+      result.data.queue;
 
-    updateQueueStatusBadge(queue);
-    renderDashboardTable(entries);
-    renderDashboardCounters(counts);
-  } catch (error) {
-    console.error('Erreur dashboard :', error);
-
-    const tableBody = document.getElementById(
-      'day-list-table-body'
+    /*
+    |--------------------------------------------------------------------------
+    | Sécuriser l’ordre FIFO côté front
+    |--------------------------------------------------------------------------
+    | Même si l’API trie déjà les données, le front conserve explicitement
+    | l’ordre basé sur le numéro d’inscription.
+    |--------------------------------------------------------------------------
+    */
+    dashboardState.entries = [
+      ...(result.data.entries ?? [])
+    ].sort(
+      (left, right) =>
+        Number(left.number)
+        - Number(right.number)
     );
+
+    const currentEntry =
+      getCurrentWaitingEntry();
+
+    const selectedEntryStillExists =
+      dashboardState.entries.some(
+        entry =>
+          String(entry.id)
+          === String(
+            dashboardState.selectedEntryId
+          )
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Premier chargement ou passage au patient suivant
+    |--------------------------------------------------------------------------
+    */
+    if (
+      focusCurrent
+      || dashboardState.selectedEntryId === null
+    ) {
+      dashboardState.selectedEntryId =
+        currentEntry?.id
+        ?? dashboardState.entries[0]?.id
+        ?? null;
+
+      if (currentEntry) {
+        ensureDashboardEntryIsVisible(
+          currentEntry.id
+        );
+
+        dashboardState.scrollToEntryId =
+          currentEntry.id;
+      }
+    } else if (!selectedEntryStillExists) {
+      dashboardState.selectedEntryId =
+        currentEntry?.id
+        ?? dashboardState.entries[0]?.id
+        ?? null;
+    }
+
+    updateQueueStatusBadge(
+      dashboardState.queue
+    );
+
+    renderDashboardCounters(
+      result.data.counts
+    );
+
+    syncDashboardControls();
+    renderDashboardView();
+  } catch (error) {
+    console.error(
+      'Erreur dashboard :',
+      error
+    );
+
+    const tableBody =
+      document.getElementById(
+        'day-list-table-body'
+      );
 
     if (tableBody) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="table-empty-state">
+          <td
+            colspan="6"
+            class="table-empty-state"
+          >
             Impossible de charger les données.
           </td>
         </tr>
@@ -948,188 +2086,374 @@ async function loadDashboardData() {
 }
 /*
 |--------------------------------------------------------------------------
-| Mettre à jour l'état du bouton "Nouveau patient"
-|--------------------------------------------------------------------------
-| Cette fonction rend le bouton cohérent avec l'état de la liste :
-| - si la liste est ouverte  -> bouton actif
-| - si la liste est fermée   -> bouton désactivé
-|--------------------------------------------------------------------------
-|
-| Pourquoi une fonction dédiée ?
-| - logique plus lisible
-| - réutilisable
-| - évite de mélanger trop de responsabilités dans une seule fonction
+| Mettre à jour le bouton Nouveau patient
 |--------------------------------------------------------------------------
 */
 function updateAddPatientButtonState(queue) {
-    const addPatientButton = document.getElementById('openAddPatientModalBtn');
+  const addPatientButton = document.getElementById('openAddPatientModalBtn');
 
-    /*
-    |--------------------------------------------------------------
-    | Si le bouton n'existe pas, on sort sans erreur
-    |--------------------------------------------------------------
-    */
-    if (!addPatientButton) {
-        return;
+  if (!addPatientButton) return;
+
+  const canRegister =
+    queue?.registration_status === 'open'
+    && queue?.day_status === 'active';
+
+  addPatientButton.disabled = !canRegister;
+
+  const buttonLabel = addPatientButton.querySelector('span');
+
+  if (buttonLabel) {
+    if (queue?.day_status === 'completed') {
+      buttonLabel.textContent = 'Journée clôturée';
+    } else if (queue?.day_status === 'paused') {
+      buttonLabel.textContent = 'Liste en pause';
+    } else if (queue?.registration_status === 'closed') {
+      buttonLabel.textContent = 'Inscriptions fermées';
+    } else {
+      buttonLabel.textContent = 'Nouveau patient';
     }
+  }
 
-    /*
-    |--------------------------------------------------------------
-    | Déterminer si la liste est ouverte
-    |--------------------------------------------------------------
-    */
-    const isOpen = queue?.status === 'open';
-
-    /*
-    |--------------------------------------------------------------
-    | Désactiver / réactiver le bouton
-    |--------------------------------------------------------------
-    */
-    addPatientButton.disabled = !isOpen;
-
-    /*
-    |--------------------------------------------------------------
-    | Adapter le texte visible
-    |--------------------------------------------------------------
-    | On garde l'icône si elle existe déjà dans le HTML.
-    | Ici on ne remplace que le texte du <span>.
-    */
-    const buttonLabel = addPatientButton.querySelector('span');
-
-    if (buttonLabel) {
-        buttonLabel.textContent = isOpen
-            ? 'Nouveau patient'
-            : 'Liste fermée';
-    }
-
-    /*
-    |--------------------------------------------------------------
-    | Accessibilité / UX
-    |--------------------------------------------------------------
-    | Le title aide à comprendre pourquoi le bouton est désactivé.
-    */
-    addPatientButton.title = isOpen
-        ? 'Ajouter un nouveau patient à la liste du jour'
-        : 'Impossible d’ajouter un patient : la liste du jour est fermée';
+  addPatientButton.title = canRegister
+    ? 'Ajouter un nouveau patient à la liste du jour'
+    : 'Les nouvelles inscriptions sont actuellement indisponibles';
 }
+
 /*
 |--------------------------------------------------------------------------
-| Mettre à jour le badge Liste ouverte / fermée
-|--------------------------------------------------------------------------
-| Cette fonction met à jour :
-| - le badge d'état
-| - le bouton Fermer / Réouvrir la liste
-| - le bouton Nouveau patient
-|--------------------------------------------------------------------------
-|
-| Pourquoi centraliser ici ?
-| - toute l'UI dépend de queue.status
-| - quand loadDashboardData() recharge la queue,
-|   tout l'état visuel se met à jour au même endroit
+| Mettre à jour les deux états de la queue
 |--------------------------------------------------------------------------
 */
 function updateQueueStatusBadge(queue) {
-    const badge = document.getElementById('list-status-badge');
-    const toggleButton = document.getElementById('toggle-list-btn');
+  const dayBadge = document.getElementById('day-status-badge');
+  const registrationBadge = document.getElementById(
+    'registration-status-badge'
+  );
+  const toggleButton = document.getElementById('toggle-list-btn');
+  const menuButton = document.getElementById('queue-day-menu-btn');
+  const pauseButton = document.getElementById('pause-day-btn');
+  const resumeButton = document.getElementById('resume-day-btn');
+  const completeButton = document.getElementById('complete-day-btn');
+  const reopenButton = document.getElementById(
+    'reopen-completed-day-btn'
+  );
 
-    /*
-    |--------------------------------------------------------------
-    | Sécurité minimale
-    |--------------------------------------------------------------
-    */
-    if (!badge || !toggleButton) return;
+  if (!queue) return;
 
-    /*
-    |--------------------------------------------------------------
-    | Calculer l'état métier
-    |--------------------------------------------------------------
-    */
-    const isOpen = queue.status === 'open';
+  const dayStatus = queue.day_status;
+  const registrationsOpen = queue.registration_status === 'open';
+  const isCompleted = dayStatus === 'completed';
+  const isPaused = dayStatus === 'paused';
 
-    /*
-    |--------------------------------------------------------------
-    | Mettre à jour le badge
-    |--------------------------------------------------------------
-    */
-    badge.textContent = isOpen ? 'Liste ouverte' : 'Liste fermée';
-    badge.classList.remove('list-status-badge--open', 'list-status-badge--closed');
-    badge.classList.add(isOpen ? 'list-status-badge--open' : 'list-status-badge--closed');
+  if (dayBadge) {
+    dayBadge.classList.remove(
+      'list-status-badge--open',
+      'list-status-badge--paused',
+      'list-status-badge--closed'
+    );
 
-    /*
-    |--------------------------------------------------------------
-    | Mettre à jour le bouton fermer / réouvrir
-    |--------------------------------------------------------------
-    */
-    toggleButton.textContent = isOpen ? 'Fermer la liste' : 'Réouvrir la liste';
-    toggleButton.classList.remove('btn-toggle-list--close', 'btn-toggle-list--open');
-    toggleButton.classList.add(isOpen ? 'btn-toggle-list--close' : 'btn-toggle-list--open');
+    if (isCompleted) {
+      dayBadge.textContent = 'Journée clôturée';
+      dayBadge.classList.add('list-status-badge--closed');
+    } else if (isPaused) {
+      dayBadge.textContent = 'Liste en pause';
+      dayBadge.classList.add('list-status-badge--paused');
+    } else {
+      dayBadge.textContent = 'Liste active';
+      dayBadge.classList.add('list-status-badge--open');
+    }
+  }
 
-    /*
-    |--------------------------------------------------------------
-    | Mettre aussi à jour le bouton Nouveau patient
-    |--------------------------------------------------------------
-    | Cela garde l'interface cohérente avec l'état réel de la liste.
-    */
-    updateAddPatientButtonState(queue);
+  if (registrationBadge) {
+    registrationBadge.textContent = registrationsOpen
+      ? 'Inscriptions ouvertes'
+      : 'Inscriptions fermées';
+
+    registrationBadge.classList.toggle(
+      'registration-status-badge--open',
+      registrationsOpen
+    );
+    registrationBadge.classList.toggle(
+      'registration-status-badge--closed',
+      !registrationsOpen
+    );
+  }
+
+  if (toggleButton) {
+    toggleButton.textContent = registrationsOpen
+      ? 'Fermer les inscriptions'
+      : 'Rouvrir les inscriptions';
+
+    toggleButton.disabled = isCompleted || isPaused;
+    toggleButton.classList.toggle(
+      'btn-toggle-list--close',
+      registrationsOpen
+    );
+    toggleButton.classList.toggle(
+      'btn-toggle-list--open',
+      !registrationsOpen
+    );
+  }
+
+  if (menuButton) {
+    const menuWrapper = menuButton.closest(
+      '.queue-day-menu-wrapper'
+    );
+
+    menuButton.disabled = false;
+
+    if (menuWrapper) {
+      menuWrapper.hidden = isCompleted;
+    }
+
+    if (isCompleted) {
+      closeQueueDayMenu();
+    }
+  }
+
+  if (reopenButton) {
+    reopenButton.hidden = !isCompleted;
+    reopenButton.disabled = false;
+  }
+
+  if (pauseButton) {
+    pauseButton.hidden = isPaused || isCompleted;
+  }
+
+  if (resumeButton) {
+    resumeButton.hidden = !isPaused || isCompleted;
+  }
+
+  if (completeButton) {
+    completeButton.disabled = isCompleted;
+  }
+
+  updateAddPatientButtonState(queue);
 }
 
 /*
 |--------------------------------------------------------------------------
-| Construire le tableau des patients du jour
+| Construire le tableau visible
+|--------------------------------------------------------------------------
+| La liste conserve toujours son ordre FIFO.
 |--------------------------------------------------------------------------
 */
 function renderDashboardTable(entries) {
-    const tableBody = document.getElementById('day-list-table-body');
+  const tableBody = document.getElementById('day-list-table-body');
 
-    if (!tableBody) return;
+  if (!tableBody) return;
 
-    if (!entries || entries.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="table-empty-state">
-                    Aucun patient pour aujourd'hui
-                </td>
-            </tr>
-        `;
+  if (!entries || entries.length === 0) {
+    const message = dashboardState.entries.length === 0
+      ? 'Aucun patient pour aujourd’hui.'
+      : 'Aucun patient ne correspond à la recherche.';
 
-        updatePatientDetails(null);
-        return;
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="table-empty-state">${message}</td>
+      </tr>
+    `;
+    return;
+  }
+
+  const currentEntry = getCurrentWaitingEntry();
+  const currentEntryId = currentEntry?.id ?? null;
+  const dayStatus = dashboardState.queue?.day_status;
+  const canProcessPatients = dayStatus === 'active';
+  const canEdit = dayStatus !== 'completed';
+
+  tableBody.innerHTML = entries.map(entry => {
+    const isCurrent = String(entry.id) === String(currentEntryId);
+    const isSelected = String(entry.id) === String(
+      dashboardState.selectedEntryId
+    );
+    const isWaiting = ['waiting', 'called'].includes(entry.status);
+    const canChangeWaitingStatus = canProcessPatients && isWaiting;
+    const canReturnToWaiting =
+      canProcessPatients && entry.status === 'no_show';
+
+    const rowClasses = [
+      'patient-row',
+      isCurrent ? 'is-current' : '',
+      isSelected ? 'is-selected' : ''
+    ].filter(Boolean).join(' ');
+
+    let statusActions = '';
+
+    if (isWaiting) {
+      statusActions = `
+        <button
+          class="btn-action-icon btn-action-icon--absent"
+          type="button"
+          title="Marquer absent"
+          ${canChangeWaitingStatus ? '' : 'disabled'}
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+
+        <button
+          class="btn-action-icon btn-action-icon--done"
+          type="button"
+          title="Terminer"
+          ${canChangeWaitingStatus ? '' : 'disabled'}
+        >
+          <span aria-hidden="true">✓</span>
+        </button>
+
+        <button
+          class="btn-action-icon btn-action-icon--cancel"
+          type="button"
+          title="Annuler l’inscription"
+          ${canChangeWaitingStatus ? '' : 'disabled'}
+        >
+          <span aria-hidden="true">⊘</span>
+        </button>
+      `;
+    } else if (entry.status === 'no_show') {
+      statusActions = `
+        <button
+          class="btn-action-icon btn-action-icon--return"
+          type="button"
+          title="Remettre en attente à la fin de la file"
+          ${canReturnToWaiting ? '' : 'disabled'}
+        >
+          <span aria-hidden="true">↩</span>
+        </button>
+      `;
     }
 
-    tableBody.innerHTML = entries.map((entry, index) => `
-        <tr
-            class="patient-row ${index === 0 ? 'is-selected' : ''}"
-            data-entry-id="${entry.id}"
-        >
-            <td>${entry.number}</td>
-            <td class="patient-name-cell">${escapeHtml(entry.display_name ?? '')}</td>
-            <td class="patient-phone-cell">${escapeHtml(entry.phone ?? '-')}</td>
-            <td>${escapeHtml(entry.time ?? '-')}</td>
-            <td>${renderStatusPill(entry.status)}</td>
-            <td>
-                <div class="table-actions">
-                    <button class="btn-action-icon btn-action-icon--view" type="button" title="Voir">
-                        <span>👁</span>
-                    </button>
-                    <button class="btn-action-icon btn-action-icon--edit" type="button" title="Modifier">
-                        <span>✎</span>
-                    </button>
-                    <button class="btn-action-icon btn-action-icon--absent" type="button" title="Absent">
-                        <span>✕</span>
-                    </button>
+    return `
+      <tr class="${rowClasses}" data-entry-id="${entry.id}">
+        <td>${entry.number}</td>
+        <td class="patient-name-cell">
+          ${escapeHtml(entry.display_name ?? '')}
+        </td>
+        <td class="patient-phone-cell">
+          ${escapeHtml(entry.phone ?? '-')}
+        </td>
+        <td>${escapeHtml(entry.time ?? '-')}</td>
+        <td>${renderStatusPill(entry.status)}</td>
+        <td>
+          <div class="table-actions">
+            <button
+              class="btn-action-icon btn-action-icon--view"
+              type="button"
+              title="Voir les détails"
+              aria-label="Voir les détails de ${escapeHtml(entry.display_name ?? '')}"
+            >
+              <span aria-hidden="true">👁</span>
+            </button>
 
-                    <button class="btn-action-icon btn-action-icon--done" type="button" title="Terminer">
-                        <span>✓</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+            <button
+              class="btn-action-icon btn-action-icon--edit"
+              type="button"
+              title="Modifier"
+              ${canEdit ? '' : 'disabled'}
+            >
+              <span aria-hidden="true">✎</span>
+            </button>
 
-    updatePatientDetails(entries[0]);
-    bindPatientRowEvents(entries);
+            ${statusActions}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  bindPatientRowEvents(entries);
 }
+/*
+|--------------------------------------------------------------------------
+| Rendu central du dashboard
+|--------------------------------------------------------------------------
+| Ordre :
+| 1. recherche et filtre
+| 2. pagination
+| 3. tableau
+| 4. détails
+| 5. bouton patient actuel
+|--------------------------------------------------------------------------
+*/
+function renderDashboardView() {
+  const filteredEntries =
+    getFilteredDashboardEntries();
 
+  const totalPages =
+    getDashboardTotalPages(filteredEntries);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Empêcher une page inexistante après un filtre
+  |--------------------------------------------------------------------------
+  */
+  dashboardState.currentPage = Math.min(
+    Math.max(1, dashboardState.currentPage),
+    totalPages
+  );
+
+  const pageEntries =
+    getCurrentDashboardPageEntries(
+      filteredEntries
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Si le patient sélectionné n’est pas présent sur cette page,
+  | sélectionner automatiquement la première ligne visible.
+  |--------------------------------------------------------------------------
+  */
+  const selectedEntryIsVisible =
+    pageEntries.some(
+      entry =>
+        String(entry.id)
+        === String(
+          dashboardState.selectedEntryId
+        )
+    );
+
+  if (!selectedEntryIsVisible) {
+    dashboardState.selectedEntryId =
+      pageEntries[0]?.id ?? null;
+  }
+
+  renderDashboardTable(pageEntries);
+
+  renderDashboardPagination(totalPages);
+
+  renderDashboardResultsCount(
+    filteredEntries.length
+  );
+
+  renderCurrentPatientButton();
+
+  syncDashboardControls();
+
+  const selectedEntry = findEntryById(
+    dashboardState.entries,
+    dashboardState.selectedEntryId
+  );
+
+  updatePatientDetails(selectedEntry);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Après Terminer, Absent ou clic sur Patient actuel,
+  | rendre automatiquement la bonne ligne visible.
+  |--------------------------------------------------------------------------
+  */
+  const entryIdToScroll =
+    dashboardState.scrollToEntryId;
+
+  dashboardState.scrollToEntryId = null;
+
+  if (entryIdToScroll !== null) {
+    requestAnimationFrame(() => {
+      scrollDashboardEntryIntoView(
+        entryIdToScroll
+      );
+    });
+  }
+}
 /*
 |--------------------------------------------------------------------------
 | Construire le badge de statut
@@ -1151,6 +2475,14 @@ function renderStatusPill(status) {
 
     if (status === 'done') {
         return '<span class="status-pill status-pill--done">Terminé</span>';
+    }
+
+    if (status === 'canceled') {
+        return '<span class="status-pill status-pill--canceled">Annulé</span>';
+    }
+
+    if (status === 'called') {
+        return '<span class="status-pill status-pill--waiting">Appelé</span>';
     }
 
     return `<span class="status-pill">${escapeHtml(status)}</span>`;
@@ -1179,46 +2511,142 @@ function renderDetailStatusPill(status) {
 }
 
 function renderDefaultPatientHistory() {
-    return `
-        <li>
-            <span>Aucune visite récente</span>
-            <strong class="history-status">-</strong>
-        </li>
-    `;
+  return `
+    <li>
+      <span>Aucune visite récente</span>
+      <strong class="history-status">-</strong>
+    </li>
+  `;
+}
+
+function formatVisitDate(value) {
+  if (!value) return '-';
+
+  const date = new Date(String(value).replace(' ', 'T'));
+
+  if (Number.isNaN(date.getTime())) {
+    return escapeHtml(String(value));
+  }
+
+  return new Intl.DateTimeFormat('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(date);
+}
+
+function getVisitStatusLabel(status) {
+  if (status === 'done') return 'Terminée';
+  if (status === 'in_progress') return 'En cours';
+  if (status === 'canceled') return 'Annulée';
+  return status || '-';
+}
+
+function renderPatientHistory(visits) {
+  if (!Array.isArray(visits) || visits.length === 0) {
+    return renderDefaultPatientHistory();
+  }
+
+  return visits.map(visit => `
+    <li>
+      <span>${formatVisitDate(visit.visit_at)}</span>
+      <strong class="history-status history-status--${escapeHtml(visit.status)}">
+        ${escapeHtml(getVisitStatusLabel(visit.status))}
+      </strong>
+    </li>
+  `).join('');
+}
+
+function openSelectedPatientFullRecord() {
+  const button = document.getElementById('view-full-patient-record-btn');
+  const patientId = Number(button?.dataset.patientId || 0);
+
+  if (patientId <= 0) {
+    showToast('Aucune fiche patient liée à cette inscription.', 'error');
+    return;
+  }
+
+  sessionStorage.setItem(
+    'marki:selectedPatientId',
+    String(patientId)
+  );
+
+  const patientsMenuItem = [...document.querySelectorAll('.sidebar__item')]
+    .find(item => item.textContent.includes('Mes Patients'));
+
+  const patientsPage = patientsMenuItem?.dataset.page || 'patients';
+
+  setActiveMenuItem(patientsPage);
+  loadPage(patientsPage);
+}
+
+function bindPatientDetailsEvents() {
+  document
+    .getElementById('view-full-patient-record-btn')
+    ?.addEventListener('click', openSelectedPatientFullRecord);
 }
 
 function updatePatientDetails(entry) {
-    const nameEl = document.getElementById('patient-details-name');
-    const phoneEl = document.getElementById('patient-details-phone');
-    const birthDateEl = document.getElementById('patient-details-birth-date');
-    const sourceEl = document.getElementById('patient-details-source');
-    const statusEl = document.getElementById('patient-details-status');
-    const notesEl = document.getElementById('patient-details-notes');
-    const historyEl = document.getElementById('patient-details-history');
+  const emptyState = document.getElementById('patient-details-empty');
+  const detailsContent = document.getElementById('patient-details-content');
+  const nameEl = document.getElementById('patient-details-name');
+  const phoneEl = document.getElementById('patient-details-phone');
+  const birthDateEl = document.getElementById('patient-details-birth-date');
+  const sourceEl = document.getElementById('patient-details-source');
+  const statusEl = document.getElementById('patient-details-status');
+  const notesEl = document.getElementById('patient-details-notes');
+  const historyEl = document.getElementById('patient-details-history');
+  const fullRecordButton = document.getElementById(
+    'view-full-patient-record-btn'
+  );
 
-    if (!nameEl || !phoneEl || !birthDateEl || !sourceEl || !statusEl || !notesEl || !historyEl) {
-        return;
-    }
+  if (
+    !emptyState
+    || !detailsContent
+    || !nameEl
+    || !phoneEl
+    || !birthDateEl
+    || !sourceEl
+    || !statusEl
+    || !notesEl
+    || !historyEl
+    || !fullRecordButton
+  ) {
+    return;
+  }
 
-    if (!entry) {
-        nameEl.textContent = 'Aucun patient sélectionné';
-        phoneEl.textContent = '-';
-        birthDateEl.textContent = '-';
-        sourceEl.textContent = '-';
-        statusEl.innerHTML = '<span class="status-pill">-</span>';
-        notesEl.textContent = 'Aucune note disponible.';
-        historyEl.innerHTML = renderDefaultPatientHistory();
-        return;
-    }
+  if (!entry) {
+    emptyState.hidden = false;
+    detailsContent.hidden = true;
+    fullRecordButton.disabled = true;
+    delete fullRecordButton.dataset.patientId;
+    return;
+  }
 
-    nameEl.textContent = entry.display_name || '-';
-    phoneEl.textContent = entry.phone || '-';
-    birthDateEl.textContent = formatBirthDate(entry.birth_date);
-    sourceEl.textContent = formatSourceLabel(entry.source);
-    statusEl.innerHTML = renderDetailStatusPill(entry.status);
+  emptyState.hidden = true;
+  detailsContent.hidden = false;
 
-    notesEl.textContent = 'Aucune note disponible pour le moment.';
-    historyEl.innerHTML = renderDefaultPatientHistory();
+  nameEl.textContent = entry.display_name || '-';
+  phoneEl.textContent = entry.phone || '-';
+  birthDateEl.textContent = formatBirthDate(entry.birth_date);
+  sourceEl.textContent = formatSourceLabel(entry.source);
+  statusEl.innerHTML = renderDetailStatusPill(entry.status);
+
+  notesEl.textContent = entry.patient_notes?.trim()
+    || 'Aucune note disponible pour le moment.';
+
+  historyEl.innerHTML = renderPatientHistory(
+    entry.recent_visits
+  );
+
+  const patientId = Number(entry.patient_id || 0);
+  fullRecordButton.disabled = patientId <= 0;
+
+  if (patientId > 0) {
+    fullRecordButton.dataset.patientId = String(patientId);
+  } else {
+    delete fullRecordButton.dataset.patientId;
+  }
 }
 
 function selectPatientRowByEntryId(entryId) {
@@ -1232,78 +2660,157 @@ function selectPatientRowByEntryId(entryId) {
 function findEntryById(entries, entryId) {
     return entries.find(entry => String(entry.id) === String(entryId)) || null;
 }
-function bindPatientRowEvents(entries) {
-    const rows = document.querySelectorAll('.patient-row');
+/*
+|--------------------------------------------------------------------------
+| Exécuter une action de statut
+|--------------------------------------------------------------------------
+| Le bouton est désactivé pendant la requête afin d’éviter les doubles clics.
+|--------------------------------------------------------------------------
+*/
+async function handleQueueEntryStatusAction(
+  button,
+  entry,
+  newStatus,
+  extraPayload = {}
+) {
+  if (!button || button.disabled) return;
 
-    rows.forEach(row => {
-        const entryId = row.dataset.entryId;
-        const entry = findEntryById(entries, entryId);
+  button.disabled = true;
 
-        if (!entry) return;
+  try {
+    const result = await updateQueueEntryStatus(
+      entry.id,
+      newStatus,
+      extraPayload
+    );
 
-        row.addEventListener('click', (event) => {
-            const clickedActionButton = event.target.closest('.btn-action-icon');
+    showToast(result.message, 'success');
 
-            if (clickedActionButton && !clickedActionButton.classList.contains('btn-action-icon--view')) {
-                return;
-            }
-
-            selectPatientRowByEntryId(entry.id);
-            updatePatientDetails(entry);
-        });
-
-        const viewBtn = row.querySelector('.btn-action-icon--view');
-        if (viewBtn) {
-            viewBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                selectPatientRowByEntryId(entry.id);
-                updatePatientDetails(entry);
-            });
-        }
-
-        const editBtn = row.querySelector('.btn-action-icon--edit');
-        if (editBtn) {
-            editBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                openEditPatientModal(entry);
-            });
-        }
-
-        const absentBtn = row.querySelector('.btn-action-icon--absent');
-        if (absentBtn) {
-            absentBtn.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                try {
-                    await updateQueueEntryStatus(entry.id, 'no_show');
-                    await loadDashboardData();
-                } catch (error) {
-                    console.error('Erreur statut absent:', error);
-                    alert(error.message || 'Impossible de marquer le patient absent.');
-                }
-            });
-        }
-
-        const doneBtn = row.querySelector('.btn-action-icon--done');
-        if (doneBtn) {
-            doneBtn.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                try {
-                    await updateQueueEntryStatus(entry.id, 'done');
-                    await loadDashboardData();
-                } catch (error) {
-                    console.error('Erreur statut terminé:', error);
-                    alert(error.message || 'Impossible de terminer le patient.');
-                }
-            });
-        }
+    await loadDashboardData({
+      focusCurrent: ['done', 'no_show', 'canceled'].includes(newStatus)
     });
+  } catch (error) {
+    console.error('Erreur de changement de statut :', error);
+    showToast(
+      error.message || 'Impossible de modifier le statut.',
+      'error'
+    );
+    button.disabled = false;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Brancher les événements des lignes
+|--------------------------------------------------------------------------
+*/
+function bindPatientRowEvents(entries) {
+  const rows = document.querySelectorAll('.patient-row');
+
+  rows.forEach(row => {
+    const entry = findEntryById(entries, row.dataset.entryId);
+
+    if (!entry) return;
+
+    row.addEventListener('click', event => {
+      if (event.target.closest('.btn-action-icon')) return;
+      selectDashboardEntry(entry.id);
+    });
+
+    row.querySelector('.btn-action-icon--view')?.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectDashboardEntry(entry.id);
+      }
+    );
+
+    const editButton = row.querySelector('.btn-action-icon--edit');
+    editButton?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!editButton.disabled) {
+        openEditPatientModal(entry);
+      }
+    });
+
+    const absentButton = row.querySelector('.btn-action-icon--absent');
+    absentButton?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      handleQueueEntryStatusAction(absentButton, entry, 'no_show');
+    });
+
+    const doneButton = row.querySelector('.btn-action-icon--done');
+    doneButton?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      handleQueueEntryStatusAction(doneButton, entry, 'done');
+    });
+
+    const cancelButton = row.querySelector('.btn-action-icon--cancel');
+    cancelButton?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      openQueueActionConfirmation({
+        title: 'Annuler cette inscription ?',
+        message: `${entry.display_name} ne passera pas chez le médecin. Choisissez la raison à conserver dans l’historique.`,
+        confirmLabel: 'Annuler l’inscription',
+        defaultReason: 'patient_request',
+        reasonOptions: [
+          {
+            value: 'patient_request',
+            label: 'Annulation demandée par le patient'
+          },
+          {
+            value: 'registration_error',
+            label: 'Erreur d’inscription'
+          },
+          {
+            value: 'doctor_unavailable',
+            label: 'Médecin indisponible'
+          },
+          {
+            value: 'other',
+            label: 'Autre raison'
+          }
+        ],
+        onConfirm: async ({ reason }) => {
+          await handleQueueEntryStatusAction(
+            cancelButton,
+            entry,
+            'canceled',
+            {
+              cancellation_reason: reason || 'other'
+            }
+          );
+        }
+      });
+    });
+
+    const returnButton = row.querySelector('.btn-action-icon--return');
+    returnButton?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      openQueueActionConfirmation({
+        title: 'Remettre le patient en attente ?',
+        message: `${entry.display_name} sera replacé à la fin de la file afin de respecter les patients qui ont continué à attendre.`,
+        confirmLabel: 'Remettre en attente',
+        confirmType: 'primary',
+        onConfirm: async () => {
+          await handleQueueEntryStatusAction(
+            returnButton,
+            entry,
+            'waiting'
+          );
+        }
+      });
+    });
+  });
 }
 /*
 |--------------------------------------------------------------------------
@@ -1314,10 +2821,12 @@ function renderDashboardCounters(counts) {
     const waitingEl = document.getElementById('counter-waiting');
     const absentEl = document.getElementById('counter-absent');
     const doneEl = document.getElementById('counter-done');
+    const canceledEl = document.getElementById('counter-canceled');
 
     if (waitingEl) waitingEl.textContent = counts.waiting ?? 0;
     if (absentEl) absentEl.textContent = counts.absent ?? 0;
     if (doneEl) doneEl.textContent = counts.done ?? 0;
+    if (canceledEl) canceledEl.textContent = counts.canceled ?? 0;
 }
 
 // ==========================================================

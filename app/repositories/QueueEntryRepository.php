@@ -6,13 +6,12 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | Repository des entrées de la liste du jour
 |--------------------------------------------------------------------------
-| Ce fichier gère les requêtes SQL liées aux patients inscrits
-| dans une queue (liste du jour).
-|
-| Son rôle :
-| - récupérer toutes les entrées d’une liste
-| - compter les entrées par statut
-| - créer une nouvelle entrée patient dans la liste
+| Gère les patients inscrits dans une queue :
+| - lecture FIFO
+| - compteurs
+| - ajout
+| - modification administrative
+| - changement de statut
 |--------------------------------------------------------------------------
 */
 
@@ -30,31 +29,96 @@ class QueueEntryRepository
 
     /*
     |--------------------------------------------------------------------------
-    | Récupérer toutes les entrées d’une queue
+    | Convertir une ligne SQL en tableau typé
+    |--------------------------------------------------------------------------
+    */
+    private function mapEntryRow(array $row, ?int $fallbackNumber = null): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'queue_id' => (int) $row['queue_id'],
+            'clinic_id' => (int) $row['clinic_id'],
+            'patient_id' => $row['patient_id'] !== null
+                ? (int) $row['patient_id']
+                : null,
+            'number' => $row['position_number'] !== null
+                ? (int) $row['position_number']
+                : $fallbackNumber,
+            'display_name' => $row['display_name'],
+            'phone' => $row['phone'],
+            'birth_date' => $row['birth_date'],
+            'source' => $row['source'],
+            'status' => $row['status'],
+            'status_before_completion' =>
+                $row['status_before_completion'],
+            'canceled_by_completion' =>
+                (bool) $row['canceled_by_completion'],
+            'patient_notes' => $row['patient_notes'] ?? null,
+            'recent_visits' => [],
+            'time' => date('H:i', strtotime($row['created_at'])),
+            'position_number' => $row['position_number'] !== null
+                ? (int) $row['position_number']
+                : null,
+            'created_at' => $row['created_at'],
+            'called_at' => $row['called_at'],
+            'done_at' => $row['done_at'],
+            'canceled_at' => $row['canceled_at'],
+            'cancellation_reason' => $row['cancellation_reason'],
+            'no_show_at' => $row['no_show_at'],
+            'created_by_user_id' => $row['created_by_user_id'] !== null
+                ? (int) $row['created_by_user_id']
+                : null,
+            'updated_by_user_id' => $row['updated_by_user_id'] !== null
+                ? (int) $row['updated_by_user_id']
+                : null,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Colonnes SELECT réutilisées
+    |--------------------------------------------------------------------------
+    */
+    private function entrySelectColumns(): string
+    {
+        return "
+            qe.id,
+            qe.queue_id,
+            qe.clinic_id,
+            qe.patient_id,
+            qe.display_name,
+            qe.phone,
+            qe.birth_date,
+            qe.source,
+            qe.status,
+            qe.status_before_completion,
+            qe.canceled_by_completion,
+            qe.position_number,
+            qe.created_at,
+            qe.called_at,
+            qe.done_at,
+            qe.canceled_at,
+            qe.cancellation_reason,
+            qe.no_show_at,
+            qe.created_by_user_id,
+            qe.updated_by_user_id,
+            p.notes_non_medical AS patient_notes
+        ";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Récupérer toutes les entrées dans l'ordre FIFO
     |--------------------------------------------------------------------------
     */
     public function findByQueueId(int $queueId): array
     {
         $sql = "
-            SELECT
-                qe.id,
-                qe.queue_id,
-                qe.clinic_id,
-                qe.patient_id,
-                qe.display_name,
-                qe.phone,
-                qe.birth_date,
-                qe.source,
-                qe.status,
-                qe.position_number,
-                qe.created_at,
-                qe.called_at,
-                qe.done_at,
-                qe.canceled_at,
-                qe.no_show_at,
-                qe.created_by_user_id,
-                qe.updated_by_user_id
+            SELECT {$this->entrySelectColumns()}
             FROM queue_entries qe
+            LEFT JOIN patients p
+              ON p.id = qe.patient_id
+             AND p.clinic_id = qe.clinic_id
             WHERE qe.queue_id = :queue_id
             ORDER BY
                 CASE
@@ -62,7 +126,8 @@ class QueueEntryRepository
                     ELSE 0
                 END,
                 qe.position_number ASC,
-                qe.created_at ASC
+                qe.created_at ASC,
+                qe.id ASC
         ";
 
         $stmt = $this->pdo->prepare($sql);
@@ -71,34 +136,90 @@ class QueueEntryRepository
         ]);
 
         $rows = $stmt->fetchAll();
-
         $entries = [];
 
         foreach ($rows as $index => $row) {
-            $entries[] = [
+            $entries[] = $this->mapEntryRow($row, $index + 1);
+        }
+
+        return $this->attachRecentVisits($entries);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ajouter les trois dernières visites à chaque patient
+    |--------------------------------------------------------------------------
+    | Une seule requête est exécutée pour tous les patients affichés.
+    | Les patients sans visite conservent un tableau vide.
+    |--------------------------------------------------------------------------
+    */
+    private function attachRecentVisits(array $entries): array
+    {
+        $patientIds = [];
+
+        foreach ($entries as $entry) {
+            if ($entry['patient_id'] !== null) {
+                $patientIds[] = (int) $entry['patient_id'];
+            }
+        }
+
+        $patientIds = array_values(array_unique($patientIds));
+
+        if ($patientIds === []) {
+            return $entries;
+        }
+
+        $placeholders = implode(
+            ', ',
+            array_fill(0, count($patientIds), '?')
+        );
+
+        $sql = "
+            SELECT
+                v.id,
+                v.patient_id,
+                v.started_at,
+                v.ended_at,
+                v.status,
+                v.created_at
+            FROM visits v
+            WHERE v.patient_id IN ($placeholders)
+            ORDER BY
+                v.patient_id ASC,
+                COALESCE(v.ended_at, v.started_at, v.created_at) DESC,
+                v.id DESC
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($patientIds);
+
+        $visitsByPatient = [];
+
+        foreach ($stmt->fetchAll() as $row) {
+            $patientId = (int) $row['patient_id'];
+
+            if (count($visitsByPatient[$patientId] ?? []) >= 3) {
+                continue;
+            }
+
+            $visitsByPatient[$patientId][] = [
                 'id' => (int) $row['id'],
-                'queue_id' => (int) $row['queue_id'],
-                'patient_id' => $row['patient_id'] !== null ? (int) $row['patient_id'] : null,
-
-                'number' => $row['position_number'] !== null
-                    ? (int) $row['position_number']
-                    : ($index + 1),
-
-                'display_name' => $row['display_name'],
-                'phone' => $row['phone'],
-                'birth_date' => $row['birth_date'],
-                'source' => $row['source'],
                 'status' => $row['status'],
-
-                'time' => date('H:i', strtotime($row['created_at'])),
-
-                'created_at' => $row['created_at'],
-                'called_at' => $row['called_at'],
-                'done_at' => $row['done_at'],
-                'canceled_at' => $row['canceled_at'],
-                'no_show_at' => $row['no_show_at'],
+                'visit_at' => $row['ended_at']
+                    ?? $row['started_at']
+                    ?? $row['created_at'],
             ];
         }
+
+        foreach ($entries as &$entry) {
+            $patientId = $entry['patient_id'];
+
+            $entry['recent_visits'] = $patientId !== null
+                ? ($visitsByPatient[(int) $patientId] ?? [])
+                : [];
+        }
+
+        unset($entry);
 
         return $entries;
     }
@@ -128,54 +249,50 @@ class QueueEntryRepository
 
         $counts = [
             'waiting' => 0,
+            'called' => 0,
             'absent' => 0,
             'done' => 0,
+            'canceled' => 0,
+            'total' => 0,
         ];
 
         foreach ($rows as $row) {
-            $status = $row['status'];
+            $status = (string) $row['status'];
             $total = (int) $row['total'];
+
+            $counts['total'] += $total;
 
             if ($status === 'waiting') {
                 $counts['waiting'] = $total;
-            }
-
-            if ($status === 'no_show') {
+            } elseif ($status === 'called') {
+                $counts['called'] = $total;
+            } elseif ($status === 'no_show') {
                 $counts['absent'] = $total;
-            }
-
-            if ($status === 'done') {
+            } elseif ($status === 'done') {
                 $counts['done'] = $total;
+            } elseif ($status === 'canceled') {
+                $counts['canceled'] = $total;
             }
         }
 
         return $counts;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Récupérer une entrée précise
+    |--------------------------------------------------------------------------
+    */
     public function findById(int $entryId, int $clinicId): ?array
     {
         $sql = "
-            SELECT
-                qe.id,
-                qe.queue_id,
-                qe.clinic_id,
-                qe.patient_id,
-                qe.display_name,
-                qe.phone,
-                qe.birth_date,
-                qe.source,
-                qe.status,
-                qe.position_number,
-                qe.created_at,
-                qe.called_at,
-                qe.done_at,
-                qe.canceled_at,
-                qe.no_show_at,
-                qe.created_by_user_id,
-                qe.updated_by_user_id
+            SELECT {$this->entrySelectColumns()}
             FROM queue_entries qe
+            LEFT JOIN patients p
+              ON p.id = qe.patient_id
+             AND p.clinic_id = qe.clinic_id
             WHERE qe.id = :id
-            AND qe.clinic_id = :clinic_id
+              AND qe.clinic_id = :clinic_id
             LIMIT 1
         ";
 
@@ -191,93 +308,16 @@ class QueueEntryRepository
             return null;
         }
 
-        return [
-            'id' => (int) $row['id'],
-            'queue_id' => (int) $row['queue_id'],
-            'clinic_id' => (int) $row['clinic_id'],
-            'patient_id' => $row['patient_id'] !== null ? (int) $row['patient_id'] : null,
-            'number' => $row['position_number'] !== null ? (int) $row['position_number'] : null,
-            'display_name' => $row['display_name'],
-            'phone' => $row['phone'],
-            'birth_date' => $row['birth_date'],
-            'source' => $row['source'],
-            'status' => $row['status'],
-            'time' => date('H:i', strtotime($row['created_at'])),
-            'created_at' => $row['created_at'],
-            'called_at' => $row['called_at'],
-            'done_at' => $row['done_at'],
-            'canceled_at' => $row['canceled_at'],
-            'no_show_at' => $row['no_show_at'],
-        ];
-    }
-
-    public function updateStatus(
-        int $entryId,
-        int $clinicId,
-        string $newStatus,
-        int $updatedByUserId
-    ): array {
-        $allowedStatuses = ['waiting', 'done', 'no_show'];
-
-        if (!in_array($newStatus, $allowedStatuses, true)) {
-            throw new InvalidArgumentException('Statut invalide.');
-        }
-
-        $existingEntry = $this->findById($entryId, $clinicId);
-
-        if (!$existingEntry) {
-            throw new RuntimeException('Entrée introuvable.');
-        }
-
-        $doneAt = null;
-        $noShowAt = null;
-
-        if ($newStatus === 'done') {
-            $doneAt = date('Y-m-d H:i:s');
-        }
-
-        if ($newStatus === 'no_show') {
-            $noShowAt = date('Y-m-d H:i:s');
-        }
-
-        if ($newStatus === 'waiting') {
-            $doneAt = null;
-            $noShowAt = null;
-        }
-
-        $sql = "
-            UPDATE queue_entries
-            SET
-                status = :status,
-                done_at = :done_at,
-                no_show_at = :no_show_at,
-                updated_by_user_id = :updated_by_user_id
-            WHERE id = :id
-            AND clinic_id = :clinic_id
-            LIMIT 1
-        ";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':status' => $newStatus,
-            ':done_at' => $doneAt,
-            ':no_show_at' => $noShowAt,
-            ':updated_by_user_id' => $updatedByUserId,
-            ':id' => $entryId,
-            ':clinic_id' => $clinicId,
+        $entries = $this->attachRecentVisits([
+            $this->mapEntryRow($row),
         ]);
 
-        $updatedEntry = $this->findById($entryId, $clinicId);
-
-        if (!$updatedEntry) {
-            throw new RuntimeException('Impossible de récupérer l’entrée après mise à jour.');
-        }
-
-        return $updatedEntry;
+        return $entries[0] ?? null;
     }
+
     /*
     |--------------------------------------------------------------------------
-    | Récupérer la prochaine position dans la queue
+    | Récupérer la prochaine position disponible
     |--------------------------------------------------------------------------
     */
     private function getNextPositionNumber(int $queueId): int
@@ -297,29 +337,180 @@ class QueueEntryRepository
 
         return (int) ($row['next_position'] ?? 1);
     }
-    public function findWaitingByQueueAndPatientId(int $queueId, int $patientId): ?array
-    {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mettre à jour le statut d'une entrée
+    |--------------------------------------------------------------------------
+    | Transitions V1 :
+    | - waiting/called -> done | no_show | canceled
+    | - no_show        -> waiting, à la fin de la file
+    | - done/canceled  -> états finaux
+    |--------------------------------------------------------------------------
+    */
+    public function updateStatus(
+        int $entryId,
+        int $clinicId,
+        string $newStatus,
+        int $updatedByUserId,
+        ?string $cancellationReason = null
+    ): array {
+        $allowedStatuses = [
+            'waiting',
+            'done',
+            'no_show',
+            'canceled',
+        ];
+
+        $allowedCancellationReasons = [
+            'patient_request',
+            'registration_error',
+            'doctor_unavailable',
+            'end_of_day',
+            'other',
+        ];
+
+        if (!in_array($newStatus, $allowedStatuses, true)) {
+            throw new InvalidArgumentException('Statut invalide.');
+        }
+
+        $existingEntry = $this->findById($entryId, $clinicId);
+
+        if ($existingEntry === null) {
+            throw new RuntimeException('Entrée introuvable.');
+        }
+
+        $currentStatus = $existingEntry['status'];
+
+        if ($currentStatus === $newStatus) {
+            return $existingEntry;
+        }
+
+        if ($currentStatus === 'done') {
+            throw new InvalidArgumentException(
+                'Un patient terminé ne peut plus changer de statut.'
+            );
+        }
+
+        if ($currentStatus === 'canceled') {
+            throw new InvalidArgumentException(
+                'Une inscription annulée ne peut pas être réactivée dans la V1.'
+            );
+        }
+
+        if (
+            $newStatus === 'waiting'
+            && $currentStatus !== 'no_show'
+        ) {
+            throw new InvalidArgumentException(
+                'Seul un patient absent peut être remis en attente.'
+            );
+        }
+
+        if (
+            in_array($newStatus, ['done', 'no_show', 'canceled'], true)
+            && !in_array($currentStatus, ['waiting', 'called'], true)
+        ) {
+            throw new InvalidArgumentException(
+                'Cette transition de statut n’est pas autorisée.'
+            );
+        }
+
+        if ($newStatus === 'canceled') {
+            $cancellationReason = $cancellationReason ?: 'other';
+
+            if (!in_array($cancellationReason, $allowedCancellationReasons, true)) {
+                throw new InvalidArgumentException(
+                    'Raison d’annulation invalide.'
+                );
+            }
+        } else {
+            $cancellationReason = null;
+        }
+
+        $positionNumber = $existingEntry['position_number'];
+        $calledAt = $existingEntry['called_at'];
+        $doneAt = null;
+        $noShowAt = null;
+        $canceledAt = null;
+
+        if ($newStatus === 'done') {
+            $doneAt = date('Y-m-d H:i:s');
+        } elseif ($newStatus === 'no_show') {
+            $noShowAt = date('Y-m-d H:i:s');
+        } elseif ($newStatus === 'canceled') {
+            $canceledAt = date('Y-m-d H:i:s');
+        } elseif ($newStatus === 'waiting') {
+            /*
+            |----------------------------------------------------------------------
+            | Un patient absent qui revient repart à la fin de la file
+            |----------------------------------------------------------------------
+            */
+            $positionNumber = $this->getNextPositionNumber(
+                (int) $existingEntry['queue_id']
+            );
+            $calledAt = null;
+        }
+
         $sql = "
-            SELECT
-                qe.id,
-                qe.queue_id,
-                qe.clinic_id,
-                qe.patient_id,
-                qe.display_name,
-                qe.phone,
-                qe.birth_date,
-                qe.source,
-                qe.status,
-                qe.position_number,
-                qe.created_at,
-                qe.called_at,
-                qe.done_at,
-                qe.canceled_at,
-                qe.no_show_at
+            UPDATE queue_entries
+            SET
+                status = :status,
+                position_number = :position_number,
+                called_at = :called_at,
+                done_at = :done_at,
+                no_show_at = :no_show_at,
+                canceled_at = :canceled_at,
+                cancellation_reason = :cancellation_reason,
+                updated_by_user_id = :updated_by_user_id
+            WHERE id = :id
+              AND clinic_id = :clinic_id
+            LIMIT 1
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':status' => $newStatus,
+            ':position_number' => $positionNumber,
+            ':called_at' => $calledAt,
+            ':done_at' => $doneAt,
+            ':no_show_at' => $noShowAt,
+            ':canceled_at' => $canceledAt,
+            ':cancellation_reason' => $cancellationReason,
+            ':updated_by_user_id' => $updatedByUserId,
+            ':id' => $entryId,
+            ':clinic_id' => $clinicId,
+        ]);
+
+        $updatedEntry = $this->findById($entryId, $clinicId);
+
+        if ($updatedEntry === null) {
+            throw new RuntimeException(
+                'Impossible de récupérer l’entrée après mise à jour.'
+            );
+        }
+
+        return $updatedEntry;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chercher le même patient déjà en attente dans la queue
+    |--------------------------------------------------------------------------
+    */
+    public function findWaitingByQueueAndPatientId(
+        int $queueId,
+        int $patientId
+    ): ?array {
+        $sql = "
+            SELECT {$this->entrySelectColumns()}
             FROM queue_entries qe
+            LEFT JOIN patients p
+              ON p.id = qe.patient_id
+             AND p.clinic_id = qe.clinic_id
             WHERE qe.queue_id = :queue_id
-            AND qe.patient_id = :patient_id
-            AND qe.status = 'waiting'
+              AND qe.patient_id = :patient_id
+              AND qe.status IN ('waiting', 'called')
             LIMIT 1
         ";
 
@@ -335,26 +526,12 @@ class QueueEntryRepository
             return null;
         }
 
-        return [
-            'id' => (int) $row['id'],
-            'queue_id' => (int) $row['queue_id'],
-            'patient_id' => $row['patient_id'] !== null ? (int) $row['patient_id'] : null,
-            'number' => $row['position_number'] !== null ? (int) $row['position_number'] : null,
-            'display_name' => $row['display_name'],
-            'phone' => $row['phone'],
-            'birth_date' => $row['birth_date'],
-            'source' => $row['source'],
-            'status' => $row['status'],
-            'time' => date('H:i', strtotime($row['created_at'])),
-            'created_at' => $row['created_at'],
-            'called_at' => $row['called_at'],
-            'done_at' => $row['done_at'],
-            'canceled_at' => $row['canceled_at'],
-            'no_show_at' => $row['no_show_at'],
-        ];
+        $entries = $this->attachRecentVisits([
+            $this->mapEntryRow($row),
+        ]);
+
+        return $entries[0] ?? null;
     }
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -371,18 +548,9 @@ class QueueEntryRepository
         string $source,
         int $createdByUserId
     ): array {
-        $displayName =
-            PatientDataNormalizer::normalizeName($displayName);
-
-        $phone =
-            PatientDataNormalizer::normalizePhone(
-                $phone ?? ''
-            );
-
-        $birthDate = $birthDate !== null
-            ? trim($birthDate)
-            : null;
-
+        $displayName = PatientDataNormalizer::normalizeName($displayName);
+        $phone = PatientDataNormalizer::normalizePhone($phone ?? '');
+        $birthDate = $birthDate !== null ? trim($birthDate) : null;
         $source = trim($source);
 
         if ($displayName === '') {
@@ -397,9 +565,7 @@ class QueueEntryRepository
             );
         }
 
-        if (
-            !PatientDataNormalizer::isValidPhone($phone)
-        ) {
+        if (!PatientDataNormalizer::isValidPhone($phone)) {
             throw new InvalidArgumentException(
                 'Le numéro de téléphone est invalide.'
             );
@@ -409,45 +575,43 @@ class QueueEntryRepository
             $birthDate = null;
         }
 
-        if ($source === '') {
+        if (!in_array($source, ['secretary', 'doctor', 'qr', 'link'], true)) {
             $source = 'secretary';
         }
 
-        $positionNumber =
-            $this->getNextPositionNumber($queueId);
+        $positionNumber = $this->getNextPositionNumber($queueId);
 
         $sql = "
-        INSERT INTO queue_entries (
-            queue_id,
-            clinic_id,
-            patient_id,
-            display_name,
-            phone,
-            birth_date,
-            source,
-            status,
-            position_number,
-            created_by_user_id,
-            updated_by_user_id,
-            created_at
-        ) VALUES (
-            :queue_id,
-            :clinic_id,
-            :patient_id,
-            :display_name,
-            :phone,
-            :birth_date,
-            :source,
-            'waiting',
-            :position_number,
-            :created_by_user_id,
-            :updated_by_user_id,
-            NOW()
-        )
-    ";
+            INSERT INTO queue_entries (
+                queue_id,
+                clinic_id,
+                patient_id,
+                display_name,
+                phone,
+                birth_date,
+                source,
+                status,
+                position_number,
+                created_by_user_id,
+                updated_by_user_id,
+                created_at
+            ) VALUES (
+                :queue_id,
+                :clinic_id,
+                :patient_id,
+                :display_name,
+                :phone,
+                :birth_date,
+                :source,
+                'waiting',
+                :position_number,
+                :created_by_user_id,
+                :updated_by_user_id,
+                NOW()
+            )
+        ";
 
         $stmt = $this->pdo->prepare($sql);
-
         $stmt->execute([
             ':queue_id' => $queueId,
             ':clinic_id' => $clinicId,
@@ -461,13 +625,8 @@ class QueueEntryRepository
             ':updated_by_user_id' => $createdByUserId,
         ]);
 
-        $entryId =
-            (int) $this->pdo->lastInsertId();
-
-        $createdEntry = $this->findById(
-            $entryId,
-            $clinicId
-        );
+        $entryId = (int) $this->pdo->lastInsertId();
+        $createdEntry = $this->findById($entryId, $clinicId);
 
         if ($createdEntry === null) {
             throw new RuntimeException(
@@ -477,11 +636,12 @@ class QueueEntryRepository
 
         return $createdEntry;
     }
+
     /*
-|--------------------------------------------------------------------------
-| Corriger l’identité affichée dans la liste
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | Corriger l'identité affichée dans la liste
+    |--------------------------------------------------------------------------
+    */
     public function updatePatientIdentity(
         int $entryId,
         int $clinicId,
@@ -490,17 +650,9 @@ class QueueEntryRepository
         ?string $birthDate,
         int $updatedByUserId
     ): array {
-        $displayName =
-            PatientDataNormalizer::normalizeName($displayName);
-
-        $phone =
-            PatientDataNormalizer::normalizePhone(
-                $phone ?? ''
-            );
-
-        $birthDate = $birthDate !== null
-            ? trim($birthDate)
-            : null;
+        $displayName = PatientDataNormalizer::normalizeName($displayName);
+        $phone = PatientDataNormalizer::normalizePhone($phone ?? '');
+        $birthDate = $birthDate !== null ? trim($birthDate) : null;
 
         if ($displayName === '') {
             throw new InvalidArgumentException(
@@ -514,9 +666,7 @@ class QueueEntryRepository
             );
         }
 
-        if (
-            !PatientDataNormalizer::isValidPhone($phone)
-        ) {
+        if (!PatientDataNormalizer::isValidPhone($phone)) {
             throw new InvalidArgumentException(
                 'Le numéro de téléphone est invalide.'
             );
@@ -527,19 +677,18 @@ class QueueEntryRepository
         }
 
         $sql = "
-        UPDATE queue_entries
-        SET
-            display_name = :display_name,
-            phone = :phone,
-            birth_date = :birth_date,
-            updated_by_user_id = :updated_by_user_id
-        WHERE id = :id
-          AND clinic_id = :clinic_id
-        LIMIT 1
-    ";
+            UPDATE queue_entries
+            SET
+                display_name = :display_name,
+                phone = :phone,
+                birth_date = :birth_date,
+                updated_by_user_id = :updated_by_user_id
+            WHERE id = :id
+              AND clinic_id = :clinic_id
+            LIMIT 1
+        ";
 
         $stmt = $this->pdo->prepare($sql);
-
         $stmt->execute([
             ':display_name' => $displayName,
             ':phone' => $phone,
@@ -549,10 +698,7 @@ class QueueEntryRepository
             ':clinic_id' => $clinicId,
         ]);
 
-        $updatedEntry = $this->findById(
-            $entryId,
-            $clinicId
-        );
+        $updatedEntry = $this->findById($entryId, $clinicId);
 
         if ($updatedEntry === null) {
             throw new RuntimeException(
