@@ -250,17 +250,19 @@ p {
 /* =========================================================
    DASHBOARD / LISTE DU JOUR
    ---------------------------------------------------------
-   Ce fichier gère :
-   - la structure générale de la page Liste du jour
-   - le titre + badge + boutons du haut
-   - la recherche + filtre
-   - le tableau
-   - les actions en icônes
-   - la pagination
-   ---------------------------------------------------------
-   IMPORTANT :
-   - On garde le panneau détails à gauche
-   - On donne plus de place au tableau pour écran ~1240px
+   Responsabilités de ce fichier :
+   - structure générale de la page
+   - en-tête et états de la journée
+   - barre de recherche et filtres
+   - tableau et actions patient
+   - état vide du tableau
+   - pagination
+   - modales, confirmations et notifications
+   - responsive général du dashboard
+
+   Ne contient plus :
+   - le panneau "Détails du patient"
+   - les cartes de compteurs
    ========================================================= */
 .main-content {
   padding: 1.5rem;
@@ -268,21 +270,12 @@ p {
   min-height: calc(100vh - 110px);
 }
 
-/* ---------------------------------------------------------
-   Wrapper global de la page
---------------------------------------------------------- */
 .day-list-page {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-/* ---------------------------------------------------------
-   Bloc du haut :
-   - titre
-   - badge état
-   - boutons
---------------------------------------------------------- */
 .day-list-page__top {
   display: flex;
   justify-content: space-between;
@@ -298,15 +291,15 @@ p {
 }
 .day-list-page__heading h2 {
   margin: 0;
-  font-size: clamp(2rem, 2vw, 2.7rem);
-  line-height: 1.1;
-  font-weight: 700;
   color: #1F2937;
+  font-size: clamp(2rem, 2vw, 2.7rem);
+  font-weight: 700;
+  line-height: 1.1;
 }
 .day-list-page__heading p {
   margin: 0;
-  font-size: 1rem;
   color: #6B7280;
+  font-size: 1rem;
 }
 
 .title-row {
@@ -316,9 +309,6 @@ p {
   flex-wrap: wrap;
 }
 
-/* ---------------------------------------------------------
-   Badge ouvert / fermé
---------------------------------------------------------- */
 .list-status-badge {
   display: inline-flex;
   align-items: center;
@@ -334,14 +324,15 @@ p {
   background-color: #D1FAE5;
   color: #10B981;
 }
+.list-status-badge--paused {
+  background-color: #fff4db;
+  color: #9a5b00;
+}
 .list-status-badge--closed {
   background-color: #FEE2E2;
   color: #EF4444;
 }
 
-/* ---------------------------------------------------------
-   Boutons à droite
---------------------------------------------------------- */
 .day-list-page__top-actions {
   display: flex;
   align-items: center;
@@ -349,44 +340,43 @@ p {
   flex-wrap: wrap;
 }
 
-/* Bouton violet principal */
 .btn-primary {
-  background-color: rgb(138, 43, 226);
-  color: #fff;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  padding: 0.7rem 1.3rem;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background-color: rgb(138, 43, 226);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 300ms ease-in-out;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .btn-primary img {
   width: 24px;
   height: 24px;
   object-fit: contain;
 }
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: rgba(138, 43, 226, 0.9);
   transform: translateY(-1px);
 }
 
-/* Bouton ouvrir / fermer */
 .btn-toggle-list {
-  border: none;
-  border-radius: 0.5rem;
   padding: 0.7rem 1.3rem;
+  border: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 300ms ease-in-out;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
-.btn-toggle-list:hover {
+.btn-toggle-list:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 .btn-toggle-list--close {
@@ -398,630 +388,46 @@ p {
   color: #fff;
 }
 
-/* ---------------------------------------------------------
-   LAYOUT PRINCIPAL
-   - détails gauche
-   - contenu droit
-   ---------------------------------------------------------
-   Très important :
-   On garde une colonne gauche plus compacte
-   pour laisser un maximum de largeur au tableau.
---------------------------------------------------------- */
-.day-list-layout {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.day-list-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-width: 0;
-}
-
-/* ---------------------------------------------------------
-   Barre recherche + filtre
---------------------------------------------------------- */
-.day-list-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 1rem;
-  align-items: center;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 56px;
-  padding: 0 1rem;
-  background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-.search-box img {
-  width: 20px;
-  height: 20px;
-  opacity: 0.75;
-  flex-shrink: 0;
-}
-.search-box input {
-  border: none;
-  outline: none;
-  width: 100%;
-  background: transparent;
-  font-size: 1rem;
-  color: #1F2937;
-}
-.search-box input::placeholder {
-  color: #6B7280;
-}
-
-.filter-box select {
-  width: 100%;
-  min-height: 56px;
-  padding: 0 1rem;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
-  background-color: #FFFFFF;
-  color: #1F2937;
-  font-size: 1rem;
-  outline: none;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* ---------------------------------------------------------
-   Tableau principal
---------------------------------------------------------- */
-.waiting-list {
-  background-color: #FFFFFF;
-  border: 1px solid rgba(138, 43, 226, 0.1);
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  /* Largeurs fixes pour éviter que le tableau casse */
-}
-.waiting-list table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.waiting-list .col-num {
-  width: 6%;
-}
-.waiting-list .col-patient {
-  width: 24%;
-}
-.waiting-list .col-phone {
-  width: 20%;
-}
-.waiting-list .col-time {
-  width: 10%;
-}
-.waiting-list .col-status {
-  width: 16%;
-}
-.waiting-list .col-actions {
-  width: 24%;
-}
-.waiting-list thead {
-  background-color: #F9FAFB;
-}
-.waiting-list th {
-  text-align: left;
-  padding: 1rem 0.9rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #6B7280;
-  border-bottom: 1px solid #E5E7EB;
-  white-space: nowrap;
-}
-.waiting-list td {
-  padding: 0.95rem 0.9rem;
-  font-size: 0.98rem;
-  color: #1F2937;
-  border-bottom: 1px solid #f1f1f1;
-  vertical-align: middle;
-}
-.waiting-list tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Ligne sélectionnée */
-.patient-row {
-  transition: all 300ms ease-in-out;
-}
-.patient-row:hover {
-  background-color: #faf8ff;
-}
-.patient-row.is-selected {
-  background-color: #fbf9ff;
-}
-
-/* Empêcher le nom et le téléphone de casser sur plusieurs lignes */
-.patient-name-cell,
-.patient-phone-cell {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.patient-name-cell {
-  font-weight: 600;
-}
-
-/* ---------------------------------------------------------
-   Statuts
---------------------------------------------------------- */
-.status-pill {
+.registration-status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.3rem;
-  border-radius: 0.25rem;
-  font-size: 0.7rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
 }
-.status-pill--waiting {
-  background-color: rgba(138, 43, 226, 0.1);
-  color: rgb(138, 43, 226);
-}
-.status-pill--absent {
-  background-color: #FEE2E2;
-  color: #EF4444;
-}
-.status-pill--done {
+.registration-status-badge--open {
   background-color: #D1FAE5;
   color: #10B981;
 }
-
-/* ---------------------------------------------------------
-   Actions : on passe en boutons icônes compacts
-   pour gagner de la place
---------------------------------------------------------- */
-.table-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: nowrap;
-}
-
-.btn-action-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 0.5rem;
-  border: 1px solid #E5E7EB;
-  background-color: #FFFFFF;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 300ms ease-in-out;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-.btn-action-icon:hover {
-  transform: translateY(-1px);
-}
-.btn-action-icon span {
-  line-height: 1;
-}
-.btn-action-icon--view {
-  color: #1F2937;
-  background-color: #fff;
-}
-.btn-action-icon--absent {
+.registration-status-badge--closed {
   background-color: #FEE2E2;
-  border-color: rgba(239, 68, 68, 0.15);
   color: #EF4444;
 }
-.btn-action-icon--done {
-  background-color: #D1FAE5;
-  border-color: rgba(16, 185, 129, 0.15);
-  color: #10B981;
+
+.day-list-page__top-actions .btn-primary:disabled,
+.btn-toggle-list:disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
+}
+.day-list-page__top-actions .btn-primary:disabled:hover,
+.btn-toggle-list:disabled:hover {
+  background-color: #d1d5db;
+  transform: none;
 }
 
-/* ---------------------------------------------------------
-   Bas de tableau
---------------------------------------------------------- */
-.day-list-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+.day-list-page__top-actions .btn-primary:disabled img {
+  opacity: 0.5;
 }
 
-.display-count {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.display-count span {
-  color: #6B7280;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.display-count__options {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.display-option {
-  min-width: 42px;
-  height: 40px;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
-  background-color: #FFFFFF;
-  color: #6B7280;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 300ms ease-in-out;
-}
-.display-option.is-active {
-  background-color: rgba(138, 43, 226, 0.1);
-  color: rgb(138, 43, 226);
-  border-color: rgba(138, 43, 226, 0.2);
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.pagination__item {
-  min-width: 42px;
-  height: 40px;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
-  background-color: #FFFFFF;
-  color: #6B7280;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 300ms ease-in-out;
-}
-.pagination__item.is-active {
-  background-color: rgba(138, 43, 226, 0.1);
-  color: rgb(138, 43, 226);
-  border-color: rgba(138, 43, 226, 0.2);
-}
-
-/* ---------------------------------------------------------
-   Responsive
---------------------------------------------------------- */
-/* Tablette large */
-@media (max-width: 1400px) {
-  .day-list-layout {
-    grid-template-columns: 280px minmax(0, 1fr);
-  }
-  .waiting-list th,
-  .waiting-list td {
-    font-size: 0.7rem;
-    padding: 0.85rem 0.75rem;
-  }
-  .btn-action-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.95rem;
-  }
-}
-/* Tablette */
-@media (max-width: 1180px) {
-  .day-list-layout {
-    grid-template-columns: 1fr;
-  }
-  .day-list-toolbar {
-    grid-template-columns: 1fr;
-  }
-  .day-list-page__top {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .day-list-page__top-actions {
-    width: 100%;
-  }
-  .btn-primary,
-  .btn-toggle-list {
-    width: 30%;
-    justify-content: center;
-  }
-}
-/* Mobile / petite tablette */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  .waiting-list {
-    overflow-x: auto;
-  }
-  .waiting-list table {
-    min-width: 900px;
-  }
-  .day-list-page__top-actions {
-    width: 100%;
-  }
-  .btn-primary,
-  .btn-toggle-list {
-    width: 100%;
-    justify-content: center;
-  }
-}
-.marki-modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  z-index: 9999;
-  padding: 16px;
-}
-
-.marki-modal.is-open {
-  display: grid;
-  place-items: center;
-}
-
-.marki-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.42);
-}
-
-.marki-modal__dialog {
-  position: relative;
-  z-index: 1;
-  width: min(92vw, 780px);
-  max-width: 780px;
-  max-height: calc(100vh - 32px);
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.marki-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-  flex-shrink: 0;
-}
-
-.marki-modal__header h2 {
-  margin: 0;
-  font-size: 28px;
-  line-height: 1.1;
-}
-
-.marki-modal__close {
-  border: 0;
-  background: transparent;
-  font-size: 30px;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.marki-modal__form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.marki-form__group {
-  display: grid;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.marki-form__group label {
-  font-weight: 600;
-}
-
-.marki-form__group input {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid #d9d9e3;
-  border-radius: 12px;
-  padding: 0 16px;
-  font: inherit;
-}
-
-.marki-form__message {
-  min-height: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  flex-shrink: 0;
-}
-
-.marki-form__message:empty {
-  display: none;
-}
-
-.marki-form__message.is-error {
-  color: #c62828;
-}
-
-.marki-form__message.is-success {
-  color: #1b8f5a;
-}
-
-/* ---------------------------------------------------------
-   Avertissement de téléphone familial
---------------------------------------------------------- */
-.marki-modal .marki-confirm-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid #f59e0b;
-  border-radius: 12px;
-  background-color: #fffbeb;
-  color: #92400e;
-  flex-shrink: 0;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Garantir que l'attribut hidden masque réellement le bloc
-|--------------------------------------------------------------------------
-*/
-.marki-modal .marki-confirm-box[hidden] {
-  display: none;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Icône warning sans devoir modifier le HTML
-|--------------------------------------------------------------------------
-*/
-.marki-modal .marki-confirm-box::before {
-  content: "⚠";
-  flex-shrink: 0;
-  font-size: 1.15rem;
-  line-height: 1.5;
-}
-
-.marki-modal .marki-confirm-box__text {
-  margin: 0;
-  color: inherit;
-  font-size: 0.95rem;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-/* ---------------------------------------------------------
-   Bouton principal pendant la confirmation familiale
---------------------------------------------------------- */
-.marki-modal .btn.btn-primary.is-confirmation {
-  background-color: #ea580c;
-  color: #fff;
-  border-color: #ea580c;
-}
-
-.marki-modal .btn.btn-primary.is-confirmation:hover {
-  background-color: #c2410c;
-  border-color: #c2410c;
-}
-
-/* ---------------------------------------------------------
-   Indication du champ facultatif
---------------------------------------------------------- */
-.optional-label {
-  margin-left: 0.25rem;
-  color: #6B7280;
-  font-size: 0.85rem;
-  font-weight: 400;
-}
-
-/* ---------------------------------------------------------
-   Focus visible sur les champs
---------------------------------------------------------- */
-.marki-form__group input:focus {
-  border-color: rgb(138, 43, 226);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.12);
-}
-
-/* Astérisque des champs obligatoires */
-.required-mark {
-  margin-left: 0.15rem;
-  color: #EF4444;
-  font-weight: 700;
-}
-
-.marki-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 4px;
-  padding-top: 4px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  background: #fff;
-}
-
-@media (max-width: 768px) {
-  .marki-modal {
-    padding: 12px;
-  }
-  .marki-modal__dialog {
-    width: 100%;
-    max-width: none;
-    max-height: calc(100vh - 24px);
-    padding: 18px;
-    border-radius: 16px;
-  }
-  .marki-modal__header h2 {
-    font-size: 22px;
-  }
-  .marki-form__group input {
-    min-height: 46px;
-  }
-  .marki-modal__actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .marki-modal__actions button {
-    width: 100%;
-  }
-}
-@media (max-height: 760px) {
-  .marki-modal {
-    padding: 10px;
-  }
-  .marki-modal__dialog {
-    max-height: calc(100vh - 20px);
-    padding: 16px;
-  }
-  .marki-modal__header {
-    margin-bottom: 12px;
-  }
-  .marki-modal__header h2 {
-    font-size: 22px;
-  }
-  .marki-modal__form {
-    gap: 12px;
-  }
-  .marki-form__group input {
-    min-height: 44px;
-  }
-  .marki-confirm-box {
-    padding: 14px;
-  }
-}
-/* =========================================================
-   MARKI V1 — ÉTATS DES INSCRIPTIONS ET DE LA JOURNÉE
-   ---------------------------------------------------------
-   Ces règles complètent les styles existants sans modifier
-   la charte graphique actuelle.
-   ========================================================= */
-/* ---------------------------------------------------------
-   Badge de la journée : active / pause / clôturée
---------------------------------------------------------- */
-.list-status-badge--paused {
-  background-color: #fff4db;
-  color: #9a5b00;
-}
-
-/* ---------------------------------------------------------
-   Bouton de secours : annuler la clôture
---------------------------------------------------------- */
 .queue-day-restore-button {
   width: 38px;
   min-width: 38px;
@@ -1031,11 +437,11 @@ p {
   border-radius: 50%;
   background-color: #eef8ff;
   color: #2f80ed;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: all 300ms ease-in-out;
 }
 .queue-day-restore-button span {
@@ -1064,33 +470,6 @@ p {
   display: none;
 }
 
-/* ---------------------------------------------------------
-   État des nouvelles inscriptions
---------------------------------------------------------- */
-.registration-status-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0.5rem 0.9rem;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-}
-.registration-status-badge--open {
-  background-color: #D1FAE5;
-  color: #10B981;
-}
-.registration-status-badge--closed {
-  background-color: #FEE2E2;
-  color: #EF4444;
-}
-
-/* ---------------------------------------------------------
-   Menu sensible placé près du statut de la journée
---------------------------------------------------------- */
 .queue-day-menu-wrapper {
   position: relative;
   display: inline-flex;
@@ -1104,10 +483,10 @@ p {
   border-radius: 50%;
   background-color: #FFFFFF;
   color: #1F2937;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: all 300ms ease-in-out;
 }
 .queue-day-menu-button:hover:not(:disabled) {
@@ -1133,7 +512,6 @@ p {
   background-color: #FFFFFF;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
 }
-
 .queue-day-menu[hidden] {
   display: none;
 }
@@ -1167,33 +545,68 @@ p {
   color: #EF4444;
 }
 
-/* ---------------------------------------------------------
-   Boutons désactivés
---------------------------------------------------------- */
-.day-list-page__top-actions .btn-primary:disabled,
-.btn-toggle-list:disabled {
-  background-color: #d1d5db;
-  color: #6b7280;
-  cursor: not-allowed;
-  box-shadow: none;
-  opacity: 1;
-  transform: none;
-}
-.day-list-page__top-actions .btn-primary:disabled:hover,
-.btn-toggle-list:disabled:hover {
-  background-color: #d1d5db;
-  transform: none;
+.day-list-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
 }
 
-.day-list-page__top-actions .btn-primary:disabled img {
-  opacity: 0.5;
+.day-list-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* ---------------------------------------------------------
-   Recherche + filtre + patient actuel
---------------------------------------------------------- */
 .day-list-toolbar {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) 220px auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.search-box img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.search-box input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #1F2937;
+  font-size: 1rem;
+}
+.search-box input::placeholder {
+  color: #6B7280;
+}
+
+.filter-box select {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  outline: 0;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  font-size: 1rem;
+  cursor: pointer;
 }
 
 .btn-current-patient {
@@ -1203,6 +616,7 @@ p {
   border-radius: 0.5rem;
   background-color: rgba(138, 43, 226, 0.1);
   color: rgb(138, 43, 226);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1212,18 +626,17 @@ p {
   white-space: nowrap;
   cursor: pointer;
   transition: all 300ms ease-in-out;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 .btn-current-patient:hover:not(:disabled) {
   background-color: rgba(138, 43, 226, 0.16);
   transform: translateY(-1px);
 }
 .btn-current-patient:disabled {
-  background-color: #f3f4f6;
   border-color: #e5e7eb;
+  background-color: #f3f4f6;
   color: #9ca3af;
-  cursor: not-allowed;
   box-shadow: none;
+  cursor: not-allowed;
   transform: none;
 }
 
@@ -1232,110 +645,266 @@ p {
   line-height: 1;
 }
 
-/* ---------------------------------------------------------
-   Tableau à défilement interne avec en-tête fixe
---------------------------------------------------------- */
 .waiting-list {
   position: relative;
-  max-height: calc(100vh - 390px);
   min-height: 320px;
+  max-height: calc(100vh - 390px);
   overflow: auto;
+  border: 1px solid rgba(138, 43, 226, 0.1);
+  border-radius: 1rem;
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
-
-.waiting-list th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.waiting-list table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.waiting-list .col-num {
+  width: 6%;
+}
+.waiting-list .col-patient {
+  width: 24%;
+}
+.waiting-list .col-phone {
+  width: 20%;
+}
+.waiting-list .col-time {
+  width: 10%;
+}
+.waiting-list .col-status {
+  width: 16%;
+}
+.waiting-list .col-actions {
+  width: 24%;
+}
+.waiting-list thead {
   background-color: #F9FAFB;
 }
+.waiting-list th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  padding: 1rem 0.9rem;
+  border-bottom: 1px solid #E5E7EB;
+  background-color: #F9FAFB;
+  color: #6B7280;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.waiting-list td {
+  padding: 0.95rem 0.9rem;
+  border-bottom: 1px solid #f1f1f1;
+  color: #1F2937;
+  vertical-align: middle;
+  font-size: 0.98rem;
+}
+.waiting-list tbody tr:last-child td {
+  border-bottom: 0;
+}
 
-/* ---------------------------------------------------------
-   Patient actuel FIFO et patient consulté
---------------------------------------------------------- */
+/* État vide compatible avec le HTML actuel du tableau. */
+.waiting-list .table-empty-state {
+  height: 280px;
+  padding: 2rem;
+  color: #6B7280;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Icône SVG intégrée : aucun fichier supplémentaire nécessaire. */
+.waiting-list .table-empty-state::before {
+  content: "";
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background-color: rgba(138, 43, 226, 0.1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64' fill='none'%3E%3Ccircle cx='23' cy='21' r='7' stroke='%237C3AED' stroke-width='3'/%3E%3Cpath d='M11 43C11 35.82 16.82 30 24 30C29.21 30 33.7 33.06 35.78 37.48' stroke='%237C3AED' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='36' y='16' width='18' height='30' rx='4' fill='white' stroke='%237C3AED' stroke-width='3'/%3E%3Cpath d='M42 25H48M42 32H48M42 39H46' stroke='%23B88AF4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 58px 58px;
+  display: block;
+}
+
+.patient-row {
+  transition: all 300ms ease-in-out;
+}
+.patient-row:hover {
+  background-color: #faf8ff;
+}
 .patient-row.is-selected {
   background-color: #f8fafc;
   box-shadow: inset 0 0 0 1px rgba(138, 43, 226, 0.18);
 }
-
 .patient-row.is-current {
   background-color: #f5f0ff;
   box-shadow: inset 4px 0 0 rgb(138, 43, 226);
 }
-
 .patient-row.is-current.is-selected {
   background-color: #eee7ff;
   box-shadow: inset 4px 0 0 rgb(138, 43, 226), inset 0 0 0 1px rgba(138, 43, 226, 0.2);
 }
 
-/* ---------------------------------------------------------
-   Statut Annulé
---------------------------------------------------------- */
+.patient-name-cell,
+.patient-phone-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-name-cell {
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.status-pill--waiting {
+  background-color: rgba(138, 43, 226, 0.1);
+  color: rgb(138, 43, 226);
+}
+.status-pill--absent {
+  background-color: #FEE2E2;
+  color: #EF4444;
+}
+.status-pill--done {
+  background-color: #D1FAE5;
+  color: #10B981;
+}
 .status-pill--canceled {
   background-color: #f1f3f5;
   color: #5f6874;
 }
 
-/* ---------------------------------------------------------
-   Nouvelles actions patient
---------------------------------------------------------- */
-.btn-action-icon--cancel {
-  background-color: #fff4f4;
-  border-color: rgba(239, 68, 68, 0.18);
-  color: #EF4444;
+.table-actions {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
 }
 
-.btn-action-icon--return {
-  background-color: #eef8ff;
-  border-color: rgba(47, 128, 237, 0.18);
-  color: #2f80ed;
-}
-
-.btn-action-icon:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-.btn-action-icon:disabled:hover {
-  transform: none;
-}
-
-/* ---------------------------------------------------------
-   Compteur Annulé
---------------------------------------------------------- */
-.status-counters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.counter.canceled {
-  background-color: #f7f8fa;
-}
-
-.counter__fallback-icon {
-  width: 34px;
-  height: 34px;
+.btn-action-icon {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background-color: #e9ecef;
-  color: #5f6874;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
-  flex-shrink: 0;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 300ms ease-in-out;
+}
+.btn-action-icon:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn-action-icon span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.btn-action-icon--view, .btn-action-icon--edit {
+  background-color: #fff;
+  color: #1F2937;
+}
+.btn-action-icon--absent, .btn-action-icon--cancel {
+  border-color: rgba(239, 68, 68, 0.18);
+  background-color: #FEE2E2;
+  color: #EF4444;
+}
+.btn-action-icon--done {
+  border-color: rgba(16, 185, 129, 0.18);
+  background-color: #D1FAE5;
+  color: #10B981;
+}
+.btn-action-icon--return {
+  border-color: rgba(47, 128, 237, 0.18);
+  background-color: #eef8ff;
+  color: #2f80ed;
+}
+.btn-action-icon:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* ---------------------------------------------------------
-   Pagination compacte
---------------------------------------------------------- */
+.day-list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.display-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.display-count span {
+  color: #6B7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 #day-list-results-count {
   color: #1F2937;
   font-size: 0.95rem;
   font-weight: 700;
 }
 
+.display-count__options,
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.display-option,
+.pagination__item {
+  min-width: 42px;
+  height: 40px;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  color: #6B7280;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 300ms ease-in-out;
+}
+.display-option.is-active,
+.pagination__item.is-active {
+  border-color: rgba(138, 43, 226, 0.2);
+  background-color: rgba(138, 43, 226, 0.1);
+  color: rgb(138, 43, 226);
+}
+.display-option:disabled,
 .pagination__item:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -1343,52 +912,248 @@ p {
 
 .pagination__ellipsis {
   min-width: 28px;
-  text-align: center;
   color: #6B7280;
+  text-align: center;
   font-weight: 700;
 }
 
-/* ---------------------------------------------------------
-   Modal métier de confirmation
---------------------------------------------------------- */
+/* =========================================================
+   MODALES ET CONFIRMATIONS
+   ========================================================= */
+.marki-modal {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  padding: 16px;
+  display: none;
+}
+.marki-modal.is-open {
+  display: grid;
+  place-items: center;
+}
+
+.marki-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.marki-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 780px);
+  max-width: 780px;
+  max-height: calc(100vh - 32px);
+  padding: 24px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+}
 .marki-modal__dialog--compact {
   width: min(92vw, 560px);
   max-width: 560px;
 }
 
-.queue-action-confirmation {
+.marki-modal__header {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.marki-modal__header h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.marki-modal__close {
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.marki-modal__form {
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.marki-form__group {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.marki-form__group label {
+  font-weight: 600;
+}
+.marki-form__group input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid #d9d9e3;
+  border-radius: 12px;
+  font: inherit;
+}
+.marki-form__group input:focus {
+  border-color: rgb(138, 43, 226);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.12);
+}
+
+.required-mark {
+  margin-left: 0.15rem;
+  color: #EF4444;
+  font-weight: 700;
+}
+
+.optional-label {
+  margin-left: 0.25rem;
+  color: #6B7280;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.marki-form__message {
+  min-height: 0;
+  color: #6B7280;
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.marki-form__message:empty {
+  display: none;
+}
+.marki-form__message.is-error {
+  color: #c62828;
+}
+.marki-form__message.is-success {
+  color: #1b8f5a;
+}
+
+.marki-modal .marki-confirm-box {
+  padding: 14px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  background-color: #fffbeb;
+  color: #92400e;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.marki-modal .marki-confirm-box[hidden] {
+  display: none;
+}
+.marki-modal .marki-confirm-box::before {
+  content: "⚠";
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.marki-confirm-box__text {
+  margin: 0;
+  color: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.marki-modal .btn.btn-primary.is-confirmation {
+  border-color: #ea580c;
+  background-color: #ea580c;
+  color: #fff;
+}
+.marki-modal .btn.btn-primary.is-confirmation:hover {
+  border-color: #c2410c;
+  background-color: #c2410c;
+}
+
+.marki-modal__actions {
+  margin-top: 4px;
+  padding-top: 4px;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.queue-action-confirmation {
   padding: 16px;
   border: 1px solid #f3c66b;
   border-radius: 0.5rem;
   background-color: #fffaf0;
   color: #7a4b00;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
-
-.queue-action-confirmation__icon {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: #f59e0b;
-  color: #fff;
-  font-weight: 800;
-}
-
 .queue-action-confirmation p {
   margin: 0;
   line-height: 1.55;
 }
 
+.queue-action-confirmation__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.queue-action-reason {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.queue-action-reason[hidden] {
+  display: none;
+}
+.queue-action-reason label {
+  color: #1F2937;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.queue-action-reason select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 0.9rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  outline: 0;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.queue-action-reason select:focus {
+  border-color: rgb(138, 43, 226);
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.12);
+}
+
 .btn-danger {
+  padding: 0.5rem 1.5rem;
   border: 0;
   border-radius: 0.5rem;
-  padding: 0.5rem 1.5rem;
   background-color: #EF4444;
   color: #fff;
   font-weight: 700;
@@ -1403,9 +1168,9 @@ p {
   cursor: wait;
 }
 
-/* ---------------------------------------------------------
-   Notifications professionnelles
---------------------------------------------------------- */
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
 .marki-toast-container {
   position: fixed;
   z-index: 12000;
@@ -1451,31 +1216,81 @@ p {
   color: rgb(138, 43, 226);
 }
 
-/* ---------------------------------------------------------
-   Responsive des nouveaux éléments
---------------------------------------------------------- */
+@media (max-width: 1400px) {
+  .day-list-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .waiting-list th,
+  .waiting-list td {
+    padding: 0.85rem 0.75rem;
+    font-size: 0.78rem;
+  }
+}
 @media (max-width: 1180px) {
+  .day-list-layout,
   .day-list-toolbar {
     grid-template-columns: 1fr;
   }
-  .status-counters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .day-list-page__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .day-list-page__top-actions {
+    width: 100%;
+  }
+  .btn-primary,
+  .btn-toggle-list {
+    width: 30%;
   }
   .registration-status-badge {
     min-height: 46px;
   }
 }
 @media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+  .waiting-list {
+    overflow-x: auto;
+  }
+  .waiting-list table {
+    min-width: 900px;
+  }
+  .day-list-page__top-actions,
   .btn-current-patient,
   .registration-status-badge {
     width: 100%;
   }
-  .status-counters {
-    grid-template-columns: 1fr;
+  .btn-primary,
+  .btn-toggle-list {
+    width: 100%;
   }
   .queue-day-menu {
-    left: auto;
     right: 0;
+    left: auto;
+  }
+  .marki-modal {
+    padding: 12px;
+  }
+  .marki-modal__dialog {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .marki-modal__header h2 {
+    font-size: 22px;
+  }
+  .marki-form__group input {
+    min-height: 46px;
+  }
+  .marki-modal__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .marki-modal__actions button {
+    width: 100%;
   }
   .marki-toast-container {
     top: 12px;
@@ -1484,27 +1299,96 @@ p {
     width: auto;
   }
 }
+@media (max-height: 760px) {
+  .marki-modal {
+    padding: 10px;
+  }
+  .marki-modal__dialog {
+    max-height: calc(100vh - 20px);
+    padding: 16px;
+  }
+  .marki-modal__header {
+    margin-bottom: 12px;
+  }
+  .marki-modal__header h2 {
+    font-size: 22px;
+  }
+  .marki-modal__form {
+    gap: 12px;
+  }
+  .marki-form__group input {
+    min-height: 44px;
+  }
+  .marki-confirm-box {
+    padding: 14px;
+  }
+}
 /* =========================================================
-   DÉTAILS DU PATIENT — ÉTAT VIDE ET DONNÉES RÉELLES
+   DASHBOARD — DÉTAILS DU PATIENT
+   ---------------------------------------------------------
+   Responsabilités de ce fichier :
+   - panneau latéral gauche
+   - informations rapides du patient
+   - état vide lorsqu’aucun patient n’est sélectionné
+   - notes du cabinet
+   - dernières visites
+   - bouton "Voir la fiche complète"
    ========================================================= */
+.patient-details {
+  width: 100%;
+  min-width: 0;
+}
+
+.panel {
+  min-height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(138, 43, 226, 0.1);
+  border-radius: 1rem;
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+.panel__header {
+  padding: 1.2rem 1.25rem;
+  border-bottom: 1px solid rgba(138, 43, 226, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.panel__header img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.panel__header h2 {
+  margin: 0;
+  color: #1F2937;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.panel__content {
+  padding: 1.2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .patient-details-empty {
   min-height: 470px;
   padding: 2rem 1.25rem;
+  color: #6B7280;
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.7rem;
-  text-align: center;
-  color: #6B7280;
 }
-
-.patient-details-empty[hidden],
-.patient-details-content[hidden],
-.queue-action-reason[hidden] {
+.patient-details-empty[hidden] {
   display: none;
 }
-
 .patient-details-empty img {
   width: 68px;
   height: 68px;
@@ -1512,13 +1396,11 @@ p {
   object-fit: contain;
   opacity: 0.85;
 }
-
 .patient-details-empty strong {
   color: #1F2937;
   font-size: 1.05rem;
   font-weight: 700;
 }
-
 .patient-details-empty span {
   max-width: 230px;
   font-size: 0.88rem;
@@ -1528,6 +1410,93 @@ p {
 .patient-details-content {
   display: flex;
   flex-direction: column;
+}
+.patient-details-content[hidden] {
+  display: none;
+}
+
+.patient-details-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.patient-details-card__identity {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.patient-details-card__identity h3 {
+  margin: 0 0 0.35rem;
+  color: #1F2937;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.patient-details-card__identity p {
+  margin: 0;
+  color: #6B7280;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.patient-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.patient-detail-item .label {
+  color: #6B7280;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.patient-detail-item .value {
+  color: #1F2937;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.patient-detail-item--notes,
+.patient-detail-item--history {
+  padding-top: 0.25rem;
+  border-top: 1px solid #f4f4f4;
+}
+
+.visit-history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.visit-history li {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #f1f1f1;
+  border-radius: 0.5rem;
+  background-color: #F9FAFB;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.visit-history li span {
+  color: #1F2937;
+  font-size: 0.92rem;
+}
+
+.history-status {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.history-status--done {
+  color: #10B981;
+}
+.history-status--in_progress {
+  color: rgb(138, 43, 226);
+}
+.history-status--canceled, .history-status--absent {
+  color: #EF4444;
 }
 
 .btn-patient-full-record {
@@ -1554,208 +1523,13 @@ p {
   transform: translateY(-1px);
 }
 .btn-patient-full-record:disabled {
-  background-color: #f3f4f6;
   border-color: #e5e7eb;
+  background-color: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
   transform: none;
 }
 
-.history-status--done {
-  color: #10B981;
-}
-
-.history-status--in_progress {
-  color: rgb(138, 43, 226);
-}
-
-.history-status--canceled {
-  color: #EF4444;
-}
-
-/* ---------------------------------------------------------
-   Sélection de la raison d’annulation individuelle
---------------------------------------------------------- */
-.queue-action-reason {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-}
-
-.queue-action-reason label {
-  color: #1F2937;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.queue-action-reason select {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 0.9rem;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.5rem;
-  background-color: #FFFFFF;
-  color: #1F2937;
-  font: inherit;
-  font-size: 0.92rem;
-  outline: none;
-  cursor: pointer;
-}
-
-.queue-action-reason select:focus {
-  border-color: rgb(138, 43, 226);
-  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.12);
-}
-
-/* =========================================================
-   DÉTAILS DU PATIENT
-   ---------------------------------------------------------
-   Ce fichier gère uniquement le panneau de détails
-   placé à gauche dans la page "Liste du jour".
-   ========================================================= */
-.patient-details {
-  width: 100%;
-  min-width: 0;
-}
-
-/* Carte principale */
-.panel {
-  background-color: #FFFFFF;
-  border-radius: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(138, 43, 226, 0.1);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-.panel__header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.2rem 1.25rem;
-  border-bottom: 1px solid rgba(138, 43, 226, 0.08);
-}
-.panel__header img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.panel__header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #1F2937;
-}
-.panel__content {
-  padding: 1.2rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ---------------------------------------------------------
-   Carte interne des infos patient
---------------------------------------------------------- */
-.patient-details-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.patient-details-card__identity {
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-.patient-details-card__identity h3 {
-  margin: 0 0 0.35rem 0;
-  font-size: 1.4rem;
-  line-height: 1.2;
-  font-weight: 700;
-  color: #1F2937;
-}
-.patient-details-card__identity p {
-  margin: 0;
-  color: #6B7280;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-/* ---------------------------------------------------------
-   Lignes d’info :
-   - date de naissance
-   - source inscription
-   - statut
---------------------------------------------------------- */
-.patient-detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-.patient-detail-item .label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #6B7280;
-}
-.patient-detail-item .value {
-  font-size: 1rem;
-  line-height: 1.45;
-  color: #1F2937;
-}
-
-/* Notes cabinet */
-.patient-detail-item--notes {
-  padding-top: 0.25rem;
-  border-top: 1px solid #f4f4f4;
-}
-
-/* Historique */
-.patient-detail-item--history {
-  padding-top: 0.25rem;
-  border-top: 1px solid #f4f4f4;
-}
-
-.visit-history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-.visit-history li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 0.85rem;
-  background-color: #F9FAFB;
-  border-radius: 0.5rem;
-  border: 1px solid #f1f1f1;
-}
-.visit-history li span {
-  font-size: 0.92rem;
-  color: #1F2937;
-}
-
-/* Statuts dans l'historique */
-.history-status {
-  font-size: 0.88rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.history-status--done {
-  color: #10B981;
-}
-.history-status--absent {
-  color: #EF4444;
-}
-
-/* ---------------------------------------------------------
-   Responsive :
-   quand le layout passe en colonne, ce panneau reste propre
---------------------------------------------------------- */
 @media (max-width: 1180px) {
   .panel__content {
     padding: 1rem;
@@ -1763,67 +1537,106 @@ p {
   .patient-details-card__identity h3 {
     font-size: 1.25rem;
   }
+  .patient-details-empty {
+    min-height: 320px;
+  }
 }
-/* components/status-counters.scss */
+/* =========================================================
+   DASHBOARD — COMPTEURS DE STATUT
+   ---------------------------------------------------------
+   Responsabilités de ce fichier :
+   - grille des quatre compteurs
+   - apparence des cartes
+   - icônes
+   - couleurs des statuts
+   - responsive des compteurs
+   ========================================================= */
 .status-counters {
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
 }
 
 .counter {
-  background-color: #FFFFFF;
-  border-radius: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 86px;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  box-sizing: border-box;
   border: 1px solid rgba(138, 43, 226, 0.1);
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  padding: 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
-.counter img {
-  width: 40px;
-  height: 40px;
-  border-radius: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
+.counter > img,
+.counter > .counter__fallback-icon {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  object-fit: contain;
 }
 .counter__info {
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
 }
 .counter__info span {
-  font-size: 0.875rem;
   color: #6B7280;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .counter__info strong {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-.counter.waiting i {
-  background-color: rgba(138, 43, 226, 0.1);
-  color: rgb(138, 43, 226);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
 }
 .counter.waiting strong {
   color: rgb(138, 43, 226);
 }
-.counter.absent i {
-  background-color: #FEE2E2;
-  color: #EF4444;
-}
 .counter.absent strong {
   color: #EF4444;
-}
-.counter.done i {
-  background-color: #D1FAE5;
-  color: #10B981;
 }
 .counter.done strong {
   color: #10B981;
 }
+.counter.canceled {
+  background-color: #f7f8fa;
+}
+.counter.canceled strong {
+  color: #5f6874;
+}
 
+.counter__fallback-icon {
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #5f6874;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 650px) {
+  .status-counters {
+    grid-template-columns: 1fr;
+  }
+}
 .patients-page {
   background-color: #FFFFFF;
   padding: 1rem;

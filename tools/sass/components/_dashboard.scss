@@ -1,17 +1,19 @@
 /* =========================================================
    DASHBOARD / LISTE DU JOUR
    ---------------------------------------------------------
-   Ce fichier gère :
-   - la structure générale de la page Liste du jour
-   - le titre + badge + boutons du haut
-   - la recherche + filtre
-   - le tableau
-   - les actions en icônes
-   - la pagination
-   ---------------------------------------------------------
-   IMPORTANT :
-   - On garde le panneau détails à gauche
-   - On donne plus de place au tableau pour écran ~1240px
+   Responsabilités de ce fichier :
+   - structure générale de la page
+   - en-tête et états de la journée
+   - barre de recherche et filtres
+   - tableau et actions patient
+   - état vide du tableau
+   - pagination
+   - modales, confirmations et notifications
+   - responsive général du dashboard
+
+   Ne contient plus :
+   - le panneau "Détails du patient"
+   - les cartes de compteurs
    ========================================================= */
 
 .main-content {
@@ -20,21 +22,12 @@
   min-height: calc(100vh - 110px);
 }
 
-/* ---------------------------------------------------------
-   Wrapper global de la page
---------------------------------------------------------- */
 .day-list-page {
   display: flex;
   flex-direction: column;
   gap: $spacing-lg;
 }
 
-/* ---------------------------------------------------------
-   Bloc du haut :
-   - titre
-   - badge état
-   - boutons
---------------------------------------------------------- */
 .day-list-page__top {
   display: flex;
   justify-content: space-between;
@@ -50,16 +43,16 @@
 
   h2 {
     margin: 0;
-    font-size: clamp(2rem, 2vw, 2.7rem);
-    line-height: 1.1;
-    font-weight: 700;
     color: $text-primary;
+    font-size: clamp(2rem, 2vw, 2.7rem);
+    font-weight: 700;
+    line-height: 1.1;
   }
 
   p {
     margin: 0;
-    font-size: 1rem;
     color: $text-secondary;
+    font-size: 1rem;
   }
 }
 
@@ -70,9 +63,6 @@
   flex-wrap: wrap;
 }
 
-/* ---------------------------------------------------------
-   Badge ouvert / fermé
---------------------------------------------------------- */
 .list-status-badge {
   display: inline-flex;
   align-items: center;
@@ -89,15 +79,17 @@
     color: $done;
   }
 
+  &--paused {
+    background-color: #fff4db;
+    color: #9a5b00;
+  }
+
   &--closed {
     background-color: $absent-light;
     color: $absent;
   }
 }
 
-/* ---------------------------------------------------------
-   Boutons à droite
---------------------------------------------------------- */
 .day-list-page__top-actions {
   display: flex;
   align-items: center;
@@ -105,22 +97,21 @@
   flex-wrap: wrap;
 }
 
-/* Bouton violet principal */
 .btn-primary {
-  background-color: $primary;
-  color: #fff;
-  border: none;
-  border-radius: $radius;
-  font-size: .9rem;
-  padding: 0.7rem 1.3rem;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: $spacing-sm;
+  padding: 0.7rem 1.3rem;
+  border: 0;
+  border-radius: $radius;
+  background-color: $primary;
+  color: #fff;
+  box-shadow: $shadow;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: $transition-all;
-  box-shadow: $shadow;
-  // min-height: 54px;
 
   img {
     width: 24px;
@@ -128,25 +119,23 @@
     object-fit: contain;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: $primary-dark;
     transform: translateY(-1px);
   }
 }
 
-/* Bouton ouvrir / fermer */
 .btn-toggle-list {
-  border: none;
+  padding: 0.7rem 1.3rem;
+  border: 0;
   border-radius: $radius;
-  padding: 0.70rem 1.3rem;
-  // min-height: 54px;
+  box-shadow: $shadow;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: $transition-all;
-  box-shadow: $shadow;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: translateY(-1px);
   }
 
@@ -161,685 +150,48 @@
   }
 }
 
-/* ---------------------------------------------------------
-   LAYOUT PRINCIPAL
-   - détails gauche
-   - contenu droit
-   ---------------------------------------------------------
-   Très important :
-   On garde une colonne gauche plus compacte
-   pour laisser un maximum de largeur au tableau.
---------------------------------------------------------- */
-.day-list-layout {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: $spacing-lg;
-  align-items: start;
-}
-
-.day-list-main {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-lg;
-  min-width: 0;
-}
-
-/* ---------------------------------------------------------
-   Barre recherche + filtre
---------------------------------------------------------- */
-.day-list-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: $spacing-md;
-  align-items: center;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  min-height: 56px;
-  padding: 0 1rem;
-  background-color: $bg-primary;
-  border: 1px solid $border-color;
-  border-radius: $radius;
-  box-shadow: $shadow-subtle;
-
-  img {
-    width: 20px;
-    height: 20px;
-    opacity: 0.75;
-    flex-shrink: 0;
-  }
-
-  input {
-    border: none;
-    outline: none;
-    width: 100%;
-    background: transparent;
-    font-size: 1rem;
-    color: $text-primary;
-
-    &::placeholder {
-      color: $text-secondary;
-    }
-  }
-}
-
-.filter-box {
-  select {
-    width: 100%;
-    min-height: 56px;
-    padding: 0 1rem;
-    border: 1px solid $border-color;
-    border-radius: $radius;
-    background-color: $bg-primary;
-    color: $text-primary;
-    font-size: 1rem;
-    outline: none;
-    cursor: pointer;
-    box-shadow: $shadow-subtle;
-  }
-}
-
-/* ---------------------------------------------------------
-   Tableau principal
---------------------------------------------------------- */
-.waiting-list {
-  background-color: $bg-primary;
-  border: 1px solid $primary-light;
-  border-radius: $radius-lg;
-  overflow: hidden;
-  box-shadow: $shadow-subtle;
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-
-  /* Largeurs fixes pour éviter que le tableau casse */
-  .col-num {
-    width: 6%;
-  }
-
-  .col-patient {
-    width: 24%;
-  }
-
-  .col-phone {
-    width: 20%;
-  }
-
-  .col-time {
-    width: 10%;
-  }
-
-  .col-status {
-    width: 16%;
-  }
-
-  .col-actions {
-    width: 24%;
-  }
-
-  thead {
-    background-color: $bg-secondary;
-  }
-
-  th {
-    text-align: left;
-    padding: 1rem 0.9rem;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: $text-secondary;
-    border-bottom: 1px solid $border-color;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 0.95rem 0.9rem;
-    font-size: 0.98rem;
-    color: $text-primary;
-    border-bottom: 1px solid #f1f1f1;
-    vertical-align: middle;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
-}
-
-/* Ligne sélectionnée */
-.patient-row {
-  transition: $transition-all;
-
-  &:hover {
-    background-color: #faf8ff;
-  }
-
-  &.is-selected {
-    background-color: #fbf9ff;
-  }
-}
-
-/* Empêcher le nom et le téléphone de casser sur plusieurs lignes */
-.patient-name-cell,
-.patient-phone-cell {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.patient-name-cell {
-  font-weight: 600;
-}
-
-/* ---------------------------------------------------------
-   Statuts
---------------------------------------------------------- */
-.status-pill {
+.registration-status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.3rem;
-  border-radius: $radius-sm;
-  font-size: 0.7rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  border-radius: $radius-full;
+  font-size: 0.78rem;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
 
-  &--waiting {
-    background-color: $waiting-light;
-    color: $waiting;
-  }
-
-  &--absent {
-    background-color: $absent-light;
-    color: $absent;
-  }
-
-  &--done {
+  &--open {
     background-color: $done-light;
     color: $done;
   }
+
+  &--closed {
+    background-color: $absent-light;
+    color: $absent;
+  }
 }
 
-/* ---------------------------------------------------------
-   Actions : on passe en boutons icônes compacts
-   pour gagner de la place
---------------------------------------------------------- */
-.table-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: nowrap;
-}
-
-.btn-action-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius;
-  border: 1px solid $border-color;
-  background-color: $bg-primary;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: $transition-all;
-  box-shadow: $shadow-subtle;
-  font-size: 1.05rem;
-  font-weight: 700;
+.day-list-page__top-actions .btn-primary:disabled,
+.btn-toggle-list:disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
 
   &:hover {
-    transform: translateY(-1px);
-  }
-
-  span {
-    line-height: 1;
-  }
-
-  &--view {
-    color: $text-primary;
-    background-color: #fff;
-  }
-
-  &--absent {
-    background-color: $absent-light;
-    border-color: rgba($absent, 0.15);
-    color: $absent;
-  }
-
-  &--done {
-    background-color: $done-light;
-    border-color: rgba($done, 0.15);
-    color: $done;
+    background-color: #d1d5db;
+    transform: none;
   }
 }
 
-/* ---------------------------------------------------------
-   Bas de tableau
---------------------------------------------------------- */
-.day-list-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: $spacing-md;
-  flex-wrap: wrap;
+.day-list-page__top-actions .btn-primary:disabled img {
+  opacity: 0.5;
 }
 
-.display-count {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-
-  span {
-    color: $text-secondary;
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-}
-
-.display-count__options {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.display-option {
-  min-width: 42px;
-  height: 40px;
-  border: 1px solid $border-color;
-  border-radius: $radius;
-  background-color: $bg-primary;
-  color: $text-secondary;
-  font-weight: 600;
-  cursor: pointer;
-  transition: $transition-all;
-
-  &.is-active {
-    background-color: $primary-light;
-    color: $primary;
-    border-color: rgba($primary, 0.2);
-  }
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.pagination__item {
-  min-width: 42px;
-  height: 40px;
-  border: 1px solid $border-color;
-  border-radius: $radius;
-  background-color: $bg-primary;
-  color: $text-secondary;
-  font-weight: 600;
-  cursor: pointer;
-  transition: $transition-all;
-
-  &.is-active {
-    background-color: $primary-light;
-    color: $primary;
-    border-color: rgba($primary, 0.2);
-  }
-}
-
-/* ---------------------------------------------------------
-   Responsive
---------------------------------------------------------- */
-
-/* Tablette large */
-@media (max-width: 1400px) {
-  .day-list-layout {
-    grid-template-columns: 280px minmax(0, 1fr);
-  }
-
-  .waiting-list {
-    th,
-    td {
-      font-size: 0.70rem;
-      padding: 0.85rem 0.75rem;
-    }
-  }
-
-  .btn-action-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.95rem;
-  }
-}
-
-/* Tablette */
-@media (max-width: 1180px) {
-  .day-list-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .day-list-toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .day-list-page__top {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .day-list-page__top-actions {
-    width: 100%;
-  }
-  
-  .btn-primary,
-  .btn-toggle-list {
-    width: 30%;
-    justify-content: center;
-  }
-}
-
-/* Mobile / petite tablette */
-@media (max-width: 768px) {
-  .main-content {
-    padding: $spacing-md;
-  }
-
-  .waiting-list {
-    overflow-x: auto;
-
-    table {
-      min-width: 900px;
-    }
-  }
-  .day-list-page__top-actions {
-    width: 100%;
-  }
-  .btn-primary,
-  .btn-toggle-list {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-// css partie add patient 
-.marki-modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  z-index: 9999;
-  padding: 16px;
-}
-
-.marki-modal.is-open {
-  display: grid;
-  place-items: center;
-}
-
-.marki-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.42);
-}
-
-.marki-modal__dialog {
-  position: relative;
-  z-index: 1;
-  width: min(92vw, 780px);
-  max-width: 780px;
-  max-height: calc(100vh - 32px);
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.marki-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-  flex-shrink: 0;
-}
-
-.marki-modal__header h2 {
-  margin: 0;
-  font-size: 28px;
-  line-height: 1.1;
-}
-
-.marki-modal__close {
-  border: 0;
-  background: transparent;
-  font-size: 30px;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.marki-modal__form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.marki-form__group {
-  display: grid;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.marki-form__group label {
-  font-weight: 600;
-}
-
-.marki-form__group input {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid #d9d9e3;
-  border-radius: 12px;
-  padding: 0 16px;
-  font: inherit;
-}
-
-.marki-form__message {
-  min-height: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  flex-shrink: 0;
-}
-
-.marki-form__message:empty {
-  display: none;
-}
-
-.marki-form__message.is-error {
-  color: #c62828;
-}
-
-.marki-form__message.is-success {
-  color: #1b8f5a;
-}
-
-/* ---------------------------------------------------------
-   Avertissement de téléphone familial
---------------------------------------------------------- */
-.marki-modal .marki-confirm-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid #f59e0b;
-  border-radius: 12px;
-  background-color: #fffbeb;
-  color: #92400e;
-  flex-shrink: 0;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Garantir que l'attribut hidden masque réellement le bloc
-|--------------------------------------------------------------------------
-*/
-.marki-modal .marki-confirm-box[hidden] {
-  display: none;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Icône warning sans devoir modifier le HTML
-|--------------------------------------------------------------------------
-*/
-.marki-modal .marki-confirm-box::before {
-  content: "⚠";
-  flex-shrink: 0;
-  font-size: 1.15rem;
-  line-height: 1.5;
-}
-
-.marki-modal .marki-confirm-box__text {
-  margin: 0;
-  color: inherit;
-  font-size: 0.95rem;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-/* ---------------------------------------------------------
-   Bouton principal pendant la confirmation familiale
---------------------------------------------------------- */
-.marki-modal .btn.btn-primary.is-confirmation {
-  background-color: #ea580c;
-  color: #fff;
-  border-color: #ea580c;
-}
-
-.marki-modal .btn.btn-primary.is-confirmation:hover {
-  background-color: #c2410c;
-  border-color: #c2410c;
-}
-
-/* ---------------------------------------------------------
-   Indication du champ facultatif
---------------------------------------------------------- */
-.optional-label {
-  margin-left: 0.25rem;
-  color: $text-secondary;
-  font-size: 0.85rem;
-  font-weight: 400;
-}
-
-/* ---------------------------------------------------------
-   Focus visible sur les champs
---------------------------------------------------------- */
-.marki-form__group input:focus {
-  border-color: $primary;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba($primary, 0.12);
-}
-/* Astérisque des champs obligatoires */
-.required-mark {
-  margin-left: 0.15rem;
-  color: $absent;
-  font-weight: 700;
-}
-
-.marki-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 4px;
-  padding-top: 4px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  background: #fff;
-}
-
-@media (max-width: 768px) {
-  .marki-modal {
-    padding: 12px;
-  }
-
-  .marki-modal__dialog {
-    width: 100%;
-    max-width: none;
-    max-height: calc(100vh - 24px);
-    padding: 18px;
-    border-radius: 16px;
-  }
-
-  .marki-modal__header h2 {
-    font-size: 22px;
-  }
-
-  .marki-form__group input {
-    min-height: 46px;
-  }
-  .marki-modal__actions {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.marki-modal__actions button {
-  width: 100%;
-}
-}
-
-@media (max-height: 760px) {
-  .marki-modal {
-    padding: 10px;
-  }
-
-  .marki-modal__dialog {
-    max-height: calc(100vh - 20px);
-    padding: 16px;
-  }
-
-  .marki-modal__header {
-    margin-bottom: 12px;
-  }
-
-  .marki-modal__header h2 {
-    font-size: 22px;
-  }
-
-  .marki-modal__form {
-    gap: 12px;
-  }
-
-  .marki-form__group input {
-    min-height: 44px;
-  }
-
-  .marki-confirm-box {
-    padding: 14px;
-  }
-}
-/* =========================================================
-   MARKI V1 — ÉTATS DES INSCRIPTIONS ET DE LA JOURNÉE
-   ---------------------------------------------------------
-   Ces règles complètent les styles existants sans modifier
-   la charte graphique actuelle.
-   ========================================================= */
-
-/* ---------------------------------------------------------
-   Badge de la journée : active / pause / clôturée
---------------------------------------------------------- */
-.list-status-badge--paused {
-  background-color: #fff4db;
-  color: #9a5b00;
-}
-
-/* ---------------------------------------------------------
-   Bouton de secours : annuler la clôture
---------------------------------------------------------- */
 .queue-day-restore-button {
   width: 38px;
   min-width: 38px;
@@ -849,11 +201,11 @@
   border-radius: 50%;
   background-color: #eef8ff;
   color: #2f80ed;
+  box-shadow: $shadow-subtle;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: $shadow-subtle;
   transition: $transition-all;
 
   span {
@@ -887,35 +239,6 @@
   }
 }
 
-/* ---------------------------------------------------------
-   État des nouvelles inscriptions
---------------------------------------------------------- */
-.registration-status-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0.5rem 0.9rem;
-  border-radius: $radius-full;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-
-  &--open {
-    background-color: $done-light;
-    color: $done;
-  }
-
-  &--closed {
-    background-color: $absent-light;
-    color: $absent;
-  }
-}
-
-/* ---------------------------------------------------------
-   Menu sensible placé près du statut de la journée
---------------------------------------------------------- */
 .queue-day-menu-wrapper {
   position: relative;
   display: inline-flex;
@@ -929,10 +252,10 @@
   border-radius: 50%;
   background-color: $bg-primary;
   color: $text-primary;
+  box-shadow: $shadow-subtle;
   font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: $shadow-subtle;
   transition: $transition-all;
 
   &:hover:not(:disabled) {
@@ -959,10 +282,10 @@
   border-radius: $radius;
   background-color: $bg-primary;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
-}
 
-.queue-day-menu[hidden] {
-  display: none;
+  &[hidden] {
+    display: none;
+  }
 }
 
 .queue-day-menu__item {
@@ -998,33 +321,71 @@
   }
 }
 
-/* ---------------------------------------------------------
-   Boutons désactivés
---------------------------------------------------------- */
-.day-list-page__top-actions .btn-primary:disabled,
-.btn-toggle-list:disabled {
-  background-color: #d1d5db;
-  color: #6b7280;
-  cursor: not-allowed;
-  box-shadow: none;
-  opacity: 1;
-  transform: none;
+.day-list-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: $spacing-lg;
+  align-items: start;
+}
 
-  &:hover {
-    background-color: #d1d5db;
-    transform: none;
+.day-list-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.day-list-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px auto;
+  gap: $spacing-md;
+  align-items: center;
+}
+
+.search-box {
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  background-color: $bg-primary;
+  box-shadow: $shadow-subtle;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+
+  input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: $text-primary;
+    font-size: 1rem;
+
+    &::placeholder {
+      color: $text-secondary;
+    }
   }
 }
 
-.day-list-page__top-actions .btn-primary:disabled img {
-  opacity: 0.5;
-}
-
-/* ---------------------------------------------------------
-   Recherche + filtre + patient actuel
---------------------------------------------------------- */
-.day-list-toolbar {
-  grid-template-columns: minmax(0, 1fr) 220px auto;
+.filter-box select {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  outline: 0;
+  background-color: $bg-primary;
+  color: $text-primary;
+  box-shadow: $shadow-subtle;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
 .btn-current-patient {
@@ -1034,6 +395,7 @@
   border-radius: $radius;
   background-color: $primary-light;
   color: $primary;
+  box-shadow: $shadow-subtle;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1043,7 +405,6 @@
   white-space: nowrap;
   cursor: pointer;
   transition: $transition-all;
-  box-shadow: $shadow-subtle;
 
   &:hover:not(:disabled) {
     background-color: rgba($primary, 0.16);
@@ -1051,11 +412,11 @@
   }
 
   &:disabled {
-    background-color: #f3f4f6;
     border-color: #e5e7eb;
+    background-color: #f3f4f6;
     color: #9ca3af;
-    cursor: not-allowed;
     box-shadow: none;
+    cursor: not-allowed;
     transform: none;
   }
 }
@@ -1065,185 +426,545 @@
   line-height: 1;
 }
 
-/* ---------------------------------------------------------
-   Tableau à défilement interne avec en-tête fixe
---------------------------------------------------------- */
 .waiting-list {
   position: relative;
-  max-height: calc(100vh - 390px);
   min-height: 320px;
+  max-height: calc(100vh - 390px);
   overflow: auto;
+  border: 1px solid $primary-light;
+  border-radius: $radius-lg;
+  background-color: $bg-primary;
+  box-shadow: $shadow-subtle;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .col-num { width: 6%; }
+  .col-patient { width: 24%; }
+  .col-phone { width: 20%; }
+  .col-time { width: 10%; }
+  .col-status { width: 16%; }
+  .col-actions { width: 24%; }
+
+  thead {
+    background-color: $bg-secondary;
+  }
+
+  th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    padding: 1rem 0.9rem;
+    border-bottom: 1px solid $border-color;
+    background-color: $bg-secondary;
+    color: $text-secondary;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.95rem 0.9rem;
+    border-bottom: 1px solid #f1f1f1;
+    color: $text-primary;
+    vertical-align: middle;
+    font-size: 0.98rem;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
 }
 
-.waiting-list th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: $bg-secondary;
+/* État vide compatible avec le HTML actuel du tableau. */
+.waiting-list .table-empty-state {
+  height: 280px;
+  padding: 2rem;
+  color: $text-secondary;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
-/* ---------------------------------------------------------
-   Patient actuel FIFO et patient consulté
---------------------------------------------------------- */
-.patient-row.is-selected {
-  background-color: #f8fafc;
-  box-shadow: inset 0 0 0 1px rgba($primary, 0.18);
+/* Icône SVG intégrée : aucun fichier supplémentaire nécessaire. */
+.waiting-list .table-empty-state::before {
+  content: "";
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background-color: $primary-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64' fill='none'%3E%3Ccircle cx='23' cy='21' r='7' stroke='%237C3AED' stroke-width='3'/%3E%3Cpath d='M11 43C11 35.82 16.82 30 24 30C29.21 30 33.7 33.06 35.78 37.48' stroke='%237C3AED' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='36' y='16' width='18' height='30' rx='4' fill='white' stroke='%237C3AED' stroke-width='3'/%3E%3Cpath d='M42 25H48M42 32H48M42 39H46' stroke='%23B88AF4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 58px 58px;
+  display: block;
 }
 
-.patient-row.is-current {
-  background-color: #f5f0ff;
-  box-shadow: inset 4px 0 0 $primary;
-}
-
-.patient-row.is-current.is-selected {
-  background-color: #eee7ff;
-  box-shadow:
-    inset 4px 0 0 $primary,
-    inset 0 0 0 1px rgba($primary, 0.2);
-}
-
-/* ---------------------------------------------------------
-   Statut Annulé
---------------------------------------------------------- */
-.status-pill--canceled {
-  background-color: #f1f3f5;
-  color: #5f6874;
-}
-
-/* ---------------------------------------------------------
-   Nouvelles actions patient
---------------------------------------------------------- */
-.btn-action-icon--cancel {
-  background-color: #fff4f4;
-  border-color: rgba($absent, 0.18);
-  color: $absent;
-}
-
-.btn-action-icon--return {
-  background-color: #eef8ff;
-  border-color: rgba(#2f80ed, 0.18);
-  color: #2f80ed;
-}
-
-.btn-action-icon:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
+.patient-row {
+  transition: $transition-all;
 
   &:hover {
+    background-color: #faf8ff;
+  }
+
+  &.is-selected {
+    background-color: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba($primary, 0.18);
+  }
+
+  &.is-current {
+    background-color: #f5f0ff;
+    box-shadow: inset 4px 0 0 $primary;
+  }
+
+  &.is-current.is-selected {
+    background-color: #eee7ff;
+    box-shadow: inset 4px 0 0 $primary, inset 0 0 0 1px rgba($primary, 0.2);
+  }
+}
+
+.patient-name-cell,
+.patient-phone-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-name-cell {
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.3rem;
+  border-radius: $radius-sm;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+
+  &--waiting {
+    background-color: $waiting-light;
+    color: $waiting;
+  }
+
+  &--absent {
+    background-color: $absent-light;
+    color: $absent;
+  }
+
+  &--done {
+    background-color: $done-light;
+    color: $done;
+  }
+
+  &--canceled {
+    background-color: #f1f3f5;
+    color: #5f6874;
+  }
+}
+
+.table-actions {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.btn-action-icon {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  background-color: $bg-primary;
+  box-shadow: $shadow-subtle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: $transition-all;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  &--view,
+  &--edit {
+    background-color: #fff;
+    color: $text-primary;
+  }
+
+  &--absent,
+  &--cancel {
+    border-color: rgba($absent, 0.18);
+    background-color: $absent-light;
+    color: $absent;
+  }
+
+  &--done {
+    border-color: rgba($done, 0.18);
+    background-color: $done-light;
+    color: $done;
+  }
+
+  &--return {
+    border-color: rgba(#2f80ed, 0.18);
+    background-color: #eef8ff;
+    color: #2f80ed;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    box-shadow: none;
+    cursor: not-allowed;
     transform: none;
   }
 }
 
-/* ---------------------------------------------------------
-   Compteur Annulé
---------------------------------------------------------- */
-.status-counters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: $spacing-md;
-}
-
-.counter.canceled {
-  background-color: #f7f8fa;
-}
-
-.counter__fallback-icon {
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
+.day-list-footer {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: #e9ecef;
-  color: #5f6874;
-  font-size: 1.2rem;
-  font-weight: 700;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
 }
 
-/* ---------------------------------------------------------
-   Pagination compacte
---------------------------------------------------------- */
+.display-count {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  span {
+    color: $text-secondary;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+}
+
 #day-list-results-count {
   color: $text-primary;
   font-size: 0.95rem;
   font-weight: 700;
 }
 
-.pagination__item:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+.display-count__options,
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.display-option,
+.pagination__item {
+  min-width: 42px;
+  height: 40px;
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  background-color: $bg-primary;
+  color: $text-secondary;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition-all;
+
+  &.is-active {
+    border-color: rgba($primary, 0.2);
+    background-color: $primary-light;
+    color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
 }
 
 .pagination__ellipsis {
   min-width: 28px;
-  text-align: center;
   color: $text-secondary;
+  text-align: center;
   font-weight: 700;
 }
 
-/* ---------------------------------------------------------
-   Modal métier de confirmation
---------------------------------------------------------- */
-.marki-modal__dialog--compact {
-  width: min(92vw, 560px);
-  max-width: 560px;
+/* =========================================================
+   MODALES ET CONFIRMATIONS
+   ========================================================= */
+.marki-modal {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  padding: 16px;
+  display: none;
+
+  &.is-open {
+    display: grid;
+    place-items: center;
+  }
+}
+
+.marki-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.marki-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 780px);
+  max-width: 780px;
+  max-height: calc(100vh - 32px);
+  padding: 24px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+
+  &--compact {
+    width: min(92vw, 560px);
+    max-width: 560px;
+  }
+}
+
+.marki-modal__header {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+  }
+}
+
+.marki-modal__close {
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.marki-modal__form {
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.marki-form__group {
+  display: grid;
+  gap: 8px;
+  flex-shrink: 0;
+
+  label {
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid #d9d9e3;
+    border-radius: 12px;
+    font: inherit;
+
+    &:focus {
+      border-color: $primary;
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+  }
+}
+
+.required-mark {
+  margin-left: 0.15rem;
+  color: $absent;
+  font-weight: 700;
+}
+
+.optional-label {
+  margin-left: 0.25rem;
+  color: $text-secondary;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.marki-form__message {
+  min-height: 0;
+  color: $text-secondary;
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+
+  &:empty { display: none; }
+  &.is-error { color: #c62828; }
+  &.is-success { color: #1b8f5a; }
+}
+
+.marki-modal .marki-confirm-box {
+  padding: 14px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  background-color: #fffbeb;
+  color: #92400e;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-shrink: 0;
+
+  &[hidden] { display: none; }
+
+  &::before {
+    content: "⚠";
+    flex-shrink: 0;
+    font-size: 1.15rem;
+    line-height: 1.5;
+  }
+}
+
+.marki-confirm-box__text {
+  margin: 0;
+  color: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.marki-modal .btn.btn-primary.is-confirmation {
+  border-color: #ea580c;
+  background-color: #ea580c;
+  color: #fff;
+
+  &:hover {
+    border-color: #c2410c;
+    background-color: #c2410c;
+  }
+}
+
+.marki-modal__actions {
+  margin-top: 4px;
+  padding-top: 4px;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .queue-action-confirmation {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
   padding: 16px;
   border: 1px solid #f3c66b;
   border-radius: $radius;
   background-color: #fffaf0;
   color: #7a4b00;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
 }
 
 .queue-action-confirmation__icon {
   width: 32px;
   height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 50%;
   background-color: #f59e0b;
   color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 800;
 }
 
-.queue-action-confirmation p {
-  margin: 0;
-  line-height: 1.55;
+.queue-action-reason {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.5rem;
+
+  &[hidden] { display: none; }
+
+  label {
+    color: $text-primary;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 0.9rem;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    outline: 0;
+    background-color: $bg-primary;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+  }
 }
 
 .btn-danger {
+  padding: $spacing-sm $spacing-lg;
   border: 0;
   border-radius: $radius;
-  padding: $spacing-sm $spacing-lg;
   background-color: $absent;
   color: #fff;
   font-weight: 700;
   cursor: pointer;
   transition: $transition-all;
 
-  &:hover:not(:disabled) {
-    filter: brightness(0.92);
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: wait;
-  }
+  &:hover:not(:disabled) { filter: brightness(0.92); }
+  &:disabled { opacity: 0.55; cursor: wait; }
 }
 
-/* ---------------------------------------------------------
-   Notifications professionnelles
---------------------------------------------------------- */
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
 .marki-toast-container {
   position: fixed;
   z-index: 12000;
@@ -1293,16 +1014,38 @@
   }
 }
 
-/* ---------------------------------------------------------
-   Responsive des nouveaux éléments
---------------------------------------------------------- */
+@media (max-width: 1400px) {
+  .day-list-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .waiting-list {
+    th,
+    td {
+      padding: 0.85rem 0.75rem;
+      font-size: 0.78rem;
+    }
+  }
+}
+
 @media (max-width: 1180px) {
+  .day-list-layout,
   .day-list-toolbar {
     grid-template-columns: 1fr;
   }
 
-  .status-counters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .day-list-page__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .day-list-page__top-actions {
+    width: 100%;
+  }
+
+  .btn-primary,
+  .btn-toggle-list {
+    width: 30%;
   }
 
   .registration-status-badge {
@@ -1311,18 +1054,61 @@
 }
 
 @media (max-width: 768px) {
+  .main-content {
+    padding: $spacing-md;
+  }
+
+  .waiting-list {
+    overflow-x: auto;
+
+    table {
+      min-width: 900px;
+    }
+  }
+
+  .day-list-page__top-actions,
   .btn-current-patient,
   .registration-status-badge {
     width: 100%;
   }
 
-  .status-counters {
-    grid-template-columns: 1fr;
+  .btn-primary,
+  .btn-toggle-list {
+    width: 100%;
   }
 
   .queue-day-menu {
-    left: auto;
     right: 0;
+    left: auto;
+  }
+
+  .marki-modal {
+    padding: 12px;
+  }
+
+  .marki-modal__dialog {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .marki-modal__header h2 {
+    font-size: 22px;
+  }
+
+  .marki-form__group input {
+    min-height: 46px;
+  }
+
+  .marki-modal__actions {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+    }
   }
 
   .marki-toast-container {
@@ -1333,129 +1119,21 @@
   }
 }
 
+@media (max-height: 760px) {
+  .marki-modal { padding: 10px; }
 
-/* =========================================================
-   DÉTAILS DU PATIENT — ÉTAT VIDE ET DONNÉES RÉELLES
-   ========================================================= */
-
-.patient-details-empty {
-  min-height: 470px;
-  padding: 2rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  text-align: center;
-  color: $text-secondary;
-}
-
-.patient-details-empty[hidden],
-.patient-details-content[hidden],
-.queue-action-reason[hidden] {
-  display: none;
-}
-
-.patient-details-empty img {
-  width: 68px;
-  height: 68px;
-  margin-bottom: 0.35rem;
-  object-fit: contain;
-  opacity: 0.85;
-}
-
-.patient-details-empty strong {
-  color: $text-primary;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.patient-details-empty span {
-  max-width: 230px;
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-.patient-details-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.btn-patient-full-record {
-  width: 100%;
-  min-height: 46px;
-  margin-top: 1rem;
-  padding: 0.7rem 1rem;
-  border: 1px solid rgba($primary, 0.25);
-  border-radius: $radius;
-  background-color: $primary-light;
-  color: $primary;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: $transition-all;
-
-  &:hover:not(:disabled) {
-    background-color: rgba($primary, 0.16);
-    transform: translateY(-1px);
+  .marki-modal__dialog {
+    max-height: calc(100vh - 20px);
+    padding: 16px;
   }
 
-  &:disabled {
-    background-color: #f3f4f6;
-    border-color: #e5e7eb;
-    color: #9ca3af;
-    cursor: not-allowed;
-    transform: none;
+  .marki-modal__header {
+    margin-bottom: 12px;
+
+    h2 { font-size: 22px; }
   }
-}
 
-.history-status--done {
-  color: $done;
-}
-
-.history-status--in_progress {
-  color: $waiting;
-}
-
-.history-status--canceled {
-  color: $absent;
-}
-
-/* ---------------------------------------------------------
-   Sélection de la raison d’annulation individuelle
---------------------------------------------------------- */
-.queue-action-reason {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-}
-
-.queue-action-reason label {
-  color: $text-primary;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.queue-action-reason select {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 0.9rem;
-  border: 1px solid $border-color;
-  border-radius: $radius;
-  background-color: $bg-primary;
-  color: $text-primary;
-  font: inherit;
-  font-size: 0.92rem;
-  outline: none;
-  cursor: pointer;
-}
-
-.queue-action-reason select:focus {
-  border-color: $primary;
-  box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  .marki-modal__form { gap: 12px; }
+  .marki-form__group input { min-height: 44px; }
+  .marki-confirm-box { padding: 14px; }
 }

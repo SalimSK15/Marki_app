@@ -1,8 +1,13 @@
 /* =========================================================
-   DÉTAILS DU PATIENT
+   DASHBOARD — DÉTAILS DU PATIENT
    ---------------------------------------------------------
-   Ce fichier gère uniquement le panneau de détails
-   placé à gauche dans la page "Liste du jour".
+   Responsabilités de ce fichier :
+   - panneau latéral gauche
+   - informations rapides du patient
+   - état vide lorsqu’aucun patient n’est sélectionné
+   - notes du cabinet
+   - dernières visites
+   - bouton "Voir la fiche complète"
    ========================================================= */
 
 .patient-details {
@@ -10,23 +15,22 @@
   min-width: 0;
 }
 
-/* Carte principale */
 .panel {
-  background-color: $bg-primary;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-subtle;
-  border: 1px solid $primary-light;
+  min-height: 100%;
   overflow: hidden;
+  border: 1px solid $primary-light;
+  border-radius: $radius-lg;
+  background-color: $bg-primary;
+  box-shadow: $shadow-subtle;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
 
   &__header {
+    padding: 1.2rem 1.25rem;
+    border-bottom: 1px solid rgba($primary, 0.08);
     display: flex;
     align-items: center;
     gap: $spacing-sm;
-    padding: 1.2rem 1.25rem;
-    border-bottom: 1px solid rgba($primary, 0.08);
 
     img {
       width: 24px;
@@ -37,9 +41,9 @@
 
     h2 {
       margin: 0;
+      color: $text-primary;
       font-size: 1.05rem;
       font-weight: 700;
-      color: $text-primary;
     }
   }
 
@@ -51,9 +55,47 @@
   }
 }
 
-/* ---------------------------------------------------------
-   Carte interne des infos patient
---------------------------------------------------------- */
+.patient-details-empty {
+  min-height: 470px;
+  padding: 2rem 1.25rem;
+  color: $text-secondary;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+
+  &[hidden] { display: none; }
+
+  img {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 0.35rem;
+    object-fit: contain;
+    opacity: 0.85;
+  }
+
+  strong {
+    color: $text-primary;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  span {
+    max-width: 230px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+}
+
+.patient-details-content {
+  display: flex;
+  flex-direction: column;
+
+  &[hidden] { display: none; }
+}
+
 .patient-details-card {
   display: flex;
   flex-direction: column;
@@ -65,11 +107,11 @@
   border-bottom: 1px solid #f0f0f0;
 
   h3 {
-    margin: 0 0 0.35rem 0;
-    font-size: 1.4rem;
-    line-height: 1.2;
-    font-weight: 700;
+    margin: 0 0 0.35rem;
     color: $text-primary;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
   }
 
   p {
@@ -80,96 +122,112 @@
   }
 }
 
-/* ---------------------------------------------------------
-   Lignes d’info :
-   - date de naissance
-   - source inscription
-   - statut
---------------------------------------------------------- */
 .patient-detail-item {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 
   .label {
+    color: $text-secondary;
     font-size: 0.9rem;
     font-weight: 700;
-    color: $text-secondary;
   }
 
   .value {
+    color: $text-primary;
     font-size: 1rem;
     line-height: 1.45;
-    color: $text-primary;
   }
 }
 
-/* Notes cabinet */
-.patient-detail-item--notes {
-  padding-top: 0.25rem;
-  border-top: 1px solid #f4f4f4;
-}
-
-/* Historique */
+.patient-detail-item--notes,
 .patient-detail-item--history {
   padding-top: 0.25rem;
   border-top: 1px solid #f4f4f4;
 }
 
 .visit-history {
-  list-style: none;
   margin: 0;
   padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
 
   li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: $spacing-sm;
     padding: 0.7rem 0.85rem;
-    background-color: $bg-secondary;
-    border-radius: $radius;
     border: 1px solid #f1f1f1;
+    border-radius: $radius;
+    background-color: $bg-secondary;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
 
     span {
-      font-size: 0.92rem;
       color: $text-primary;
+      font-size: 0.92rem;
     }
   }
 }
 
-/* Statuts dans l'historique */
 .history-status {
   font-size: 0.88rem;
   font-weight: 700;
   white-space: nowrap;
 
-  &--done {
-    color: $done;
-  }
+  &--done { color: $done; }
+  &--in_progress { color: $waiting; }
 
+  &--canceled,
   &--absent {
     color: $absent;
   }
 }
 
-/* ---------------------------------------------------------
-   Responsive :
-   quand le layout passe en colonne, ce panneau reste propre
---------------------------------------------------------- */
-@media (max-width: 1180px) {
-  .panel {
-    &__content {
-      padding: 1rem;
-    }
+.btn-patient-full-record {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba($primary, 0.25);
+  border-radius: $radius;
+  background-color: $primary-light;
+  color: $primary;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: $transition-all;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($primary, 0.16);
+    transform: translateY(-1px);
   }
 
-  .patient-details-card__identity {
-    h3 {
-      font-size: 1.25rem;
-    }
+  &:disabled {
+    border-color: #e5e7eb;
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .panel__content {
+    padding: 1rem;
+  }
+
+  .patient-details-card__identity h3 {
+    font-size: 1.25rem;
+  }
+
+  .patient-details-empty {
+    min-height: 320px;
   }
 }
