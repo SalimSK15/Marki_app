@@ -50,9 +50,9 @@ class QueueEntryRepository
             'source' => $row['source'],
             'status' => $row['status'],
             'status_before_completion' =>
-                $row['status_before_completion'],
+            $row['status_before_completion'],
             'canceled_by_completion' =>
-                (bool) $row['canceled_by_completion'],
+            (bool) $row['canceled_by_completion'],
             'patient_notes' => $row['patient_notes'] ?? null,
             'recent_visits' => [],
             'time' => date('H:i', strtotime($row['created_at'])),
@@ -707,5 +707,342 @@ class QueueEntryRepository
         }
 
         return $updatedEntry;
+    }
+    /*
+|--------------------------------------------------------------------------
+| Marquer un patient comme terminé et enregistrer sa visite
+|--------------------------------------------------------------------------
+| Cette opération est transactionnelle :
+|
+| 1. verrouiller l'inscription ;
+| 2. passer queue_entries.status à "done" ;
+| 3. créer ou terminer la visite correspondante ;
+| 4. valider les deux opérations ensemble.
+|
+| Si une erreur survient, aucune modification partielle n'est conservée.
+|--------------------------------------------------------------------------
+*/
+    public function markDoneAndCreateVisit(
+        int $entryId,
+        int $clinicId,
+        int $doctorId,
+        int $updatedByUserId
+    ): array {
+        $this->pdo->beginTransaction();
+
+        try {
+            /*
+        |--------------------------------------------------------------------------
+        | Verrouiller l'inscription pendant le traitement
+        |--------------------------------------------------------------------------
+        | Cela protège aussi contre un double clic ou deux requêtes simultanées.
+        */
+            $entrySql = "
+            SELECT
+                qe.id,
+                qe.queue_id,
+                qe.clinic_id,
+                qe.patient_id,
+                qe.status,
+                qe.called_at,
+                qe.done_at
+            FROM queue_entries qe
+            WHERE qe.id = :entry_id
+              AND qe.clinic_id = :clinic_id
+            LIMIT 1
+            FOR UPDATE
+        ";
+
+            $entryStmt = $this->pdo->prepare($entrySql);
+
+            $entryStmt->execute([
+                ':entry_id' => $entryId,
+                ':clinic_id' => $clinicId,
+            ]);
+
+            $entry = $entryStmt->fetch();
+
+            if (!$entry) {
+                throw new RuntimeException(
+                    'Entrée introuvable.'
+                );
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Seuls les patients actifs peuvent être terminés
+        |--------------------------------------------------------------------------
+        | Le statut done est également accepté afin que l'opération reste
+        | idempotente : une deuxième requête ne crée pas une deuxième visite.
+        */
+            if (
+                !in_array(
+                    $entry['status'],
+                    ['waiting', 'called', 'done'],
+                    true
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    'Ce patient ne peut pas être marqué comme terminé.'
+                );
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Heure réelle de fin
+        |--------------------------------------------------------------------------
+        | Si l'inscription était déjà terminée, on conserve son heure initiale.
+        */
+            $doneAt = $entry['done_at']
+                ?: date('Y-m-d H:i:s');
+
+            /*
+        |--------------------------------------------------------------------------
+        | Mettre à jour l'inscription
+        |--------------------------------------------------------------------------
+        */
+            if ($entry['status'] !== 'done') {
+                $updateEntrySql = "
+                UPDATE queue_entries
+                SET
+                    status = 'done',
+                    done_at = :done_at,
+                    no_show_at = NULL,
+                    canceled_at = NULL,
+                    cancellation_reason = NULL,
+                    updated_by_user_id = :updated_by_user_id
+                WHERE id = :entry_id
+                  AND clinic_id = :clinic_id
+                LIMIT 1
+            ";
+
+                $updateEntryStmt =
+                    $this->pdo->prepare($updateEntrySql);
+
+                $updateEntryStmt->execute([
+                    ':done_at' => $doneAt,
+                    ':updated_by_user_id' => $updatedByUserId,
+                    ':entry_id' => $entryId,
+                    ':clinic_id' => $clinicId,
+                ]);
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Chercher une visite déjà liée à cette inscription
+        |--------------------------------------------------------------------------
+        | queue_entry_id possède un index UNIQUE dans la base.
+        */
+            $visitSql = "
+            SELECT
+                v.id,
+                v.clinic_id,
+                v.doctor_id,
+                v.patient_id,
+                v.queue_entry_id,
+                v.appointment_id,
+                v.started_at,
+                v.ended_at,
+                v.status,
+                v.created_at,
+                v.updated_at
+            FROM visits v
+            WHERE v.queue_entry_id = :queue_entry_id
+            LIMIT 1
+            FOR UPDATE
+        ";
+
+            $visitStmt = $this->pdo->prepare($visitSql);
+
+            $visitStmt->execute([
+                ':queue_entry_id' => $entryId,
+            ]);
+
+            $visit = $visitStmt->fetch();
+
+            /*
+        |--------------------------------------------------------------------------
+        | Heure de début de consultation
+        |--------------------------------------------------------------------------
+        | Si le patient avait été appelé, called_at devient started_at.
+        | Sinon started_at reste NULL : on n'invente pas une heure de début.
+        */
+            $startedAt = $entry['called_at'] ?: null;
+
+            if ($visit) {
+                /*
+            |--------------------------------------------------------------------------
+            | Une visite existe déjà
+            |--------------------------------------------------------------------------
+            | On la termine au lieu d'en créer une seconde.
+            */
+                $updateVisitSql = "
+                UPDATE visits
+                SET
+                    clinic_id = :clinic_id,
+                    doctor_id = :doctor_id,
+                    patient_id = :patient_id,
+                    started_at = COALESCE(
+                        started_at,
+                        :started_at
+                    ),
+                    ended_at = :ended_at,
+                    status = 'done',
+                    updated_at = NOW()
+                WHERE id = :visit_id
+                LIMIT 1
+            ";
+
+                $updateVisitStmt =
+                    $this->pdo->prepare($updateVisitSql);
+
+                $updateVisitStmt->execute([
+                    ':clinic_id' => $clinicId,
+                    ':doctor_id' => $doctorId,
+                    ':patient_id' => $entry['patient_id'],
+                    ':started_at' => $startedAt,
+                    ':ended_at' => $doneAt,
+                    ':visit_id' => (int) $visit['id'],
+                ]);
+
+                $visitId = (int) $visit['id'];
+            } else {
+                /*
+            |--------------------------------------------------------------------------
+            | Créer la visite
+            |--------------------------------------------------------------------------
+            */
+                $insertVisitSql = "
+                INSERT INTO visits (
+                    clinic_id,
+                    doctor_id,
+                    patient_id,
+                    queue_entry_id,
+                    appointment_id,
+                    started_at,
+                    ended_at,
+                    status,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    :clinic_id,
+                    :doctor_id,
+                    :patient_id,
+                    :queue_entry_id,
+                    NULL,
+                    :started_at,
+                    :ended_at,
+                    'done',
+                    NOW(),
+                    NOW()
+                )
+            ";
+
+                $insertVisitStmt =
+                    $this->pdo->prepare($insertVisitSql);
+
+                $insertVisitStmt->execute([
+                    ':clinic_id' => $clinicId,
+                    ':doctor_id' => $doctorId,
+                    ':patient_id' => $entry['patient_id'],
+                    ':queue_entry_id' => $entryId,
+                    ':started_at' => $startedAt,
+                    ':ended_at' => $doneAt,
+                ]);
+
+                $visitId =
+                    (int) $this->pdo->lastInsertId();
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Relire la visite enregistrée
+        |--------------------------------------------------------------------------
+        */
+            $createdVisitSql = "
+            SELECT
+                id,
+                clinic_id,
+                doctor_id,
+                patient_id,
+                queue_entry_id,
+                appointment_id,
+                started_at,
+                ended_at,
+                status,
+                created_at,
+                updated_at
+            FROM visits
+            WHERE id = :visit_id
+            LIMIT 1
+        ";
+
+            $createdVisitStmt =
+                $this->pdo->prepare($createdVisitSql);
+
+            $createdVisitStmt->execute([
+                ':visit_id' => $visitId,
+            ]);
+
+            $createdVisit =
+                $createdVisitStmt->fetch();
+
+            if (!$createdVisit) {
+                throw new RuntimeException(
+                    'Impossible de récupérer la visite enregistrée.'
+                );
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Valider les deux modifications
+        |--------------------------------------------------------------------------
+        */
+            $this->pdo->commit();
+
+            $updatedEntry =
+                $this->findById(
+                    $entryId,
+                    $clinicId
+                );
+
+            if ($updatedEntry === null) {
+                throw new RuntimeException(
+                    'Impossible de récupérer l’inscription terminée.'
+                );
+            }
+
+            return [
+                'entry' => $updatedEntry,
+                'visit' => [
+                    'id' => (int) $createdVisit['id'],
+                    'clinic_id' => (int) $createdVisit['clinic_id'],
+                    'doctor_id' => (int) $createdVisit['doctor_id'],
+                    'patient_id' =>
+                    $createdVisit['patient_id'] !== null
+                        ? (int) $createdVisit['patient_id']
+                        : null,
+                    'queue_entry_id' =>
+                    $createdVisit['queue_entry_id'] !== null
+                        ? (int) $createdVisit['queue_entry_id']
+                        : null,
+                    'appointment_id' =>
+                    $createdVisit['appointment_id'] !== null
+                        ? (int) $createdVisit['appointment_id']
+                        : null,
+                    'started_at' => $createdVisit['started_at'],
+                    'ended_at' => $createdVisit['ended_at'],
+                    'status' => $createdVisit['status'],
+                    'created_at' => $createdVisit['created_at'],
+                    'updated_at' => $createdVisit['updated_at'],
+                ],
+            ];
+        } catch (Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 }
