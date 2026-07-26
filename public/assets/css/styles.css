@@ -661,16 +661,16 @@ p {
   table-layout: fixed;
 }
 .waiting-list .col-num {
-  width: 6%;
+  width: 14%;
 }
 .waiting-list .col-patient {
   width: 24%;
 }
 .waiting-list .col-phone {
-  width: 20%;
+  width: 14%;
 }
 .waiting-list .col-time {
-  width: 10%;
+  width: 8%;
 }
 .waiting-list .col-status {
   width: 16%;

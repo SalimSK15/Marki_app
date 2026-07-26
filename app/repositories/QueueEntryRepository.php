@@ -337,7 +337,77 @@ class QueueEntryRepository
 
         return (int) ($row['next_position'] ?? 1);
     }
+/*
+|--------------------------------------------------------------------------
+| Déterminer le N° d'arrivée d'un patient absent qui revient
+|--------------------------------------------------------------------------
+| - S'il était déjà le dernier patient actif, il garde son numéro.
+| - Si d'autres patients actifs sont passés après lui, il repart
+|   réellement à la fin de la file.
+|--------------------------------------------------------------------------
+*/
+private function getReturnPositionNumber(
+    int $queueId,
+    int $entryId,
+    ?int $currentPosition
+): int {
+    /*
+    |--------------------------------------------------------------------------
+    | Une ancienne entrée sans position reçoit un nouveau numéro
+    |--------------------------------------------------------------------------
+    */
+    if ($currentPosition === null) {
+        return $this->getNextPositionNumber($queueId);
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Vérifier s'il existe encore un patient actif après lui
+    |--------------------------------------------------------------------------
+    | Les patients terminés, annulés ou absents ne comptent pas comme
+    | des patients actuellement devant lui dans la file active.
+    |--------------------------------------------------------------------------
+    */
+    $sql = "
+        SELECT EXISTS (
+            SELECT 1
+            FROM queue_entries qe
+            WHERE qe.queue_id = :queue_id
+              AND qe.id <> :entry_id
+              AND qe.status IN ('waiting', 'called')
+              AND qe.position_number > :current_position
+        ) AS has_active_patient_after
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    $stmt->execute([
+        ':queue_id' => $queueId,
+        ':entry_id' => $entryId,
+        ':current_position' => $currentPosition,
+    ]);
+
+    $row = $stmt->fetch();
+
+    $hasActivePatientAfter =
+        (int) ($row['has_active_patient_after'] ?? 0) === 1;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Il était déjà le dernier : aucun déplacement réel
+    |--------------------------------------------------------------------------
+    */
+    if (!$hasActivePatientAfter) {
+        return $currentPosition;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | D'autres patients actifs l'ont dépassé : retour à la fin
+    |--------------------------------------------------------------------------
+    */
+    return $this->getNextPositionNumber($queueId);
+}
     /*
     |--------------------------------------------------------------------------
     | Mettre à jour le statut d'une entrée
@@ -441,13 +511,10 @@ class QueueEntryRepository
         } elseif ($newStatus === 'canceled') {
             $canceledAt = date('Y-m-d H:i:s');
         } elseif ($newStatus === 'waiting') {
-            /*
-            |----------------------------------------------------------------------
-            | Un patient absent qui revient repart à la fin de la file
-            |----------------------------------------------------------------------
-            */
-            $positionNumber = $this->getNextPositionNumber(
-                (int) $existingEntry['queue_id']
+            $positionNumber = $this->getReturnPositionNumber(
+                (int) $existingEntry['queue_id'],
+                $entryId,
+                $existingEntry['position_number']
             );
             $calledAt = null;
         }
