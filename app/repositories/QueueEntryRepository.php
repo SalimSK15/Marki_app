@@ -709,19 +709,73 @@ class QueueEntryRepository
         return $updatedEntry;
     }
     /*
-|--------------------------------------------------------------------------
-| Marquer un patient comme terminé et enregistrer sa visite
-|--------------------------------------------------------------------------
-| Cette opération est transactionnelle :
-|
-| 1. verrouiller l'inscription ;
-| 2. passer queue_entries.status à "done" ;
-| 3. créer ou terminer la visite correspondante ;
-| 4. valider les deux opérations ensemble.
-|
-| Si une erreur survient, aucune modification partielle n'est conservée.
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | Enregistrer une action dans le journal d'activité
+    |--------------------------------------------------------------------------
+    | Cette méthode utilise la même connexion PDO que la transaction en cours.
+    | L'action est donc annulée automatiquement si la visite échoue.
+    |--------------------------------------------------------------------------
+    */
+    private function createActivityLog(
+        int $clinicId,
+        int $actorUserId,
+        string $action,
+        string $entityType,
+        int $entityId,
+        array $metadata
+    ): void {
+        $sql = "
+            INSERT INTO activity_logs (
+                clinic_id,
+                actor_user_id,
+                action,
+                entity_type,
+                entity_id,
+                metadata_json,
+                created_at
+            ) VALUES (
+                :clinic_id,
+                :actor_user_id,
+                :action,
+                :entity_type,
+                :entity_id,
+                :metadata_json,
+                NOW()
+            )
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':clinic_id' => $clinicId,
+            ':actor_user_id' => $actorUserId,
+            ':action' => $action,
+            ':entity_type' => $entityType,
+            ':entity_id' => $entityId,
+            ':metadata_json' => json_encode(
+                $metadata,
+                JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+            ),
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Marquer un patient comme terminé et enregistrer sa visite
+    |--------------------------------------------------------------------------
+    | Cette opération est entièrement transactionnelle :
+    |
+    | 1. verrouiller l'inscription ;
+    | 2. passer queue_entries.status à "done" ;
+    | 3. enregistrer l'utilisateur ayant réalisé l'action ;
+    | 4. créer ou terminer la visite ;
+    | 5. enregistrer VISIT_COMPLETED dans activity_logs ;
+    | 6. valider toutes les opérations ensemble.
+    |
+    | Dans la V1, aucune heure de début n'est inventée :
+    | started_at et started_by_user_id restent NULL si aucune valeur réelle
+    | n'existait déjà.
+    |--------------------------------------------------------------------------
+    */
     public function markDoneAndCreateVisit(
         int $entryId,
         int $clinicId,
@@ -732,29 +786,28 @@ class QueueEntryRepository
 
         try {
             /*
-        |--------------------------------------------------------------------------
-        | Verrouiller l'inscription pendant le traitement
-        |--------------------------------------------------------------------------
-        | Cela protège aussi contre un double clic ou deux requêtes simultanées.
-        */
+            |----------------------------------------------------------------------
+            | Verrouiller l'inscription
+            |----------------------------------------------------------------------
+            | Le verrou empêche deux clics simultanés de créer deux visites.
+            |----------------------------------------------------------------------
+            */
             $entrySql = "
-            SELECT
-                qe.id,
-                qe.queue_id,
-                qe.clinic_id,
-                qe.patient_id,
-                qe.status,
-                qe.called_at,
-                qe.done_at
-            FROM queue_entries qe
-            WHERE qe.id = :entry_id
-              AND qe.clinic_id = :clinic_id
-            LIMIT 1
-            FOR UPDATE
-        ";
+                SELECT
+                    qe.id,
+                    qe.queue_id,
+                    qe.clinic_id,
+                    qe.patient_id,
+                    qe.status,
+                    qe.done_at
+                FROM queue_entries qe
+                WHERE qe.id = :entry_id
+                  AND qe.clinic_id = :clinic_id
+                LIMIT 1
+                FOR UPDATE
+            ";
 
             $entryStmt = $this->pdo->prepare($entrySql);
-
             $entryStmt->execute([
                 ':entry_id' => $entryId,
                 ':clinic_id' => $clinicId,
@@ -763,18 +816,9 @@ class QueueEntryRepository
             $entry = $entryStmt->fetch();
 
             if (!$entry) {
-                throw new RuntimeException(
-                    'Entrée introuvable.'
-                );
+                throw new RuntimeException('Entrée introuvable.');
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | Seuls les patients actifs peuvent être terminés
-        |--------------------------------------------------------------------------
-        | Le statut done est également accepté afin que l'opération reste
-        | idempotente : une deuxième requête ne crée pas une deuxième visite.
-        */
             if (
                 !in_array(
                     $entry['status'],
@@ -787,38 +831,31 @@ class QueueEntryRepository
                 );
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | Heure réelle de fin
-        |--------------------------------------------------------------------------
-        | Si l'inscription était déjà terminée, on conserve son heure initiale.
-        */
-            $doneAt = $entry['done_at']
-                ?: date('Y-m-d H:i:s');
+            $previousQueueStatus = (string) $entry['status'];
+            $isNewCompletion = $previousQueueStatus !== 'done';
+            $doneAt = $entry['done_at'] ?: date('Y-m-d H:i:s');
 
             /*
-        |--------------------------------------------------------------------------
-        | Mettre à jour l'inscription
-        |--------------------------------------------------------------------------
-        */
-            if ($entry['status'] !== 'done') {
+            |----------------------------------------------------------------------
+            | Mettre à jour l'inscription dans la file
+            |----------------------------------------------------------------------
+            */
+            if ($isNewCompletion) {
                 $updateEntrySql = "
-                UPDATE queue_entries
-                SET
-                    status = 'done',
-                    done_at = :done_at,
-                    no_show_at = NULL,
-                    canceled_at = NULL,
-                    cancellation_reason = NULL,
-                    updated_by_user_id = :updated_by_user_id
-                WHERE id = :entry_id
-                  AND clinic_id = :clinic_id
-                LIMIT 1
-            ";
+                    UPDATE queue_entries
+                    SET
+                        status = 'done',
+                        done_at = :done_at,
+                        no_show_at = NULL,
+                        canceled_at = NULL,
+                        cancellation_reason = NULL,
+                        updated_by_user_id = :updated_by_user_id
+                    WHERE id = :entry_id
+                      AND clinic_id = :clinic_id
+                    LIMIT 1
+                ";
 
-                $updateEntryStmt =
-                    $this->pdo->prepare($updateEntrySql);
-
+                $updateEntryStmt = $this->pdo->prepare($updateEntrySql);
                 $updateEntryStmt->execute([
                     ':done_at' => $doneAt,
                     ':updated_by_user_id' => $updatedByUserId,
@@ -828,92 +865,164 @@ class QueueEntryRepository
             }
 
             /*
-        |--------------------------------------------------------------------------
-        | Chercher une visite déjà liée à cette inscription
-        |--------------------------------------------------------------------------
-        | queue_entry_id possède un index UNIQUE dans la base.
-        */
+            |----------------------------------------------------------------------
+            | Chercher une éventuelle visite déjà liée à l'inscription
+            |----------------------------------------------------------------------
+            */
             $visitSql = "
-            SELECT
-                v.id,
-                v.clinic_id,
-                v.doctor_id,
-                v.patient_id,
-                v.queue_entry_id,
-                v.appointment_id,
-                v.started_at,
-                v.ended_at,
-                v.status,
-                v.created_at,
-                v.updated_at
-            FROM visits v
-            WHERE v.queue_entry_id = :queue_entry_id
-            LIMIT 1
-            FOR UPDATE
-        ";
+                SELECT
+                    v.id,
+                    v.status,
+                    v.created_by_user_id,
+                    v.completed_by_user_id
+                FROM visits v
+                WHERE v.queue_entry_id = :queue_entry_id
+                LIMIT 1
+                FOR UPDATE
+            ";
 
             $visitStmt = $this->pdo->prepare($visitSql);
-
             $visitStmt->execute([
                 ':queue_entry_id' => $entryId,
             ]);
 
             $visit = $visitStmt->fetch();
 
-            /*
-        |--------------------------------------------------------------------------
-        | Heure de début de consultation
-        |--------------------------------------------------------------------------
-        | Si le patient avait été appelé, called_at devient started_at.
-        | Sinon started_at reste NULL : on n'invente pas une heure de début.
-        */
-            $startedAt = $entry['called_at'] ?: null;
-
             if ($visit) {
                 /*
-            |--------------------------------------------------------------------------
-            | Une visite existe déjà
-            |--------------------------------------------------------------------------
-            | On la termine au lieu d'en créer une seconde.
-            */
+                |------------------------------------------------------------------
+                | Terminer une visite existante
+                |------------------------------------------------------------------
+                | COALESCE conserve l'auteur original si la valeur existe déjà.
+                | Un deuxième clic ne remplace donc pas l'utilisateur ayant
+                | réellement terminé la visite.
+                |------------------------------------------------------------------
+                */
                 $updateVisitSql = "
-                UPDATE visits
-                SET
-                    clinic_id = :clinic_id,
-                    doctor_id = :doctor_id,
-                    patient_id = :patient_id,
-                    started_at = COALESCE(
-                        started_at,
-                        :started_at
-                    ),
-                    ended_at = :ended_at,
-                    status = 'done',
-                    updated_at = NOW()
-                WHERE id = :visit_id
-                LIMIT 1
-            ";
+                    UPDATE visits
+                    SET
+                        clinic_id = :clinic_id,
+                        doctor_id = :doctor_id,
+                        patient_id = :patient_id,
+                        ended_at = COALESCE(ended_at, :ended_at),
+                        status = 'done',
+                        created_by_user_id = COALESCE(
+                            created_by_user_id,
+                            :created_by_user_id
+                        ),
+                        completed_by_user_id = COALESCE(
+                            completed_by_user_id,
+                            :completed_by_user_id
+                        ),
+                        updated_at = NOW()
+                    WHERE id = :visit_id
+                    LIMIT 1
+                ";
 
-                $updateVisitStmt =
-                    $this->pdo->prepare($updateVisitSql);
-
+                $updateVisitStmt = $this->pdo->prepare($updateVisitSql);
                 $updateVisitStmt->execute([
                     ':clinic_id' => $clinicId,
                     ':doctor_id' => $doctorId,
                     ':patient_id' => $entry['patient_id'],
-                    ':started_at' => $startedAt,
                     ':ended_at' => $doneAt,
+                    ':created_by_user_id' => $updatedByUserId,
+                    ':completed_by_user_id' => $updatedByUserId,
                     ':visit_id' => (int) $visit['id'],
                 ]);
 
                 $visitId = (int) $visit['id'];
             } else {
                 /*
-            |--------------------------------------------------------------------------
-            | Créer la visite
-            |--------------------------------------------------------------------------
-            */
+                |------------------------------------------------------------------
+                | Créer directement une visite terminée pour la V1
+                |------------------------------------------------------------------
+                | La même personne crée et termine la visite au même clic.
+                | started_at et started_by_user_id restent NULL.
+                |------------------------------------------------------------------
+                */
                 $insertVisitSql = "
-                INSERT INTO visits (
+                    INSERT INTO visits (
+                        clinic_id,
+                        doctor_id,
+                        patient_id,
+                        queue_entry_id,
+                        appointment_id,
+                        started_at,
+                        ended_at,
+                        status,
+                        created_by_user_id,
+                        started_by_user_id,
+                        completed_by_user_id,
+                        canceled_by_user_id,
+                        created_at,
+                        updated_at
+                    ) VALUES (
+                        :clinic_id,
+                        :doctor_id,
+                        :patient_id,
+                        :queue_entry_id,
+                        NULL,
+                        NULL,
+                        :ended_at,
+                        'done',
+                        :created_by_user_id,
+                        NULL,
+                        :completed_by_user_id,
+                        NULL,
+                        NOW(),
+                        NOW()
+                    )
+                ";
+
+                $insertVisitStmt = $this->pdo->prepare($insertVisitSql);
+                $insertVisitStmt->execute([
+                    ':clinic_id' => $clinicId,
+                    ':doctor_id' => $doctorId,
+                    ':patient_id' => $entry['patient_id'],
+                    ':queue_entry_id' => $entryId,
+                    ':ended_at' => $doneAt,
+                    ':created_by_user_id' => $updatedByUserId,
+                    ':completed_by_user_id' => $updatedByUserId,
+                ]);
+
+                $visitId = (int) $this->pdo->lastInsertId();
+            }
+
+            /*
+            |----------------------------------------------------------------------
+            | Journaliser seulement la première transition vers "done"
+            |----------------------------------------------------------------------
+            | Une répétition de la requête ne crée pas un deuxième événement.
+            |----------------------------------------------------------------------
+            */
+            if ($isNewCompletion) {
+                $this->createActivityLog(
+                    $clinicId,
+                    $updatedByUserId,
+                    'VISIT_COMPLETED',
+                    'visit',
+                    $visitId,
+                    [
+                        'queue_id' => (int) $entry['queue_id'],
+                        'queue_entry_id' => $entryId,
+                        'patient_id' => $entry['patient_id'] !== null
+                            ? (int) $entry['patient_id']
+                            : null,
+                        'doctor_id' => $doctorId,
+                        'previous_queue_status' => $previousQueueStatus,
+                        'new_queue_status' => 'done',
+                    ]
+                );
+            }
+
+            /*
+            |----------------------------------------------------------------------
+            | Relire la visite complète
+            |----------------------------------------------------------------------
+            */
+            $createdVisitSql = "
+                SELECT
+                    id,
                     clinic_id,
                     doctor_id,
                     patient_id,
@@ -922,70 +1031,23 @@ class QueueEntryRepository
                     started_at,
                     ended_at,
                     status,
+                    created_by_user_id,
+                    started_by_user_id,
+                    completed_by_user_id,
+                    canceled_by_user_id,
                     created_at,
                     updated_at
-                ) VALUES (
-                    :clinic_id,
-                    :doctor_id,
-                    :patient_id,
-                    :queue_entry_id,
-                    NULL,
-                    :started_at,
-                    :ended_at,
-                    'done',
-                    NOW(),
-                    NOW()
-                )
+                FROM visits
+                WHERE id = :visit_id
+                LIMIT 1
             ";
 
-                $insertVisitStmt =
-                    $this->pdo->prepare($insertVisitSql);
-
-                $insertVisitStmt->execute([
-                    ':clinic_id' => $clinicId,
-                    ':doctor_id' => $doctorId,
-                    ':patient_id' => $entry['patient_id'],
-                    ':queue_entry_id' => $entryId,
-                    ':started_at' => $startedAt,
-                    ':ended_at' => $doneAt,
-                ]);
-
-                $visitId =
-                    (int) $this->pdo->lastInsertId();
-            }
-
-            /*
-        |--------------------------------------------------------------------------
-        | Relire la visite enregistrée
-        |--------------------------------------------------------------------------
-        */
-            $createdVisitSql = "
-            SELECT
-                id,
-                clinic_id,
-                doctor_id,
-                patient_id,
-                queue_entry_id,
-                appointment_id,
-                started_at,
-                ended_at,
-                status,
-                created_at,
-                updated_at
-            FROM visits
-            WHERE id = :visit_id
-            LIMIT 1
-        ";
-
-            $createdVisitStmt =
-                $this->pdo->prepare($createdVisitSql);
-
+            $createdVisitStmt = $this->pdo->prepare($createdVisitSql);
             $createdVisitStmt->execute([
                 ':visit_id' => $visitId,
             ]);
 
-            $createdVisit =
-                $createdVisitStmt->fetch();
+            $createdVisit = $createdVisitStmt->fetch();
 
             if (!$createdVisit) {
                 throw new RuntimeException(
@@ -993,18 +1055,7 @@ class QueueEntryRepository
                 );
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | Valider les deux modifications
-        |--------------------------------------------------------------------------
-        */
-            $this->pdo->commit();
-
-            $updatedEntry =
-                $this->findById(
-                    $entryId,
-                    $clinicId
-                );
+            $updatedEntry = $this->findById($entryId, $clinicId);
 
             if ($updatedEntry === null) {
                 throw new RuntimeException(
@@ -1012,27 +1063,42 @@ class QueueEntryRepository
                 );
             }
 
+            $this->pdo->commit();
+
             return [
                 'entry' => $updatedEntry,
                 'visit' => [
                     'id' => (int) $createdVisit['id'],
                     'clinic_id' => (int) $createdVisit['clinic_id'],
                     'doctor_id' => (int) $createdVisit['doctor_id'],
-                    'patient_id' =>
-                    $createdVisit['patient_id'] !== null
+                    'patient_id' => $createdVisit['patient_id'] !== null
                         ? (int) $createdVisit['patient_id']
                         : null,
-                    'queue_entry_id' =>
-                    $createdVisit['queue_entry_id'] !== null
+                    'queue_entry_id' => $createdVisit['queue_entry_id'] !== null
                         ? (int) $createdVisit['queue_entry_id']
                         : null,
-                    'appointment_id' =>
-                    $createdVisit['appointment_id'] !== null
+                    'appointment_id' => $createdVisit['appointment_id'] !== null
                         ? (int) $createdVisit['appointment_id']
                         : null,
                     'started_at' => $createdVisit['started_at'],
                     'ended_at' => $createdVisit['ended_at'],
                     'status' => $createdVisit['status'],
+                    'created_by_user_id' =>
+                        $createdVisit['created_by_user_id'] !== null
+                            ? (int) $createdVisit['created_by_user_id']
+                            : null,
+                    'started_by_user_id' =>
+                        $createdVisit['started_by_user_id'] !== null
+                            ? (int) $createdVisit['started_by_user_id']
+                            : null,
+                    'completed_by_user_id' =>
+                        $createdVisit['completed_by_user_id'] !== null
+                            ? (int) $createdVisit['completed_by_user_id']
+                            : null,
+                    'canceled_by_user_id' =>
+                        $createdVisit['canceled_by_user_id'] !== null
+                            ? (int) $createdVisit['canceled_by_user_id']
+                            : null,
                     'created_at' => $createdVisit['created_at'],
                     'updated_at' => $createdVisit['updated_at'],
                 ],
