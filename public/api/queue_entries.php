@@ -19,16 +19,22 @@ error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
 
-$config = require __DIR__ . '/../../app/config.php';
+// $config = require __DIR__ . '/../../app/config.php';
+$context = require __DIR__ . '/../../app/bootstrap.php';
 
 require_once __DIR__ . '/../../app/repositories/QueueRepository.php';
 require_once __DIR__ . '/../../app/repositories/QueueEntryRepository.php';
 
 try {
-    $clinicId = (int) $config['dev_context']['clinic_id'];
-    $doctorId = (int) $config['dev_context']['doctor_id'];
-    $userId = (int) $config['dev_context']['user_id'];
-    $today = date('Y-m-d');
+    // $clinicId = (int) $config['dev_context']['clinic_id'];
+    // $doctorId = (int) $config['dev_context']['doctor_id'];
+    // $userId = (int) $config['dev_context']['user_id'];
+    // $today = date('Y-m-d');
+
+    $clinicId = $context['clinic_id'];
+    $doctorId = $context['doctor_id'];
+    $userId = $context['user_id'];
+    $today = $context['today'];
 
     $queueRepository = new QueueRepository();
     $queue = $queueRepository->getOrCreateTodayQueue(

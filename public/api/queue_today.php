@@ -37,7 +37,8 @@ header('Content-Type: application/json; charset=utf-8');
 | Charger la config et le repository
 |--------------------------------------------------------------------------
 */
-$config = require __DIR__ . '/../../app/config.php';
+// $config = require __DIR__ . '/../../app/config.php';
+$context = require __DIR__ . '/../../app/bootstrap.php';
 require_once __DIR__ . '/../../app/repositories/QueueRepository.php';
 
 try {
@@ -49,10 +50,14 @@ try {
     | on travaille avec un cabinet / médecin / user fixes.
     |--------------------------------------------------------------------------
     */
-    $clinicId = (int) $config['dev_context']['clinic_id'];
-    $doctorId = (int) $config['dev_context']['doctor_id'];
-    $userId   = (int) $config['dev_context']['user_id'];
-
+    // $clinicId = (int) $config['dev_context']['clinic_id'];
+    // $doctorId = (int) $config['dev_context']['doctor_id'];
+    // $userId   = (int) $config['dev_context']['user_id'];
+    
+    $clinicId = $context['clinic_id'];
+    $doctorId = $context['doctor_id'];
+    $userId = $context['user_id'];
+    // $today = $context['today']; 
     /*
     |--------------------------------------------------------------------------
     | Définir la date du jour

@@ -337,77 +337,84 @@ class QueueEntryRepository
 
         return (int) ($row['next_position'] ?? 1);
     }
-/*
-|--------------------------------------------------------------------------
-| Déterminer le N° d'arrivée d'un patient absent qui revient
-|--------------------------------------------------------------------------
-| - S'il était déjà le dernier patient actif, il garde son numéro.
-| - Si d'autres patients actifs sont passés après lui, il repart
-|   réellement à la fin de la file.
-|--------------------------------------------------------------------------
-*/
-private function getReturnPositionNumber(
-    int $queueId,
-    int $entryId,
-    ?int $currentPosition
-): int {
     /*
     |--------------------------------------------------------------------------
-    | Une ancienne entrée sans position reçoit un nouveau numéro
+    | Déterminer le N° d'arrivée d'un patient absent qui revient
+    |--------------------------------------------------------------------------
+    | Règles :
+    |
+    | - s'il était déjà le dernier patient actif, il conserve son numéro ;
+    | - si d'autres patients actifs se trouvent après lui, il reçoit
+    |   le prochain N° d'arrivée disponible ;
+    | - les patients terminés, annulés ou absents ne sont pas considérés
+    |   comme étant encore actifs dans la file.
     |--------------------------------------------------------------------------
     */
-    if ($currentPosition === null) {
-        return $this->getNextPositionNumber($queueId);
+    private function getReturnPositionNumber(int $queueId, int $entryId, ?int $currentPosition
+    ): int {
+        /*
+        |--------------------------------------------------------------------------
+        | Ancienne inscription sans numéro
+        |--------------------------------------------------------------------------
+        */
+        if ($currentPosition === null) {
+            return $this->getNextPositionNumber(
+                $queueId
+            );
+        }
+
+        $sql = "
+            SELECT EXISTS (
+                SELECT 1
+                FROM queue_entries qe
+                WHERE qe.queue_id = :queue_id
+                AND qe.id <> :entry_id
+                AND qe.status IN (
+                    'waiting',
+                    'called'
+                )
+                AND qe.position_number
+                    > :current_position
+            ) AS has_active_patient_after
+        ";
+
+        $stmt =
+            $this->pdo->prepare($sql);
+
+        $stmt->execute([
+            ':queue_id' => $queueId,
+            ':entry_id' => $entryId,
+            ':current_position' =>
+                $currentPosition,
+        ]);
+
+        $row = $stmt->fetch();
+
+        $hasActivePatientAfter =
+            (int) (
+                $row['has_active_patient_after']
+                ?? 0
+            ) === 1;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Aucun patient actif ne se trouve après lui
+        |--------------------------------------------------------------------------
+        */
+        if (!$hasActivePatientAfter) {
+            return $currentPosition;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Il doit réellement repartir à la fin
+        |--------------------------------------------------------------------------
+        */
+        return $this->getNextPositionNumber(
+            $queueId
+        );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Vérifier s'il existe encore un patient actif après lui
-    |--------------------------------------------------------------------------
-    | Les patients terminés, annulés ou absents ne comptent pas comme
-    | des patients actuellement devant lui dans la file active.
-    |--------------------------------------------------------------------------
-    */
-    $sql = "
-        SELECT EXISTS (
-            SELECT 1
-            FROM queue_entries qe
-            WHERE qe.queue_id = :queue_id
-              AND qe.id <> :entry_id
-              AND qe.status IN ('waiting', 'called')
-              AND qe.position_number > :current_position
-        ) AS has_active_patient_after
-    ";
-
-    $stmt = $this->pdo->prepare($sql);
-
-    $stmt->execute([
-        ':queue_id' => $queueId,
-        ':entry_id' => $entryId,
-        ':current_position' => $currentPosition,
-    ]);
-
-    $row = $stmt->fetch();
-
-    $hasActivePatientAfter =
-        (int) ($row['has_active_patient_after'] ?? 0) === 1;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Il était déjà le dernier : aucun déplacement réel
-    |--------------------------------------------------------------------------
-    */
-    if (!$hasActivePatientAfter) {
-        return $currentPosition;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | D'autres patients actifs l'ont dépassé : retour à la fin
-    |--------------------------------------------------------------------------
-    */
-    return $this->getNextPositionNumber($queueId);
-}
     /*
     |--------------------------------------------------------------------------
     | Mettre à jour le statut d'une entrée
@@ -531,7 +538,7 @@ private function getReturnPositionNumber(
                 cancellation_reason = :cancellation_reason,
                 updated_by_user_id = :updated_by_user_id
             WHERE id = :id
-              AND clinic_id = :clinic_id
+                AND clinic_id = :clinic_id
             LIMIT 1
         ";
 

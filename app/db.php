@@ -6,103 +6,317 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | Connexion PDO centralisée
 |--------------------------------------------------------------------------
-| Ce fichier :
-| - lit la configuration depuis app/config.php
-| - crée une connexion PDO vers MySQL
-| - applique les bons réglages PDO
-| - retourne toujours la même connexion si on le rappelle
+| Responsabilités :
 |
-| But :
-| éviter de réécrire la connexion partout dans le projet.
+| - créer une seule connexion PDO par requête ;
+| - charger la configuration de la base ;
+| - appliquer le fuseau horaire du cabinet à PHP ;
+| - appliquer le même fuseau à la connexion MySQL ;
+| - utiliser la session lorsque l'authentification sera disponible ;
+| - utiliser temporairement dev_context pendant le développement.
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| Obtenir la connexion PDO
+|--------------------------------------------------------------------------
+*/
 function db(): PDO
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Connexion "statique"
-    |--------------------------------------------------------------------------
-    | On garde l’objet PDO en mémoire pendant l’exécution du script.
-    | Si db() est appelée plusieurs fois, on ne recrée pas 10 connexions.
-    |--------------------------------------------------------------------------
-    */
     static $pdo = null;
 
     if ($pdo instanceof PDO) {
         return $pdo;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Charger la configuration
-    |--------------------------------------------------------------------------
-    */
     $config = require __DIR__ . '/config.php';
-    $db = $config['db'];
-    date_default_timezone_set($config['app']['timezone']);
-    /*
-    |--------------------------------------------------------------------------
-    | Construire le DSN PDO
-    |--------------------------------------------------------------------------
-    | Exemple :
-    | mysql:host=127.0.0.1;port=3307;dbname=marki_dev;charset=utf8mb4
-    |--------------------------------------------------------------------------
-    */
-    $dsn = sprintf(
-        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-        $db['host'],
-        $db['port'],
-        $db['dbname'],
-        $db['charset']
-    );
+    $dbConfig = $config['db'];
 
     /*
     |--------------------------------------------------------------------------
-    | Options PDO
+    | Fuseau de secours
     |--------------------------------------------------------------------------
-    | ATTR_ERRMODE => EXCEPTION
-    |   Pour avoir de vraies erreurs claires si quelque chose casse.
-    |
-    | ATTR_DEFAULT_FETCH_MODE => FETCH_ASSOC
-    |   Pour récupérer les résultats sous forme de tableau associatif.
-    |
-    | ATTR_EMULATE_PREPARES => false
-    |   Pour utiliser les vraies requêtes préparées MySQL.
+    | Cette valeur est utilisée uniquement lorsqu'aucun cabinet valide
+    | ne peut être retrouvé.
     |--------------------------------------------------------------------------
     */
+    $fallbackTimezone =
+        (string) ($config['app']['timezone'] ?? 'UTC');
+
+    if (!isValidTimezone($fallbackTimezone)) {
+        $fallbackTimezone = 'UTC';
+    }
+
+    date_default_timezone_set($fallbackTimezone);
+
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+        $dbConfig['host'],
+        $dbConfig['port'],
+        $dbConfig['dbname'],
+        $dbConfig['charset']
+    );
+
     $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_ERRMODE =>
+            PDO::ERRMODE_EXCEPTION,
+
+        PDO::ATTR_DEFAULT_FETCH_MODE =>
+            PDO::FETCH_ASSOC,
+
+        PDO::ATTR_EMULATE_PREPARES =>
+            false,
     ];
 
     try {
         $pdo = new PDO(
             $dsn,
-            $db['username'],
-            $db['password'],
+            $dbConfig['username'],
+            $dbConfig['password'],
             $options
         );
 
-        return $pdo;
-    } catch (PDOException $e) {
         /*
         |--------------------------------------------------------------------------
-        | En dev, on affiche l’erreur
-        | Plus tard en prod, on masquera le détail technique.
+        | Identifier le cabinet courant
+        |--------------------------------------------------------------------------
+        | La session aura priorité lorsque la connexion sera développée.
+        | Pour le moment, dev_context reste utilisé.
         |--------------------------------------------------------------------------
         */
+        $clinicId =
+            resolveRuntimeClinicId($config);
+
+        if ($clinicId !== null) {
+            configureClinicTimezone(
+                $pdo,
+                $clinicId,
+                $fallbackTimezone
+            );
+        } else {
+            applyTimezoneToRuntime(
+                $pdo,
+                $fallbackTimezone
+            );
+        }
+
+        return $pdo;
+    } catch (PDOException $exception) {
         http_response_code(500);
 
-        header('Content-Type: application/json; charset=utf-8');
+        header(
+            'Content-Type: application/json; charset=utf-8'
+        );
 
-        echo json_encode([
+        $isDebug =
+            (bool) ($config['app']['debug'] ?? false);
+
+        $response = [
             'ok' => false,
-            'message' => 'Erreur de connexion à la base de données.',
-            'error' => $e->getMessage(),
-        ], JSON_UNESCAPED_UNICODE);
+            'message' =>
+                'Erreur de connexion à la base de données.',
+        ];
+
+        if ($isDebug) {
+            $response['error'] =
+                $exception->getMessage();
+        }
+
+        echo json_encode(
+            $response,
+            JSON_UNESCAPED_UNICODE
+        );
 
         exit;
     }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Retrouver le cabinet utilisé pendant la requête
+|--------------------------------------------------------------------------
+*/
+function resolveRuntimeClinicId(array $config): ?int
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Priorité à la future session réelle
+    |--------------------------------------------------------------------------
+    */
+    if (
+        session_status() === PHP_SESSION_ACTIVE
+        && isset($_SESSION['clinic_id'])
+    ) {
+        $sessionClinicId =
+            (int) $_SESSION['clinic_id'];
+
+        if ($sessionClinicId > 0) {
+            return $sessionClinicId;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Secours temporaire pour le développement
+    |--------------------------------------------------------------------------
+    */
+    $devClinicId =
+        (int) (
+            $config['dev_context']['clinic_id']
+            ?? 0
+        );
+
+    return $devClinicId > 0
+        ? $devClinicId
+        : null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Appliquer le fuseau horaire d'un cabinet
+|--------------------------------------------------------------------------
+*/
+function configureClinicTimezone(
+    PDO $pdo,
+    int $clinicId,
+    string $fallbackTimezone = 'UTC'
+): string {
+    $sql = "
+        SELECT
+            timezone
+        FROM clinics
+        WHERE id = :clinic_id
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        ':clinic_id' => $clinicId,
+    ]);
+
+    $row = $stmt->fetch();
+
+    $timezone =
+        isset($row['timezone'])
+            ? trim((string) $row['timezone'])
+            : '';
+
+    if (!isValidTimezone($timezone)) {
+        $timezone = isValidTimezone(
+            $fallbackTimezone
+        )
+            ? $fallbackTimezone
+            : 'UTC';
+    }
+
+    return applyTimezoneToRuntime(
+        $pdo,
+        $timezone
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Appliquer le même fuseau à PHP et MySQL
+|--------------------------------------------------------------------------
+*/
+function applyTimezoneToRuntime(
+    PDO $pdo,
+    string $timezone
+): string {
+    if (!isValidTimezone($timezone)) {
+        $timezone = 'UTC';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horloge PHP
+    |--------------------------------------------------------------------------
+    */
+    date_default_timezone_set($timezone);
+
+    $timezoneObject =
+        new DateTimeZone($timezone);
+
+    $now =
+        new DateTimeImmutable(
+            'now',
+            $timezoneObject
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Calculer le décalage actuel pour MySQL
+    |--------------------------------------------------------------------------
+    | Exemple :
+    |
+    | Africa/Algiers   → +01:00
+    | America/Toronto  → -04:00 ou -05:00 selon la saison
+    |--------------------------------------------------------------------------
+    */
+    $offsetSeconds =
+        $timezoneObject->getOffset($now);
+
+    $sign =
+        $offsetSeconds < 0
+            ? '-'
+            : '+';
+
+    $absoluteOffset =
+        abs($offsetSeconds);
+
+    $hours =
+        intdiv($absoluteOffset, 3600);
+
+    $minutes =
+        intdiv(
+            $absoluteOffset % 3600,
+            60
+        );
+
+    $mysqlOffset = sprintf(
+        '%s%02d:%02d',
+        $sign,
+        $hours,
+        $minutes
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horloge de la connexion MySQL
+    |--------------------------------------------------------------------------
+    | NOW() et CURRENT_TIMESTAMP utiliseront désormais le fuseau du cabinet.
+    |--------------------------------------------------------------------------
+    */
+    $pdo->exec(
+        'SET time_zone = '
+        . $pdo->quote($mysqlOffset)
+    );
+
+    return $timezone;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Vérifier un identifiant IANA
+|--------------------------------------------------------------------------
+| Exemples valides :
+|
+| Africa/Algiers
+| America/Toronto
+|--------------------------------------------------------------------------
+*/
+function isValidTimezone(string $timezone): bool
+{
+    if ($timezone === '') {
+        return false;
+    }
+
+    return in_array(
+        $timezone,
+        timezone_identifiers_list(),
+        true
+    );
 }

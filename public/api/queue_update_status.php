@@ -15,7 +15,8 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 */
 
-$config = require __DIR__ . '/../../app/config.php';
+// $config = require __DIR__ . '/../../app/config.php';
+$context = require __DIR__ . '/../../app/bootstrap.php';
 
 $debug = (bool) ($config['app']['debug'] ?? false);
 $timezone = (string) ($config['app']['timezone'] ?? 'UTC');
@@ -130,10 +131,14 @@ try {
     | Elles seront remplacées par le futur module de connexion/permissions.
     |----------------------------------------------------------------------
     */
-    $clinicId = (int) $config['dev_context']['clinic_id'];
-    $doctorId = (int) $config['dev_context']['doctor_id'];
-    $userId = resolveCurrentUserId($config, $clinicId);
-    $today = date('Y-m-d');
+    // $clinicId = (int) $config['dev_context']['clinic_id'];
+    // $doctorId = (int) $config['dev_context']['doctor_id'];
+    // $userId = resolveCurrentUserId($config, $clinicId);
+    // $today = date('Y-m-d');
+    $clinicId = $context['clinic_id'];
+    $doctorId = $context['doctor_id'];
+    $userId = $context['user_id'];
+    $today = $context['today'];
 
     /*
     |----------------------------------------------------------------------
