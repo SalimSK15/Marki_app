@@ -34,6 +34,10 @@ class QueueEntryRepository
     */
     private function mapEntryRow(array $row, ?int $fallbackNumber = null): array
     {
+        $arrivalAt =
+        !empty($row['last_rejoined_at'])
+        ? (string) $row['last_rejoined_at']
+        : (string) $row['created_at'];
         return [
             'id' => (int) $row['id'],
             'queue_id' => (int) $row['queue_id'],
@@ -45,7 +49,11 @@ class QueueEntryRepository
                 ? (int) $row['position_number']
                 : $fallbackNumber,
             'display_name' => $row['display_name'],
-            'phone' => $row['phone'],
+            'phone' => PatientDataNormalizer::formatPhoneForDisplay(
+                    $row['phone'] !== null
+                        ? (string) $row['phone']
+                        : null
+                ),
             'birth_date' => $row['birth_date'],
             'source' => $row['source'],
             'status' => $row['status'],
@@ -55,7 +63,7 @@ class QueueEntryRepository
             (bool) $row['canceled_by_completion'],
             'patient_notes' => $row['patient_notes'] ?? null,
             'recent_visits' => [],
-            'time' => date('H:i', strtotime($row['created_at'])),
+            'time' => date('H:i',strtotime($arrivalAt)),'arrival_at' => $arrivalAt,
             'position_number' => $row['position_number'] !== null
                 ? (int) $row['position_number']
                 : null,
@@ -65,6 +73,7 @@ class QueueEntryRepository
             'canceled_at' => $row['canceled_at'],
             'cancellation_reason' => $row['cancellation_reason'],
             'no_show_at' => $row['no_show_at'],
+            'last_rejoined_at' => $row['last_rejoined_at'],
             'created_by_user_id' => $row['created_by_user_id'] !== null
                 ? (int) $row['created_by_user_id']
                 : null,
@@ -100,6 +109,7 @@ class QueueEntryRepository
             qe.canceled_at,
             qe.cancellation_reason,
             qe.no_show_at,
+            qe.last_rejoined_at,
             qe.created_by_user_id,
             qe.updated_by_user_id,
             p.notes_non_medical AS patient_notes
@@ -506,10 +516,13 @@ class QueueEntryRepository
         }
 
         $positionNumber = $existingEntry['position_number'];
+
         $calledAt = $existingEntry['called_at'];
         $doneAt = null;
-        $noShowAt = null;
+        $noShowAt = $existingEntry['no_show_at'];
         $canceledAt = null;
+
+        $lastRejoinedAt = $existingEntry['last_rejoined_at'];
 
         if ($newStatus === 'done') {
             $doneAt = date('Y-m-d H:i:s');
@@ -518,12 +531,23 @@ class QueueEntryRepository
         } elseif ($newStatus === 'canceled') {
             $canceledAt = date('Y-m-d H:i:s');
         } elseif ($newStatus === 'waiting') {
+            /*
+            |--------------------------------------------------------------------------
+            | Réintégrer un patient absent
+            |--------------------------------------------------------------------------
+            | - conserver son numéro s'il était déjà le dernier ;
+            | - sinon lui attribuer le prochain N° d'arrivée ;
+            | - enregistrer l'heure réelle de son retour ;
+            | - supprimer une éventuelle heure d'appel.
+            |--------------------------------------------------------------------------
+            */
             $positionNumber = $this->getReturnPositionNumber(
                 (int) $existingEntry['queue_id'],
                 $entryId,
                 $existingEntry['position_number']
             );
             $calledAt = null;
+            $lastRejoinedAt = date('Y-m-d H:i:s');
         }
 
         $sql = "
@@ -534,6 +558,7 @@ class QueueEntryRepository
                 called_at = :called_at,
                 done_at = :done_at,
                 no_show_at = :no_show_at,
+                last_rejoined_at = :last_rejoined_at,
                 canceled_at = :canceled_at,
                 cancellation_reason = :cancellation_reason,
                 updated_by_user_id = :updated_by_user_id
@@ -549,6 +574,7 @@ class QueueEntryRepository
             ':called_at' => $calledAt,
             ':done_at' => $doneAt,
             ':no_show_at' => $noShowAt,
+            ':last_rejoined_at' => $lastRejoinedAt,
             ':canceled_at' => $canceledAt,
             ':cancellation_reason' => $cancellationReason,
             ':updated_by_user_id' => $updatedByUserId,

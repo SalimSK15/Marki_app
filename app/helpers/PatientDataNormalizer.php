@@ -97,4 +97,54 @@ final class PatientDataNormalizer
 
         return $length >= 8 && $length <= 15;
     }
+    /*
+|--------------------------------------------------------------------------
+| Formater un téléphone pour l'affichage local algérien
+|--------------------------------------------------------------------------
+| Stockage :
+| +213551223344
+|
+| Affichage :
+| 0551223344
+|--------------------------------------------------------------------------
+*/
+public static function formatPhoneForDisplay(
+    ?string $value
+): string {
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    $normalizedPhone =
+        self::normalizePhone($value);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Format canonique algérien
+    |--------------------------------------------------------------------------
+    */
+    if (
+        preg_match(
+            '/^\+213[567][0-9]{8}$/',
+            $normalizedPhone
+        ) === 1
+    ) {
+        return '0'
+            . substr(
+                $normalizedPhone,
+                4
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ancienne donnée invalide ou étrangère
+    |--------------------------------------------------------------------------
+    | On ne la transforme pas arbitrairement.
+    |--------------------------------------------------------------------------
+    */
+    return $value;
+}
 }

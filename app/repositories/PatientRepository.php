@@ -266,7 +266,7 @@ class PatientRepository
             !PatientDataNormalizer::isValidPhone($phone)
         ) {
             throw new InvalidArgumentException(
-                'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.'
+                PatientDataNormalizer::phoneValidationMessage()
             );
         }
 
@@ -350,7 +350,7 @@ class PatientRepository
             !PatientDataNormalizer::isValidPhone($phone)
         ) {
             throw new InvalidArgumentException(
-                'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.'
+                PatientDataNormalizer::phoneValidationMessage()
             );
         }
 
