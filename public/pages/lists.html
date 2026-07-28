@@ -1,52 +1,123 @@
-<!-- lists.html -->
-<div class="listes-page">
-    <div class="listes-header">
+<section class="v1-page v1-lists-page" aria-labelledby="lists-page-title">
+  <header class="v1-page__header">
+    <div>
+      <p class="v1-page__eyebrow">Historique du médecin</p>
+      <h2 id="lists-page-title">Toutes les listes</h2>
+      <p>Consultez les journées précédentes, leurs compteurs et le détail complet des patients traités.</p>
+    </div>
+  </header>
+
+  <form id="queues-history-filters" class="v1-toolbar v1-toolbar--filters">
+    <label class="v1-field v1-field--compact">
+      <span>Du</span>
+      <input type="date" id="queues-date-from" name="date_from">
+    </label>
+
+    <label class="v1-field v1-field--compact">
+      <span>Au</span>
+      <input type="date" id="queues-date-to" name="date_to">
+    </label>
+
+    <label class="v1-field v1-field--compact">
+      <span>État de la journée</span>
+      <select id="queues-day-status" name="day_status">
+        <option value="all">Tous les états</option>
+        <option value="active">Active</option>
+        <option value="paused">En pause</option>
+        <option value="completed">Clôturée</option>
+      </select>
+    </label>
+
+    <label class="v1-field v1-field--compact">
+      <span>Affichage</span>
+      <select id="queues-page-size" name="per_page">
+        <option value="12">12</option>
+        <option value="24">24</option>
+        <option value="48">48</option>
+      </select>
+    </label>
+
+    <div class="v1-toolbar__actions">
+      <button type="button" class="v1-button v1-button--ghost" id="queues-reset-filters">Réinitialiser</button>
+      <button type="submit" class="v1-button v1-button--primary">Appliquer</button>
+    </div>
+  </form>
+
+  <div id="queues-history-message" class="v1-message" role="status" aria-live="polite"></div>
+
+  <div class="v1-split-layout v1-split-layout--history">
+    <section class="v1-card v1-card--table" aria-labelledby="queues-history-title">
+      <div class="v1-card__header">
         <div>
-            <h1>Toutes les listes</h1>
-            <p>Consultez les listes par date</p>
+          <h3 id="queues-history-title">Journées</h3>
+          <p id="queues-results-summary">Chargement…</p>
         </div>
-        <div class="lists-body">
-            <div class="date-selector">
-                <button class="date-nav prev">◀</button>
-                <span class="current-date">2025-04-03</span>
-                <button class="date-nav next">▶</button>
-            </div>
+      </div>
 
-            <button class="today-button">Aujourd'hui</button>
+      <div class="v1-table-wrap">
+        <table class="v1-table v1-table--history">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>État</th>
+              <th>Total</th>
+              <th>Attente</th>
+              <th>Terminés</th>
+              <th>Absents</th>
+              <th>Annulés</th>
+              <th class="v1-table__action-heading">Détail</th>
+            </tr>
+          </thead>
+          <tbody id="queues-history-table-body">
+            <tr>
+              <td colspan="8" class="v1-empty-cell">Chargement des listes…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-            <!-- <button class="btn-primary">
-                <img src="assets/main_content/ajoutrerPatient.png" class="icon-plus"></img>
-                <span>Nouveau Patient</span>
-            </button> -->
-        </div>
-    </div>
+      <footer class="v1-card__footer">
+        <div id="queues-pagination-summary" class="v1-pagination-summary"></div>
+        <nav id="queues-pagination" class="v1-pagination" aria-label="Pagination des listes"></nav>
+      </footer>
+    </section>
 
-    <div class="list-container">
-        <div class="empty-list-message">
-            <img src="assets/icons/lists/AucuneInfo.png" alt="">
-            <p>Aucune liste disponible pour cette date</p>
+    <aside class="v1-card v1-queue-detail" aria-labelledby="queue-detail-title">
+      <div class="v1-card__header">
+        <div>
+          <p class="v1-page__eyebrow">Consultation en lecture seule</p>
+          <h3 id="queue-detail-title">Sélectionnez une journée</h3>
         </div>
-    </div>
+      </div>
 
-    <div class="appointments-future">
-        <div class="titre__header">
-            <h2>Rendez-vous futurs</h2>
+      <div id="queue-detail-empty" class="v1-empty-panel">
+        Cliquez sur une journée pour consulter son résumé et ses patients.
+      </div>
+
+      <div id="queue-detail-content" hidden>
+        <dl id="queue-detail-summary" class="v1-definition-grid"></dl>
+
+        <div class="v1-section-heading v1-section-heading--spaced">
+          <h4>Patients de la journée</h4>
+          <span id="queue-detail-count" class="v1-soft-badge">0</span>
         </div>
-        <div class="appointments__content">
-            <table>
-                <thead>
-                    <tr>
-                        <th>PATIENT</th>
-                        <th>DATE DU RENDEZ-VOUS</th>
-                        <th>DÉTAILS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="empty-row">
-                        <td colspan="3">Aucun rendez-vous futur</td>
-                    </tr>
-                </tbody>
-            </table>
+
+        <div class="v1-table-wrap v1-table-wrap--detail">
+          <table class="v1-table v1-table--compact">
+            <thead>
+              <tr>
+                <th>N° d’arrivée</th>
+                <th>Patient</th>
+                <th>Téléphone</th>
+                <th>Statut</th>
+                <th>Ajouté par</th>
+                <th>Dernière action par</th>
+              </tr>
+            </thead>
+            <tbody id="queue-detail-table-body"></tbody>
+          </table>
         </div>
-    </div>
-</div>
+      </div>
+    </aside>
+  </div>
+</section>

@@ -155,7 +155,7 @@ function normalizePhoneNumber(value) {
 |--------------------------------------------------------------------------
 */
 function isValidPhoneNumber(phone) {
-  return /^\d{8,15}$/.test(phone);
+  return /^0[567]\d{8}$/.test(phone);
 }
 /*
 |--------------------------------------------------------------------------
@@ -531,7 +531,7 @@ async function handleAddPatientSubmit(event) {
   */
   if (!isValidPhoneNumber(phone)) {
     setAddPatientFormMessage(
-      'Le numéro de téléphone doit contenir entre 8 et 15 chiffres.',
+      'Le numéro doit être sous forme de 0551223344',
       'error'
     );
 
@@ -1234,37 +1234,44 @@ function setActiveMenuItem(page) {
 // ==========================================================
 
 function loadPage(page) {
-    const mainContent = document.getElementById('main-content');
+  const mainContent = document.getElementById('main-content');
 
-    fetch(`pages/${page}.html`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erreur de chargement de la page');
-            }
-            return response.text();
-        })
-        .then(html => {
-            mainContent.innerHTML = html;
+  if (!mainContent) {
+    return;
+  }
 
-            // Initialisation spécifique selon la page chargée
-            initPage(page);
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            mainContent.innerHTML = '<p>Erreur de chargement de la page.</p>';
-        });
+  fetch(`pages/${encodeURIComponent(page)}.html`, {
+    cache: 'no-store'
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erreur de chargement de la page');
+      }
+
+      return response.text();
+    })
+    .then(html => {
+      mainContent.innerHTML = html;
+      initPage(page);
+    })
+    .catch(error => {
+      console.error('Erreur :', error);
+      mainContent.innerHTML = '<p>Erreur de chargement de la page.</p>';
+    });
 }
 
 function initPage(page) {
-    if (page === 'dashboard') {
-        initDashboardPage();
-    }
+  if (page === 'dashboard') {
+    initDashboardPage();
+    return;
+  }
 
-    if (page === 'settings') {
-        addSaveButtonListener();
-    }
+  if (typeof window.initMarkiV1Page === 'function') {
+    window.initMarkiV1Page(page);
+  }
 }
-
+window.loadPage = loadPage;
+window.setActiveMenuItem = setActiveMenuItem;
 
 // ==========================================================
 // DASHBOARD / LISTE DU JOUR
@@ -2559,25 +2566,23 @@ function renderPatientHistory(visits) {
 
 function openSelectedPatientFullRecord() {
   const button = document.getElementById('view-full-patient-record-btn');
+
   const patientId = Number(button?.dataset.patientId || 0);
 
   if (patientId <= 0) {
-    showToast('Aucune fiche patient liée à cette inscription.', 'error');
+    showToast('Aucune fiche patient liée à cette inscription.','error');
     return;
   }
 
-  sessionStorage.setItem(
-    'marki:selectedPatientId',
-    String(patientId)
-  );
+  if (typeof window.openPatientProfile === 'function') {
+    window.openPatientProfile(patientId);
+    return;
+  }
 
-  const patientsMenuItem = [...document.querySelectorAll('.sidebar__item')]
-    .find(item => item.textContent.includes('Mes Patients'));
+  sessionStorage.setItem('marki.openPatientId',String(patientId));
 
-  const patientsPage = patientsMenuItem?.dataset.page || 'patients';
-
-  setActiveMenuItem(patientsPage);
-  loadPage(patientsPage);
+  setActiveMenuItem('patients');
+  loadPage('patients');
 }
 
 function bindPatientDetailsEvents() {

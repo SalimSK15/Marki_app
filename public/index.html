@@ -5,12 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion de patients</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
+
+    <link rel="stylesheet" href="assets/css/styles.css?v=20260728-6">
+    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260728-6">
+
+    <script src="assets/js/app.js?v=20260728-6" defer></script>
+    <script src="assets/js/v1-tabs.js?v=20260728-6" defer></script>
 </head>
 
 <body>
     <div class="app">
-        <!-- Header -->
         <header class="header">
             <div class="header__profile">
                 <div class="avatar">
@@ -28,12 +32,11 @@
         </header>
 
         <div class="layout">
-            <!-- Sidebar -->
-            <nav class="sidebar">
-                <ul class="sidebar__menu ">
+            <nav class="sidebar" aria-label="Navigation principale">
+                <ul class="sidebar__menu">
                     <li class="sidebar__item active" data-page="dashboard">
                         <i class="icon">
-                            <img src="assets/icons/icons_nav/dashboard03.svg"></img>
+                            <img src="assets/icons/icons_nav/dashboard03.svg" alt="">
                         </i>
                         <span>Liste du jour</span>
                     </li>
@@ -57,14 +60,12 @@
                     </li>
                 </ul>
             </nav>
-            <!-- Contenu principal -->
-            <div class="main-content" id="main-content">
-                <!-- Le contenu de la page sera chargé ici -->
-            </div>
+
+            <main class="main-content" id="main-content">
+                <!-- Le contenu de la page sera chargé ici. -->
+            </main>
         </div>
     </div>
-
-    <script src="assets/js/app.js"></script>
 </body>
 
 </html>

@@ -1,61 +1,105 @@
-<div class="settings-page">
-  <div class="settings-header">
-    <div class="titre_section">
-      <h1>Paramètres</h1>
-      <p>Gérez les informations de votre cabinet</p>
+<section class="v1-page v1-settings-page" aria-labelledby="settings-page-title">
+  <header class="v1-page__header">
+    <div>
+      <p class="v1-page__eyebrow">Informations générales</p>
+      <h2 id="settings-page-title">Paramètres</h2>
+      <p>Gérez les informations du cabinet et le profil professionnel du médecin.</p>
     </div>
-    <div class="settings-actions">
-      <button class="btn btn-primary" id="save-button">
-        <img src="assets/icons/paramettres/enregistrer.svg" class="icon"></img>
-        Enregistrer
+  </header>
+
+  <div id="settings-page-message" class="v1-message" role="status" aria-live="polite"></div>
+
+  <form id="settings-form" class="v1-settings-grid" novalidate>
+    <section class="v1-card" aria-labelledby="clinic-settings-title">
+      <div class="v1-card__header">
+        <div>
+          <p class="v1-page__eyebrow">Structure</p>
+          <h3 id="clinic-settings-title">Cabinet ou clinique</h3>
+        </div>
+      </div>
+
+      <div class="v1-form__grid">
+        <label class="v1-field v1-field--wide">
+          <span>Nom de la structure <strong class="required-mark" aria-hidden="true">*</strong></span>
+          <input type="text" id="settings-clinic-name" name="clinic_name" required>
+        </label>
+
+        <label class="v1-field">
+          <span>Type de structure</span>
+          <select id="settings-clinic-type" name="clinic_type">
+            <option value="solo">Cabinet individuel</option>
+            <option value="clinic">Clinique</option>
+            <option value="hospital_simple">Établissement médical</option>
+          </select>
+        </label>
+
+        <label class="v1-field">
+          <span>Téléphone de la structure</span>
+          <input type="tel" id="settings-clinic-phone" name="clinic_phone" inputmode="tel">
+        </label>
+
+        <label class="v1-field v1-field--wide">
+          <span>Adresse</span>
+          <input type="text" id="settings-clinic-address" name="clinic_address" autocomplete="street-address">
+        </label>
+
+        <label class="v1-field">
+          <span>Ville</span>
+          <input type="text" id="settings-clinic-city" name="clinic_city">
+        </label>
+
+        <label class="v1-field">
+          <span>Wilaya / région</span>
+          <input type="text" id="settings-clinic-wilaya" name="clinic_wilaya">
+        </label>
+
+        <label class="v1-field v1-field--wide">
+          <span>Fuseau horaire <strong class="required-mark" aria-hidden="true">*</strong></span>
+          <select id="settings-clinic-timezone" name="clinic_timezone" required>
+            <option value="Africa/Algiers">Algérie — Africa/Algiers</option>
+            <option value="America/Toronto">Montréal / Toronto — America/Toronto</option>
+          </select>
+          <small>Les dates et les heures seront affichées selon le fuseau choisi.</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="v1-card" aria-labelledby="doctor-settings-title">
+      <div class="v1-card__header">
+        <div>
+          <p class="v1-page__eyebrow">Profil professionnel</p>
+          <h3 id="doctor-settings-title">Médecin</h3>
+        </div>
+      </div>
+
+      <div class="v1-form__grid">
+        <label class="v1-field v1-field--wide">
+          <span>Nom affiché <strong class="required-mark" aria-hidden="true">*</strong></span>
+          <input type="text" id="settings-doctor-name" name="doctor_display_name" required>
+        </label>
+
+        <label class="v1-field v1-field--wide">
+          <span>Spécialité</span>
+          <input type="text" id="settings-doctor-specialty" name="doctor_specialty">
+        </label>
+
+        <label class="v1-field v1-field--wide">
+          <span>Numéro d’agrément / licence</span>
+          <input type="text" id="settings-doctor-license" name="doctor_license_number">
+        </label>
+
+        <label class="v1-field v1-field--wide">
+          <span>Adresse professionnelle</span>
+          <input type="text" id="settings-doctor-address" name="doctor_address">
+        </label>
+      </div>
+    </section>
+
+    <div class="v1-settings-actions">
+      <p id="settings-context-note">Vérifiez les informations avant de les enregistrer.</p>
+      <button type="submit" class="v1-button v1-button--primary" id="settings-save-button">
+        Enregistrer les paramètres
       </button>
     </div>
-  </div>
-
-  <div class="settings-card">
-    <div class="settings-card__header">
-      <div class="icon-circle">
-        <img src="assets/icons/paramettres/profil_Infos.png" alt="">
-      </div>
-      <h2>Informations personnelles</h2>
-    </div>
-
-    <div class="settings-card__content">
-      <div class="settings-row">
-        <div class="settings-field">
-          <label for="nom-prenom">Nom et Prénom</label>
-          <input id="nom-prenom" type="text" value="Dr. Martin Durant" autocomplete="name" />
-        </div>
-        <div class="settings-field">
-          <label for="specialite">Spécialité</label>
-          <input id="specialite" type="text" value="Médecin Généraliste" autocomplete="organization-title" />
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <div class="settings-field">
-          <label for="telephone">Téléphone</label>
-          <input id="telephone" type="tel" value="+213 551 45 67 89" autocomplete="tel" />
-        </div>
-        <div class="settings-field">
-          <label for="email">Email</label>
-          <input id="email" type="email" value="dr.durant@cabinet-medical.fr" autocomplete="email" />
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <div class="settings-field wide">
-          <label for="adresse">Adresse du cabinet</label>
-          <input id="adresse" type="text" value="15 rue de la Santé, 75001 Paris" autocomplete="address-line1" />
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- <div class="settings-actions">
-      <button class="btn btn-primary" id="save-button">
-        <img src="assets/paramettres/enregistrer.svg" class="icon"></img>
-        Enregistrer
-      </button>
-    </div> -->
-</div>
+  </form>
+</section>

@@ -1,37 +1,146 @@
-<div class="patients-page">
-    <div class="patients-header">
-        <h1>Mes Patients</h1>
-        <p>Historique complet des patients</p>
+<section class="v1-page v1-patients-page" aria-labelledby="patients-page-title">
+  <header class="v1-page__header">
+    <div>
+      <p class="v1-page__eyebrow">Répertoire du médecin</p>
+      <h2 id="patients-page-title">Mes Patients</h2>
+      <p>Retrouvez les patients déjà reçus, consultez leur historique et corrigez leurs renseignements administratifs.</p>
     </div>
+  </header>
 
-    <div class="search-container">
-        <div class="search-box">
-            <span class="search-icon">
-                <img src="assets/icons/patients/search.svg" alt="Rechercher">
-            </span>
-            <input type="text" placeholder="Rechercher par nom, téléphone, email ou adresse...">
+  <div class="v1-toolbar">
+    <label class="v1-search" for="patients-search">
+      <span class="v1-sr-only">Rechercher un patient</span>
+      <input
+        type="search"
+        id="patients-search"
+        placeholder="Rechercher par nom, téléphone ou date de naissance…"
+        autocomplete="off"
+      >
+    </label>
+
+    <label class="v1-select-field" for="patients-page-size">
+      <span>Affichage</span>
+      <select id="patients-page-size">
+        <option value="12">12</option>
+        <option value="24">24</option>
+        <option value="48">48</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="patients-page-message" class="v1-message" role="status" aria-live="polite"></div>
+
+  <div class="v1-split-layout">
+    <section class="v1-card v1-card--table" aria-labelledby="patients-list-title">
+      <div class="v1-card__header">
+        <div>
+          <h3 id="patients-list-title">Patients</h3>
+          <p id="patients-results-summary">Chargement…</p>
         </div>
-    </div>
+      </div>
 
-    <div class="patients-list-container">
-        <div class="patients-list">
-            <div class="patients-list-header">
-                <div class="column-header patient-column">PATIENT</div>
-                <div class="column-header passage-column">DERNIER PASSAGE</div>
-                <div class="column-header status-column">STATUS</div>
-            </div>
+      <div class="v1-table-wrap">
+        <table class="v1-table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Téléphone</th>
+              <th>Naissance</th>
+              <th>Dernière visite</th>
+              <th>Visites</th>
+              <th class="v1-table__action-heading">Action</th>
+            </tr>
+          </thead>
+          <tbody id="patients-table-body">
+            <tr>
+              <td colspan="6" class="v1-empty-cell">Chargement des patients…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-            <div class="patients-list-empty">
-                <img src="assets/icons/patients/aucunPatient.png" alt="Patient">
-                <p>Aucun patient passé</p>
-            </div>
+      <footer class="v1-card__footer">
+        <div id="patients-pagination-summary" class="v1-pagination-summary"></div>
+        <nav id="patients-pagination" class="v1-pagination" aria-label="Pagination des patients"></nav>
+      </footer>
+    </section>
+
+    <aside class="v1-card v1-patient-profile" aria-labelledby="patient-profile-title">
+      <div class="v1-card__header">
+        <div>
+          <p class="v1-page__eyebrow">Fiche administrative</p>
+          <h3 id="patient-profile-title">Sélectionnez un patient</h3>
         </div>
+      </div>
 
-        <div class="patient-details-placeholder">
-            <div class="placeholder-icon">
-                <img src="assets/icons/patients/infos_patient01.svg" alt="Patient">
-            </div>
-            <p>Sélectionnez un patient pour voir ses détails</p>
-        </div>
-    </div>
-</div>
+      <div id="patient-profile-empty" class="v1-empty-panel">
+        Cliquez sur un patient pour afficher sa fiche et son historique.
+      </div>
+
+      <div id="patient-profile-content" hidden>
+        <form id="patient-profile-form" class="v1-form" novalidate>
+          <input type="hidden" id="patient-profile-id" name="patient_id">
+
+          <div class="v1-form__grid">
+            <label class="v1-field v1-field--wide">
+              <span>Nom complet <strong class="required-mark" aria-hidden="true">*</strong></span>
+              <input type="text" id="patient-profile-full-name" name="full_name" autocomplete="name" required>
+            </label>
+
+            <label class="v1-field">
+              <span>Téléphone <strong class="required-mark" aria-hidden="true">*</strong></span>
+              <input type="tel" id="patient-profile-phone" name="phone" inputmode="tel" autocomplete="tel" required>
+            </label>
+
+            <label class="v1-field">
+              <span>Date de naissance</span>
+              <input type="date" id="patient-profile-birth-date" name="birth_date">
+            </label>
+
+            <label class="v1-field v1-field--wide">
+              <span>Courriel</span>
+              <input type="email" id="patient-profile-email" name="email" autocomplete="email">
+            </label>
+
+            <label class="v1-field v1-field--wide">
+              <span>Adresse</span>
+              <input type="text" id="patient-profile-address" name="address" autocomplete="street-address">
+            </label>
+
+            <label class="v1-field v1-field--wide">
+              <span>Notes administratives du cabinet</span>
+              <textarea id="patient-profile-notes" name="notes_non_medical" rows="4"></textarea>
+            </label>
+          </div>
+
+          <div id="patient-profile-form-message" class="v1-message" role="status" aria-live="polite"></div>
+
+          <div class="v1-form__actions">
+            <button type="button" class="v1-button v1-button--secondary" id="patient-add-to-today-button">
+              Ajouter à la liste du jour
+            </button>
+            <button type="submit" class="v1-button v1-button--primary" id="patient-profile-save-button">
+              Enregistrer les modifications
+            </button>
+          </div>
+        </form>
+
+        <section class="v1-history-section" aria-labelledby="patient-visits-title">
+          <div class="v1-section-heading">
+            <h4 id="patient-visits-title">Dernières visites</h4>
+            <span id="patient-visits-count" class="v1-soft-badge">0</span>
+          </div>
+          <div id="patient-visits-list" class="v1-timeline"></div>
+        </section>
+
+        <section class="v1-history-section" aria-labelledby="patient-queues-title">
+          <div class="v1-section-heading">
+            <h4 id="patient-queues-title">Passages dans les listes</h4>
+            <span id="patient-queues-count" class="v1-soft-badge">0</span>
+          </div>
+          <div id="patient-queues-list" class="v1-timeline"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</section>
