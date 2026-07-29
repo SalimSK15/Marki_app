@@ -1,10 +1,13 @@
 <?php
+
 return [
     'app' => [
         'name' => 'MARKI',
         'env' => 'local',
         'debug' => true,
         'timezone' => 'Africa/Algiers',
+        'base_path' => '/Marki_app/Partie_medecin/public',
+        'app_key' => 'marki-v1-change-this-key-before-production-2026',
     ],
 
     'db' => [
@@ -12,20 +15,16 @@ return [
         'port' => 3307,
         'dbname' => 'markii_db',
         'charset' => 'utf8mb4',
-
-        // Utilisateur MySQL de ton projet
-        'username' => 'root',
-
-        // Mets ici ton mot de passe Laragon/MySQL
-        // Si tu n’en as pas, laisse chaîne vide
-        'password' => '',
+        'username' => 'marki_app_users',
+        'password' => '$LK~1Si@(8!PmI]7t',
     ],
 
-    // Mode dev temporaire :
-    // tant qu’on n’a pas encore codé la connexion/login
-    'dev_context' => [
-        'clinic_id' => 1,
-        'doctor_id' => 1,
-        'user_id' => 2,
+    'auth' => [
+        'session_name' => 'marki_session',
+        'idle_timeout_seconds' => 43200,
+        'remember_days' => 30,
+        'max_failed_attempts' => 5,
+        'lock_minutes' => 15,
+        'password_min_length' => 10,
     ],
 ];

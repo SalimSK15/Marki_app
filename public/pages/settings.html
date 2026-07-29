@@ -3,14 +3,14 @@
     <div>
       <p class="v1-page__eyebrow">Informations générales</p>
       <h2 id="settings-page-title">Paramètres</h2>
-      <p>Gérez les informations du cabinet et le profil professionnel du médecin.</p>
+      <p>Gérez les informations de la structure, le profil du médecin et les accès de l’équipe.</p>
     </div>
   </header>
 
   <div id="settings-page-message" class="v1-message" role="status" aria-live="polite"></div>
 
   <form id="settings-form" class="v1-settings-grid" novalidate>
-    <section class="v1-card" aria-labelledby="clinic-settings-title">
+    <section class="v1-card" id="clinic-settings-card" aria-labelledby="clinic-settings-title">
       <div class="v1-card__header">
         <div>
           <p class="v1-page__eyebrow">Structure</p>
@@ -68,7 +68,7 @@
       <div class="v1-card__header">
         <div>
           <p class="v1-page__eyebrow">Profil professionnel</p>
-          <h3 id="doctor-settings-title">Médecin</h3>
+          <h3 id="doctor-settings-title">Médecin sélectionné</h3>
         </div>
       </div>
 
@@ -102,4 +102,116 @@
       </button>
     </div>
   </form>
+
+  <section id="team-settings-section" class="v1-card team-card" aria-labelledby="team-settings-title" hidden>
+    <div class="v1-card__header team-card__header">
+      <div>
+        <p class="v1-page__eyebrow">Équipe et accès</p>
+        <h3 id="team-settings-title">Comptes de la structure</h3>
+        <p>Chaque personne utilise son propre compte. Les anciens comptes sont désactivés, jamais supprimés.</p>
+      </div>
+      <button type="button" class="v1-button v1-button--primary" id="team-new-account-button">
+        Nouveau compte
+      </button>
+    </div>
+
+    <div id="team-message" class="v1-message" role="status" aria-live="polite"></div>
+
+    <div class="team-layout">
+      <div class="v1-table-wrap team-table-wrap">
+        <table class="v1-table team-table">
+          <thead>
+            <tr>
+              <th>Utilisateur</th>
+              <th>Type</th>
+              <th>Accès</th>
+              <th>État</th>
+              <th>Dernière connexion</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="team-table-body">
+            <tr><td colspan="6" class="v1-empty-cell">Chargement de l’équipe…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <form id="team-account-form" class="v1-form team-form" novalidate hidden>
+        <div class="team-form__header">
+          <div>
+            <p class="v1-page__eyebrow">Compte</p>
+            <h4 id="team-form-title">Nouveau compte</h4>
+          </div>
+          <button type="button" class="v1-icon-button" id="team-form-close-button" aria-label="Fermer">×</button>
+        </div>
+
+        <input type="hidden" id="team-user-id" name="user_id">
+
+        <div class="v1-form__grid">
+          <label class="v1-field v1-field--wide">
+            <span>Nom complet <strong class="required-mark" aria-hidden="true">*</strong></span>
+            <input type="text" id="team-full-name" name="full_name" required>
+          </label>
+
+          <label class="v1-field">
+            <span>Type de compte <strong class="required-mark" aria-hidden="true">*</strong></span>
+            <select id="team-account-type" name="account_type" required>
+              <option value="secretary">Secrétariat</option>
+              <option value="doctor">Médecin</option>
+            </select>
+          </label>
+
+          <label class="v1-field">
+            <span>Courriel</span>
+            <input type="email" id="team-email" name="email" autocomplete="email">
+          </label>
+
+          <label class="v1-field">
+            <span>Téléphone</span>
+            <input type="tel" id="team-phone" name="phone" inputmode="tel" placeholder="0551223344">
+          </label>
+
+          <label class="v1-field v1-field--wide">
+            <span>Mot de passe temporaire</span>
+            <input type="password" id="team-temporary-password" name="temporary_password" autocomplete="new-password">
+            <small>Obligatoire à la création. L’utilisateur devra le modifier à sa première connexion.</small>
+          </label>
+
+          <label class="v1-field v1-field--wide" id="team-job-title-field">
+            <span>Fonction</span>
+            <input type="text" id="team-job-title" name="job_title" placeholder="Secrétaire médicale">
+          </label>
+
+          <label class="v1-field v1-field--wide" id="team-specialty-field" hidden>
+            <span>Spécialité</span>
+            <input type="text" id="team-specialty" name="specialty">
+          </label>
+
+          <label class="v1-field v1-field--wide" id="team-license-field" hidden>
+            <span>Numéro d’agrément / licence</span>
+            <input type="text" id="team-license-number" name="license_number">
+          </label>
+
+          <label class="v1-field v1-field--wide" id="team-access-level-field">
+            <span>Niveau d’accès</span>
+            <select id="team-access-level" name="access_level">
+              <option value="queue_only">Liste du jour seulement</option>
+              <option value="queue_and_patients">Liste, patients et historique</option>
+              <option value="full">Accès opérationnel complet</option>
+            </select>
+          </label>
+
+          <fieldset class="team-doctors-field v1-field--wide" id="team-doctors-field">
+            <legend>Médecins autorisés <strong class="required-mark" aria-hidden="true">*</strong></legend>
+            <div id="team-doctors-options" class="team-doctors-options"></div>
+          </fieldset>
+        </div>
+
+        <div class="v1-form__actions">
+          <button type="button" class="v1-button v1-button--secondary" id="team-form-cancel-button">Annuler</button>
+          <button type="submit" class="v1-button v1-button--primary" id="team-form-save-button">Enregistrer le compte</button>
+        </div>
+      </form>
+    </div>
+  </section>
 </section>

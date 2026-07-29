@@ -34,10 +34,9 @@ class QueueEntryRepository
     */
     private function mapEntryRow(array $row, ?int $fallbackNumber = null): array
     {
-        $arrivalAt =
-        !empty($row['last_rejoined_at'])
-        ? (string) $row['last_rejoined_at']
-        : (string) $row['created_at'];
+        $arrivalAt = !empty($row['last_rejoined_at'])
+            ? (string) $row['last_rejoined_at']
+            : (string) $row['created_at'];
         return [
             'id' => (int) $row['id'],
             'queue_id' => (int) $row['queue_id'],
@@ -50,10 +49,10 @@ class QueueEntryRepository
                 : $fallbackNumber,
             'display_name' => $row['display_name'],
             'phone' => PatientDataNormalizer::formatPhoneForDisplay(
-                    $row['phone'] !== null
-                        ? (string) $row['phone']
-                        : null
-                ),
+                $row['phone'] !== null
+                    ? (string) $row['phone']
+                    : null
+            ),
             'birth_date' => $row['birth_date'],
             'source' => $row['source'],
             'status' => $row['status'],
@@ -63,7 +62,8 @@ class QueueEntryRepository
             (bool) $row['canceled_by_completion'],
             'patient_notes' => $row['patient_notes'] ?? null,
             'recent_visits' => [],
-            'time' => date('H:i',strtotime($arrivalAt)),'arrival_at' => $arrivalAt,
+            'time' => date('H:i', strtotime($arrivalAt)),
+            'arrival_at' => $arrivalAt,
             'position_number' => $row['position_number'] !== null
                 ? (int) $row['position_number']
                 : null,
@@ -667,7 +667,7 @@ class QueueEntryRepository
 
         if (!PatientDataNormalizer::isValidPhone($phone)) {
             throw new InvalidArgumentException(
-                'Le numéro de téléphone est invalide.'
+                PatientDataNormalizer::phoneValidationMessage()
             );
         }
 
@@ -768,7 +768,7 @@ class QueueEntryRepository
 
         if (!PatientDataNormalizer::isValidPhone($phone)) {
             throw new InvalidArgumentException(
-                'Le numéro de téléphone est invalide.'
+                PatientDataNormalizer::phoneValidationMessage()
             );
         }
 

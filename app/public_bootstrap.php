@@ -12,7 +12,9 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth/Auth.php';
 
-$context = Auth::context($config, true);
-Auth::authorizeEndpoint($context);
+Auth::start($config);
 
-return $context;
+return [
+    'config' => $config,
+    'csrf_token' => Auth::csrfToken(),
+];

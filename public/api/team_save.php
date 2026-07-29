@@ -7,7 +7,7 @@ header('Cache-Control: no-store');
 
 try {
     $context = require __DIR__ . '/../../app/bootstrap.php';
-    require_once __DIR__ . '/../../app/repositories/SettingsRepository.php';
+    require_once __DIR__ . '/../../app/auth/TeamRepository.php';
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         Auth::jsonError(405, 'Méthode non autorisée.');
@@ -16,26 +16,20 @@ try {
     $input = json_decode((string) file_get_contents('php://input'), true);
     $input = is_array($input) ? $input : $_POST;
 
-    $settings = (new SettingsRepository())->update(
+    $data = (new TeamRepository())->save(
         (int) $context['clinic_id'],
-        (int) $context['doctor_id'],
         (int) $context['user_id'],
         $input,
-        (bool) ($context['capabilities']['settings.manage_clinic'] ?? false)
+        (int) ($context['config']['auth']['password_min_length'] ?? 10)
     );
-
-    $settings['permissions'] = [
-        'can_manage_clinic' => (bool) ($context['capabilities']['settings.manage_clinic'] ?? false),
-        'can_manage_team' => (bool) ($context['capabilities']['team.manage'] ?? false),
-    ];
 
     echo json_encode([
         'ok' => true,
-        'message' => 'Paramètres enregistrés avec succès.',
-        'data' => $settings,
+        'message' => 'Compte enregistré avec succès.',
+        'data' => $data,
     ], JSON_UNESCAPED_UNICODE);
-} catch (InvalidArgumentException $exception) {
+} catch (InvalidArgumentException | RuntimeException $exception) {
     Auth::jsonError(422, $exception->getMessage());
 } catch (Throwable $exception) {
-    Auth::jsonError(500, 'Impossible d’enregistrer les paramètres.');
+    Auth::jsonError(500, 'Impossible d’enregistrer le compte.');
 }

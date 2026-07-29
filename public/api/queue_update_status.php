@@ -15,20 +15,7 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 */
 
-// $config = require __DIR__ . '/../../app/config.php';
 $context = require __DIR__ . '/../../app/bootstrap.php';
-
-$debug = (bool) ($config['app']['debug'] ?? false);
-$timezone = (string) ($config['app']['timezone'] ?? 'UTC');
-
-date_default_timezone_set($timezone);
-ini_set('display_errors', $debug ? '1' : '0');
-ini_set('display_startup_errors', $debug ? '1' : '0');
-error_reporting(E_ALL);
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -38,73 +25,6 @@ require_once __DIR__
 
 require_once __DIR__
     . '/../../app/repositories/QueueEntryRepository.php';
-
-/*
-|--------------------------------------------------------------------------
-| Exception dédiée aux refus d'accès
-|--------------------------------------------------------------------------
-*/
-class AuthorizationException extends RuntimeException
-{
-}
-
-/*
-|--------------------------------------------------------------------------
-| Récupérer l'utilisateur actuel
-|--------------------------------------------------------------------------
-| Priorité :
-| 1. vraie session utilisateur lorsqu'elle existera ;
-| 2. dev_context pendant le développement.
-|
-| L'identifiant est ensuite validé côté serveur :
-| - utilisateur existant ;
-| - utilisateur actif ;
-| - utilisateur appartenant au cabinet courant.
-|--------------------------------------------------------------------------
-*/
-function resolveCurrentUserId(array $config, int $clinicId): int
-{
-    $sessionUserId = isset($_SESSION['user_id'])
-        ? (int) $_SESSION['user_id']
-        : 0;
-
-    $fallbackUserId = (int) (
-        $config['dev_context']['user_id'] ?? 0
-    );
-
-    $currentUserId = $sessionUserId > 0
-        ? $sessionUserId
-        : $fallbackUserId;
-
-    if ($currentUserId <= 0) {
-        throw new AuthorizationException(
-            'Aucun utilisateur actif n’est disponible.'
-        );
-    }
-
-    $sql = "
-        SELECT u.id
-        FROM users u
-        WHERE u.id = :user_id
-          AND u.clinic_id = :clinic_id
-          AND u.status = 'active'
-        LIMIT 1
-    ";
-
-    $stmt = db()->prepare($sql);
-    $stmt->execute([
-        ':user_id' => $currentUserId,
-        ':clinic_id' => $clinicId,
-    ]);
-
-    if (!$stmt->fetch()) {
-        throw new AuthorizationException(
-            'Utilisateur inactif ou non autorisé pour ce cabinet.'
-        );
-    }
-
-    return $currentUserId;
-}
 
 /*
 |--------------------------------------------------------------------------
@@ -131,10 +51,7 @@ try {
     | Elles seront remplacées par le futur module de connexion/permissions.
     |----------------------------------------------------------------------
     */
-    // $clinicId = (int) $config['dev_context']['clinic_id'];
-    // $doctorId = (int) $config['dev_context']['doctor_id'];
     // $userId = resolveCurrentUserId($config, $clinicId);
-    // $today = date('Y-m-d');
     $clinicId = $context['clinic_id'];
     $doctorId = $context['doctor_id'];
     $userId = $context['user_id'];

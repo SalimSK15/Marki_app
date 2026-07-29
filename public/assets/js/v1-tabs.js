@@ -129,6 +129,25 @@
     return original;
   }
 
+  function formatAlgerianPhoneForDisplay(value) {
+    const raw = String(value ?? '').trim();
+    const digits = raw.replace(/[^0-9]/g, '');
+
+    if (/^0[567][0-9]{8}$/.test(digits)) {
+      return digits;
+    }
+
+    if (/^213[567][0-9]{8}$/.test(digits)) {
+      return `0${digits.slice(3)}`;
+    }
+
+    if (/^00213[567][0-9]{8}$/.test(digits)) {
+      return `0${digits.slice(5)}`;
+    }
+
+    return raw;
+  }
+
   function statusLabel(status) {
     const labels = {
       waiting: 'En attente',
@@ -277,7 +296,41 @@
     form?.addEventListener('submit', savePatientProfile);
     addButton?.addEventListener('click', addPatientToTodayQueue);
 
-    loadPatients();
+    if (requestedPatientId > 0) {
+      focusPatientFromNavigation(requestedPatientId, searchInput);
+    } else {
+      loadPatients();
+    }
+  }
+
+  async function focusPatientFromNavigation(patientId, searchInput) {
+    try {
+      const response = await requestJson(
+        `${API.patientDetails}?patient_id=${encodeURIComponent(patientId)}`
+      );
+      const patient = response.data?.patient;
+
+      if (!patient) {
+        throw new Error('Fiche patient introuvable.');
+      }
+
+      patientsState.selectedId = Number(patient.id);
+      patientsState.query = patient.full_name || '';
+      patientsState.page = 1;
+      searchInput.value = patientsState.query;
+
+      await loadPatients();
+
+      requestAnimationFrame(() => {
+        document
+          .querySelector(`#patients-table-body tr[data-patient-id="${patientId}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    } catch (error) {
+      console.error('Ouverture de la fiche patient :', error);
+      await loadPatients();
+      await loadPatientProfile(patientId);
+    }
   }
 
   async function loadPatients() {
@@ -851,6 +904,7 @@
     try {
       const response = await requestJson(API.settings);
       fillSettingsForm(response.data?.clinic || {}, response.data?.doctor || {});
+      applySettingsPermissions(response.data?.permissions || {});
       setMessage(message);
     } catch (error) {
       console.error('Paramètres :', error);
@@ -875,6 +929,17 @@
     setInputValue('settings-doctor-address', doctor.address);
   }
 
+  function applySettingsPermissions(permissions) {
+    const canManageClinic = Boolean(permissions.can_manage_clinic);
+    const clinicCard = document.getElementById('clinic-settings-card');
+
+    clinicCard?.classList.toggle('is-readonly', !canManageClinic);
+
+    clinicCard?.querySelectorAll('input, select, textarea').forEach(field => {
+      field.disabled = !canManageClinic;
+    });
+  }
+
   async function saveSettings(event) {
     event.preventDefault();
 
@@ -897,6 +962,7 @@
       });
 
       fillSettingsForm(response.data?.clinic || {}, response.data?.doctor || {});
+      applySettingsPermissions(response.data?.permissions || {});
       setMessage(message, response.message || 'Paramètres enregistrés.', 'success');
     } catch (error) {
       console.error('Enregistrement paramètres :', error);

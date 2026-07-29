@@ -174,7 +174,7 @@ async function parseJsonResponseSafely(response) {
     return JSON.parse(rawText);
   } catch (error) {
     console.error('Réponse backend non JSON :', rawText);
-    throw new Error('Le serveur a renvoyé une réponse invalide. Vérifie l’endpoint PHP.');
+    throw new Error('Le serveur a renvoyé une réponse invalide. Réessayez dans quelques instants.');
   }
 }
 /*

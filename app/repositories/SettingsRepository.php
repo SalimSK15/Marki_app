@@ -34,8 +34,7 @@ final class SettingsRepository
                 d.address AS doctor_address,
                 d.is_active AS doctor_is_active
             FROM clinics c
-            INNER JOIN doctor_profiles d
-                ON d.clinic_id = c.id
+            INNER JOIN doctor_profiles d ON d.clinic_id = c.id
             WHERE c.id = :clinic_id
               AND d.id = :doctor_id
             LIMIT 1
@@ -48,7 +47,6 @@ final class SettingsRepository
         ]);
 
         $row = $stmt->fetch();
-
         if (!$row) {
             throw new RuntimeException('Paramètres introuvables.');
         }
@@ -81,17 +79,32 @@ final class SettingsRepository
         int $clinicId,
         int $doctorId,
         int $actorUserId,
-        array $input
+        array $input,
+        bool $canManageClinic
     ): array {
         $current = $this->get($clinicId, $doctorId);
 
-        $clinicName = trim((string) ($input['clinic_name'] ?? ''));
-        $clinicType = trim((string) ($input['clinic_type'] ?? 'solo'));
-        $clinicAddress = trim((string) ($input['clinic_address'] ?? ''));
-        $clinicCity = trim((string) ($input['clinic_city'] ?? ''));
-        $clinicWilaya = trim((string) ($input['clinic_wilaya'] ?? ''));
-        $clinicPhone = trim((string) ($input['clinic_phone'] ?? ''));
-        $clinicTimezone = trim((string) ($input['clinic_timezone'] ?? 'Africa/Algiers'));
+        $clinicName = $canManageClinic
+            ? trim((string) ($input['clinic_name'] ?? ''))
+            : (string) $current['clinic']['name'];
+        $clinicType = $canManageClinic
+            ? trim((string) ($input['clinic_type'] ?? 'solo'))
+            : (string) $current['clinic']['type'];
+        $clinicAddress = $canManageClinic
+            ? trim((string) ($input['clinic_address'] ?? ''))
+            : (string) ($current['clinic']['address'] ?? '');
+        $clinicCity = $canManageClinic
+            ? trim((string) ($input['clinic_city'] ?? ''))
+            : (string) ($current['clinic']['city'] ?? '');
+        $clinicWilaya = $canManageClinic
+            ? trim((string) ($input['clinic_wilaya'] ?? ''))
+            : (string) ($current['clinic']['wilaya'] ?? '');
+        $clinicPhone = $canManageClinic
+            ? trim((string) ($input['clinic_phone'] ?? ''))
+            : (string) ($current['clinic']['phone'] ?? '');
+        $clinicTimezone = $canManageClinic
+            ? trim((string) ($input['clinic_timezone'] ?? 'Africa/Algiers'))
+            : (string) $current['clinic']['timezone'];
 
         $doctorDisplayName = trim((string) ($input['doctor_display_name'] ?? ''));
         $doctorSpecialty = trim((string) ($input['doctor_specialty'] ?? ''));
@@ -99,23 +112,19 @@ final class SettingsRepository
         $doctorAddress = trim((string) ($input['doctor_address'] ?? ''));
 
         if ($clinicName === '') {
-            throw new InvalidArgumentException('Le nom du cabinet est obligatoire.');
+            throw new InvalidArgumentException('Le nom de la structure est obligatoire.');
         }
-
         if (!in_array($clinicType, ['solo', 'clinic', 'hospital_simple'], true)) {
             throw new InvalidArgumentException('Type de structure invalide.');
         }
-
         if (!in_array($clinicTimezone, timezone_identifiers_list(), true)) {
             throw new InvalidArgumentException('Fuseau horaire invalide.');
         }
-
         if ($doctorDisplayName === '') {
             throw new InvalidArgumentException('Le nom du médecin est obligatoire.');
         }
-
         if (mb_strlen($clinicPhone) > 30) {
-            throw new InvalidArgumentException('Le téléphone du cabinet est trop long.');
+            throw new InvalidArgumentException('Le téléphone de la structure est trop long.');
         }
 
         $clinicAddress = $clinicAddress !== '' ? $clinicAddress : null;
@@ -123,91 +132,83 @@ final class SettingsRepository
         $clinicWilaya = $clinicWilaya !== '' ? $clinicWilaya : null;
         $clinicPhone = $clinicPhone !== '' ? $clinicPhone : null;
         $doctorSpecialty = $doctorSpecialty !== '' ? $doctorSpecialty : null;
-        $doctorLicenseNumber = $doctorLicenseNumber !== ''
-            ? $doctorLicenseNumber
-            : null;
+        $doctorLicenseNumber = $doctorLicenseNumber !== '' ? $doctorLicenseNumber : null;
         $doctorAddress = $doctorAddress !== '' ? $doctorAddress : null;
 
         $this->pdo->beginTransaction();
 
         try {
-            $clinicSql = "
-                UPDATE clinics
-                SET
-                    name = :clinic_name,
-                    type = :clinic_type,
-                    address = :clinic_address,
-                    city = :clinic_city,
-                    wilaya = :clinic_wilaya,
-                    phone = :clinic_phone,
-                    timezone = :clinic_timezone,
-                    updated_at = NOW()
-                WHERE id = :clinic_id
-                LIMIT 1
-            ";
+            if ($canManageClinic) {
+                $clinicStmt = $this->pdo->prepare(
+                    "UPDATE clinics
+                     SET name = :clinic_name,
+                         type = :clinic_type,
+                         address = :clinic_address,
+                         city = :clinic_city,
+                         wilaya = :clinic_wilaya,
+                         phone = :clinic_phone,
+                         timezone = :clinic_timezone,
+                         updated_at = NOW()
+                     WHERE id = :clinic_id
+                     LIMIT 1"
+                );
+                $clinicStmt->execute([
+                    ':clinic_name' => $clinicName,
+                    ':clinic_type' => $clinicType,
+                    ':clinic_address' => $clinicAddress,
+                    ':clinic_city' => $clinicCity,
+                    ':clinic_wilaya' => $clinicWilaya,
+                    ':clinic_phone' => $clinicPhone,
+                    ':clinic_timezone' => $clinicTimezone,
+                    ':clinic_id' => $clinicId,
+                ]);
+            }
 
-            $clinicStmt = $this->pdo->prepare($clinicSql);
-            $clinicStmt->execute([
-                ':clinic_name' => $clinicName,
-                ':clinic_type' => $clinicType,
-                ':clinic_address' => $clinicAddress,
-                ':clinic_city' => $clinicCity,
-                ':clinic_wilaya' => $clinicWilaya,
-                ':clinic_phone' => $clinicPhone,
-                ':clinic_timezone' => $clinicTimezone,
+            $doctorStmt = $this->pdo->prepare(
+                "UPDATE doctor_profiles
+                 SET display_name = :display_name,
+                     specialty = :specialty,
+                     license_number = :license_number,
+                     address = :address,
+                     updated_at = NOW()
+                 WHERE id = :doctor_id
+                   AND clinic_id = :clinic_id
+                 LIMIT 1"
+            );
+            $doctorStmt->execute([
+                ':display_name' => $doctorDisplayName,
+                ':specialty' => $doctorSpecialty,
+                ':license_number' => $doctorLicenseNumber,
+                ':address' => $doctorAddress,
+                ':doctor_id' => $doctorId,
                 ':clinic_id' => $clinicId,
             ]);
 
-            $doctorSql = "
-                UPDATE doctor_profiles
-                SET
-                    display_name = :doctor_display_name,
-                    specialty = :doctor_specialty,
-                    license_number = :doctor_license_number,
-                    address = :doctor_address,
-                    updated_at = NOW()
-                WHERE id = :doctor_id
-                  AND clinic_id = :doctor_clinic_id
-                LIMIT 1
-            ";
-
-            $doctorStmt = $this->pdo->prepare($doctorSql);
-            $doctorStmt->execute([
-                ':doctor_display_name' => $doctorDisplayName,
-                ':doctor_specialty' => $doctorSpecialty,
-                ':doctor_license_number' => $doctorLicenseNumber,
-                ':doctor_address' => $doctorAddress,
-                ':doctor_id' => $doctorId,
-                ':doctor_clinic_id' => $clinicId,
-            ]);
-
-            $userSql = "
-                UPDATE users
-                SET
-                    full_name = :user_full_name,
-                    updated_at = NOW()
-                WHERE id = :doctor_user_id
-                  AND clinic_id = :user_clinic_id
-                LIMIT 1
-            ";
-
-            $userStmt = $this->pdo->prepare($userSql);
+            $userStmt = $this->pdo->prepare(
+                "UPDATE users
+                 SET full_name = :full_name,
+                     updated_at = NOW()
+                 WHERE id = :user_id
+                   AND clinic_id = :clinic_id
+                 LIMIT 1"
+            );
             $userStmt->execute([
-                ':user_full_name' => $doctorDisplayName,
-                ':doctor_user_id' => $current['doctor']['user_id'],
-                ':user_clinic_id' => $clinicId,
+                ':full_name' => $doctorDisplayName,
+                ':user_id' => (int) $current['doctor']['user_id'],
+                ':clinic_id' => $clinicId,
             ]);
 
             $metadata = json_encode([
                 'doctor_id' => $doctorId,
+                'clinic_updated' => $canManageClinic,
                 'previous_timezone' => $current['clinic']['timezone'],
                 'new_timezone' => $clinicTimezone,
                 'previous_clinic_name' => $current['clinic']['name'],
                 'new_clinic_name' => $clinicName,
             ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-            $logSql = "
-                INSERT INTO activity_logs (
+            $logStmt = $this->pdo->prepare(
+                "INSERT INTO activity_logs (
                     clinic_id,
                     actor_user_id,
                     action,
@@ -215,23 +216,21 @@ final class SettingsRepository
                     entity_id,
                     metadata_json,
                     created_at
-                ) VALUES (
-                    :log_clinic_id,
-                    :log_actor_user_id,
+                 ) VALUES (
+                    :clinic_id,
+                    :actor_user_id,
                     'SETTINGS_UPDATED',
                     'clinic',
-                    :log_entity_id,
-                    :log_metadata_json,
+                    :entity_id,
+                    :metadata_json,
                     NOW()
-                )
-            ";
-
-            $logStmt = $this->pdo->prepare($logSql);
+                 )"
+            );
             $logStmt->execute([
-                ':log_clinic_id' => $clinicId,
-                ':log_actor_user_id' => $actorUserId,
-                ':log_entity_id' => $clinicId,
-                ':log_metadata_json' => $metadata,
+                ':clinic_id' => $clinicId,
+                ':actor_user_id' => $actorUserId,
+                ':entity_id' => $clinicId,
+                ':metadata_json' => $metadata,
             ]);
 
             $this->pdo->commit();

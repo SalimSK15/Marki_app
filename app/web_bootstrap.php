@@ -12,7 +12,4 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth/Auth.php';
 
-$context = Auth::context($config, true);
-Auth::authorizeEndpoint($context);
-
-return $context;
+return Auth::context($config, false);

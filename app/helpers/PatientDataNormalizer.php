@@ -2,27 +2,8 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| Normalisation des données patient
-|--------------------------------------------------------------------------
-| Cette classe centralise le nettoyage :
-| - des noms
-| - des numéros de téléphone
-|
-| Elle évite de répéter la même logique dans les API et repositories.
-|--------------------------------------------------------------------------
-*/
 final class PatientDataNormalizer
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Normaliser un nom
-    |--------------------------------------------------------------------------
-    | Exemple :
-    | "  baya   KHELIFI " devient "Baya Khelifi"
-    |--------------------------------------------------------------------------
-    */
     public static function normalizeName(string $value): string
     {
         $value = trim($value);
@@ -31,120 +12,73 @@ final class PatientDataNormalizer
             return '';
         }
 
-        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
-        return mb_convert_case(
-            $value,
-            MB_CASE_TITLE,
-            'UTF-8'
-        );
+        return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Normaliser un numéro de téléphone
-    |--------------------------------------------------------------------------
-    | Exemples :
-    | "0551 70 07 10"   devient "0551700710"
-    | "+213 551700710"  devient "0551700710"
-    | "00213 551700710" devient "0551700710"
-    |--------------------------------------------------------------------------
-    */
+    /**
+     * Accepte les formats algériens locaux et internationaux, puis retourne
+     * toujours le format canonique stocké en base : +213XXXXXXXXX.
+     */
     public static function normalizePhone(string $value): string
     {
-        $digits = preg_replace(
-            '/\D+/',
-            '',
-            trim($value)
-        ) ?? '';
+        $digits = preg_replace('/[^0-9]/', '', trim($value)) ?? '';
 
-        $hadAlgerianCountryCode = false;
-
-        if (str_starts_with($digits, '00213')) {
-            $digits = substr($digits, 5);
-            $hadAlgerianCountryCode = true;
-        } elseif (
-            str_starts_with($digits, '213')
-            && strlen($digits) >= 12
-        ) {
-            $digits = substr($digits, 3);
-            $hadAlgerianCountryCode = true;
+        if ($digits === '') {
+            return '';
         }
 
-        if (
-            $hadAlgerianCountryCode
-            && strlen($digits) === 9
-        ) {
-            $digits = '0' . $digits;
+        if (preg_match('/^0[567][0-9]{8}$/', $digits) === 1) {
+            return '+213' . substr($digits, 1);
+        }
+
+        if (preg_match('/^213[567][0-9]{8}$/', $digits) === 1) {
+            return '+' . $digits;
+        }
+
+        if (preg_match('/^00213[567][0-9]{8}$/', $digits) === 1) {
+            return '+' . substr($digits, 2);
+        }
+
+        if (preg_match('/^2130[567][0-9]{8}$/', $digits) === 1) {
+            return '+213' . substr($digits, 4);
+        }
+
+        if (preg_match('/^002130[567][0-9]{8}$/', $digits) === 1) {
+            return '+213' . substr($digits, 6);
         }
 
         return $digits;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Valider une longueur de téléphone raisonnable
-    |--------------------------------------------------------------------------
-    | On accepte 8 à 15 chiffres afin de ne pas bloquer :
-    | - les numéros algériens ;
-    | - les numéros internationaux ;
-    | - les données de test existantes.
-    |--------------------------------------------------------------------------
-    */
-    public static function isValidPhone(string $phone): bool
+    public static function isValidPhone(string $value): bool
     {
-        $length = strlen($phone);
-
-        return $length >= 8 && $length <= 15;
-    }
-    /*
-|--------------------------------------------------------------------------
-| Formater un téléphone pour l'affichage local algérien
-|--------------------------------------------------------------------------
-| Stockage :
-| +213551223344
-|
-| Affichage :
-| 0551223344
-|--------------------------------------------------------------------------
-*/
-public static function formatPhoneForDisplay(
-    ?string $value
-): string {
-    $value = trim((string) $value);
-
-    if ($value === '') {
-        return '';
-    }
-
-    $normalizedPhone =
-        self::normalizePhone($value);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Format canonique algérien
-    |--------------------------------------------------------------------------
-    */
-    if (
-        preg_match(
+        return preg_match(
             '/^\+213[567][0-9]{8}$/',
-            $normalizedPhone
-        ) === 1
-    ) {
-        return '0'
-            . substr(
-                $normalizedPhone,
-                4
-            );
+            self::normalizePhone($value)
+        ) === 1;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Ancienne donnée invalide ou étrangère
-    |--------------------------------------------------------------------------
-    | On ne la transforme pas arbitrairement.
-    |--------------------------------------------------------------------------
-    */
-    return $value;
-}
+    public static function formatPhoneForDisplay(?string $value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $normalizedPhone = self::normalizePhone($value);
+
+        if (preg_match('/^\+213[567][0-9]{8}$/', $normalizedPhone) === 1) {
+            return '0' . substr($normalizedPhone, 4);
+        }
+
+        return $value;
+    }
+
+    public static function phoneValidationMessage(): string
+    {
+        return 'Le numéro doit être un mobile algérien valide, par exemple 0551223344.';
+    }
 }

@@ -2,53 +2,30 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| Endpoint de test de santé
-|--------------------------------------------------------------------------
-| But :
-| vérifier rapidement que :
-| - PHP fonctionne
-| - le routing du dossier public fonctionne
-| - la connexion PDO à MySQL fonctionne
-|
-| Si tout va bien, on retourne un JSON propre.
-|--------------------------------------------------------------------------
-*/
-
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
+$config = require __DIR__ . '/../../app/config.php';
 require_once __DIR__ . '/../../app/db.php';
 
 try {
-    $pdo = db();
-
-    /*
-    |--------------------------------------------------------------------------
-    | Petite requête très simple
-    |--------------------------------------------------------------------------
-    | SELECT 1 permet juste de vérifier que la connexion DB répond.
-    |--------------------------------------------------------------------------
-    */
-    $stmt = $pdo->query('SELECT 1 AS db_ok');
-    $row = $stmt->fetch();
+    db()->query('SELECT 1');
 
     echo json_encode([
         'ok' => true,
-        'message' => 'Connexion PHP / PDO / MySQL OK',
-        'data' => [
-            'db_ok' => (int) ($row['db_ok'] ?? 0),
-            'php_version' => PHP_VERSION,
-            'timestamp' => date('Y-m-d H:i:s'),
-        ],
+        'message' => 'Service disponible.',
     ], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $exception) {
+    http_response_code(503);
 
-} catch (Throwable $e) {
-    http_response_code(500);
-
-    echo json_encode([
+    $payload = [
         'ok' => false,
-        'message' => 'Le test de santé a échoué.',
-        'error' => $e->getMessage(),
-    ], JSON_UNESCAPED_UNICODE);
+        'message' => 'Service temporairement indisponible.',
+    ];
+
+    if ((bool) ($config['app']['debug'] ?? false)) {
+        $payload['error'] = $exception->getMessage();
+    }
+
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
 }
