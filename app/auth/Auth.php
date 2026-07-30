@@ -145,7 +145,17 @@ final class Auth
             ]
         );
 
-        return self::context($config, false);
+        return [
+            'user' => [
+                'id' => (int) $user['id'],
+                'must_change_password' =>
+                    (bool) ($user['must_change_password'] ?? false),
+            ],
+            'clinic' => [
+                'id' => (int) $clinic['id'],
+                'slug' => (string) $clinic['slug'],
+            ],
+        ];
     }
 
     public static function context(array $config, bool $api = true): array
@@ -735,7 +745,7 @@ final class Auth
             'patients.manage' => $isAdmin || $isDoctor || $hasPatients,
             'lists.view' => $isAdmin || $isDoctor || $hasPatients,
             'settings.view' => $isAdmin || $isDoctor || $hasFull,
-            'settings.manage_doctor' => $isAdmin || $isDoctor || $hasFull,
+            'settings.manage_doctor' => $isAdmin || $isDoctor,
             'settings.manage_clinic' => $isAdmin,
             'team.manage' => $isAdmin,
         ];

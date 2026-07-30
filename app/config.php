@@ -15,8 +15,8 @@ return [
         'port' => 3307,
         'dbname' => 'markii_db',
         'charset' => 'utf8mb4',
-        'username' => 'marki_app_users',
-        'password' => '$LK~1Si@(8!PmI]7t',
+        'username' => 'root',
+        'password' => '',
     ],
 
     'auth' => [

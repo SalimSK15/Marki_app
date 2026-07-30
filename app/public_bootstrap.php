@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 $config = require __DIR__ . '/config.php';
 
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
+
 $debug = (bool) ($config['app']['debug'] ?? false);
 ini_set('display_errors', $debug ? '1' : '0');
 ini_set('display_startup_errors', $debug ? '1' : '0');

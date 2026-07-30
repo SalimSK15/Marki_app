@@ -80,9 +80,16 @@ final class SettingsRepository
         int $doctorId,
         int $actorUserId,
         array $input,
-        bool $canManageClinic
+        bool $canManageClinic,
+        bool $canManageDoctor
     ): array {
         $current = $this->get($clinicId, $doctorId);
+
+        if (!$canManageClinic && !$canManageDoctor) {
+            throw new InvalidArgumentException(
+                'Vous n’avez pas la permission de modifier ces paramètres.'
+            );
+        }
 
         $clinicName = $canManageClinic
             ? trim((string) ($input['clinic_name'] ?? ''))
@@ -106,10 +113,18 @@ final class SettingsRepository
             ? trim((string) ($input['clinic_timezone'] ?? 'Africa/Algiers'))
             : (string) $current['clinic']['timezone'];
 
-        $doctorDisplayName = trim((string) ($input['doctor_display_name'] ?? ''));
-        $doctorSpecialty = trim((string) ($input['doctor_specialty'] ?? ''));
-        $doctorLicenseNumber = trim((string) ($input['doctor_license_number'] ?? ''));
-        $doctorAddress = trim((string) ($input['doctor_address'] ?? ''));
+        $doctorDisplayName = $canManageDoctor
+            ? trim((string) ($input['doctor_display_name'] ?? ''))
+            : (string) $current['doctor']['display_name'];
+        $doctorSpecialty = $canManageDoctor
+            ? trim((string) ($input['doctor_specialty'] ?? ''))
+            : (string) ($current['doctor']['specialty'] ?? '');
+        $doctorLicenseNumber = $canManageDoctor
+            ? trim((string) ($input['doctor_license_number'] ?? ''))
+            : (string) ($current['doctor']['license_number'] ?? '');
+        $doctorAddress = $canManageDoctor
+            ? trim((string) ($input['doctor_address'] ?? ''))
+            : (string) ($current['doctor']['address'] ?? '');
 
         if ($clinicName === '') {
             throw new InvalidArgumentException('Le nom de la structure est obligatoire.');
@@ -164,43 +179,46 @@ final class SettingsRepository
                 ]);
             }
 
-            $doctorStmt = $this->pdo->prepare(
-                "UPDATE doctor_profiles
-                 SET display_name = :display_name,
-                     specialty = :specialty,
-                     license_number = :license_number,
-                     address = :address,
-                     updated_at = NOW()
-                 WHERE id = :doctor_id
-                   AND clinic_id = :clinic_id
-                 LIMIT 1"
-            );
-            $doctorStmt->execute([
-                ':display_name' => $doctorDisplayName,
-                ':specialty' => $doctorSpecialty,
-                ':license_number' => $doctorLicenseNumber,
-                ':address' => $doctorAddress,
-                ':doctor_id' => $doctorId,
-                ':clinic_id' => $clinicId,
-            ]);
+            if ($canManageDoctor) {
+                $doctorStmt = $this->pdo->prepare(
+                    "UPDATE doctor_profiles
+                     SET display_name = :display_name,
+                         specialty = :specialty,
+                         license_number = :license_number,
+                         address = :address,
+                         updated_at = NOW()
+                     WHERE id = :doctor_id
+                       AND clinic_id = :clinic_id
+                     LIMIT 1"
+                );
+                $doctorStmt->execute([
+                    ':display_name' => $doctorDisplayName,
+                    ':specialty' => $doctorSpecialty,
+                    ':license_number' => $doctorLicenseNumber,
+                    ':address' => $doctorAddress,
+                    ':doctor_id' => $doctorId,
+                    ':clinic_id' => $clinicId,
+                ]);
 
-            $userStmt = $this->pdo->prepare(
-                "UPDATE users
-                 SET full_name = :full_name,
-                     updated_at = NOW()
-                 WHERE id = :user_id
-                   AND clinic_id = :clinic_id
-                 LIMIT 1"
-            );
-            $userStmt->execute([
-                ':full_name' => $doctorDisplayName,
-                ':user_id' => (int) $current['doctor']['user_id'],
-                ':clinic_id' => $clinicId,
-            ]);
+                $userStmt = $this->pdo->prepare(
+                    "UPDATE users
+                     SET full_name = :full_name,
+                         updated_at = NOW()
+                     WHERE id = :user_id
+                       AND clinic_id = :clinic_id
+                     LIMIT 1"
+                );
+                $userStmt->execute([
+                    ':full_name' => $doctorDisplayName,
+                    ':user_id' => (int) $current['doctor']['user_id'],
+                    ':clinic_id' => $clinicId,
+                ]);
+            }
 
             $metadata = json_encode([
                 'doctor_id' => $doctorId,
                 'clinic_updated' => $canManageClinic,
+                'doctor_updated' => $canManageDoctor,
                 'previous_timezone' => $current['clinic']['timezone'],
                 'new_timezone' => $clinicTimezone,
                 'previous_clinic_name' => $current['clinic']['name'],

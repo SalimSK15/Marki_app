@@ -79,6 +79,6 @@ final class PatientDataNormalizer
 
     public static function phoneValidationMessage(): string
     {
-        return 'Le numéro doit être un mobile algérien valide, par exemple 0551223344.';
+        return 'Le numéro doit être un mobile algérien valide, par exemple 0550 80 30 90.';
     }
 }

@@ -931,13 +931,40 @@
 
   function applySettingsPermissions(permissions) {
     const canManageClinic = Boolean(permissions.can_manage_clinic);
+    const canManageDoctor = Boolean(permissions.can_manage_doctor);
     const clinicCard = document.getElementById('clinic-settings-card');
+    const doctorCard = document.getElementById('doctor-settings-card');
+    const saveButton = document.getElementById('settings-save-button');
+    const actions = document.getElementById('settings-actions');
+    const note = document.getElementById('settings-context-note');
 
     clinicCard?.classList.toggle('is-readonly', !canManageClinic);
+    doctorCard?.classList.toggle('is-readonly', !canManageDoctor);
 
     clinicCard?.querySelectorAll('input, select, textarea').forEach(field => {
       field.disabled = !canManageClinic;
     });
+
+    doctorCard?.querySelectorAll('input, select, textarea').forEach(field => {
+      field.disabled = !canManageDoctor;
+    });
+
+    const canSave = canManageClinic || canManageDoctor;
+
+    if (saveButton) {
+      saveButton.hidden = !canSave;
+      saveButton.disabled = !canSave;
+    }
+
+    if (actions) {
+      actions.classList.toggle('is-readonly', !canSave);
+    }
+
+    if (note) {
+      note.textContent = canSave
+        ? 'Vérifiez les informations avant de les enregistrer.'
+        : 'Ces informations sont disponibles en lecture seule.';
+    }
   }
 
   async function saveSettings(event) {
@@ -963,7 +990,14 @@
 
       fillSettingsForm(response.data?.clinic || {}, response.data?.doctor || {});
       applySettingsPermissions(response.data?.permissions || {});
-      setMessage(message, response.message || 'Paramètres enregistrés.', 'success');
+      setMessage(message);
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          response.message || 'Paramètres enregistrés.',
+          'success'
+        );
+      }
     } catch (error) {
       console.error('Enregistrement paramètres :', error);
       setMessage(message, error.message, 'error');
@@ -976,18 +1010,10 @@
   }
 
   /* =======================================================
-     BRANCHEMENT AVEC LE ROUTEUR ACTUEL DE app.js
+     POINT D'ENTRÉE PUBLIC POUR app.js
      ======================================================= */
 
-  const previousInitPage = typeof window.initPage === 'function'
-    ? window.initPage
-    : null;
-
-  window.initPage = function (page) {
-    if (previousInitPage) {
-      previousInitPage(page);
-    }
-
+  window.initMarkiV1Page = function (page) {
     if (page === 'patients') {
       initPatientsPage();
       return;

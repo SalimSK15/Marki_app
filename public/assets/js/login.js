@@ -9,21 +9,61 @@
     element.className = `auth-message is-${type}`;
   }
 
+  async function readJson(response) {
+    const raw = await response.text();
+
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      console.error('Réponse non JSON :', raw);
+      throw new Error(
+        'Le serveur a renvoyé une réponse inattendue. Rechargez la page puis réessayez.'
+      );
+    }
+  }
+
+  function csrfToken(form) {
+    return document.querySelector('meta[name="csrf-token"]')?.content
+      || form.querySelector('[name="csrf_token"]')?.value
+      || '';
+  }
+
   async function submitJson(form, endpoint) {
     const button = form.querySelector('button[type="submit"]');
     const payload = Object.fromEntries(new FormData(form).entries());
-    payload.remember = form.querySelector('[name="remember"]')?.checked || false;
+    const rememberInput = form.querySelector('[name="remember"]');
+
+    if (rememberInput) {
+      payload.remember = rememberInput.checked;
+    }
+
+    const token = csrfToken(form);
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (token) {
+      headers['X-CSRF-Token'] = token;
+    }
 
     message('');
-    if (button) button.disabled = true;
+
+    if (button) {
+      button.disabled = true;
+      button.dataset.defaultLabel = button.dataset.defaultLabel
+        || button.textContent;
+      button.textContent = 'Traitement…';
+    }
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'same-origin',
         body: JSON.stringify(payload)
       });
-      const data = await response.json();
+
+      const data = await readJson(response);
 
       if (!response.ok || !data?.ok) {
         throw new Error(data?.message || 'Impossible de traiter la demande.');
@@ -38,12 +78,15 @@
       if (data.data?.redirect) {
         window.setTimeout(() => {
           location.href = data.data.redirect;
-        }, 250);
+        }, 180);
       }
     } catch (error) {
       message(error.message || 'Une erreur est survenue.');
     } finally {
-      if (button) button.disabled = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = button.dataset.defaultLabel || 'Valider';
+      }
     }
   }
 
@@ -55,6 +98,7 @@
 
     const clinicInput = document.querySelector('[name="clinic_slug"]');
     const rememberedSlug = localStorage.getItem('marki.clinicSlug');
+
     if (clinicInput && !clinicInput.value && rememberedSlug) {
       clinicInput.value = rememberedSlug;
     }

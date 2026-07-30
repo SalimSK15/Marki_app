@@ -64,11 +64,11 @@
       </div>
     </section>
 
-    <section class="v1-card" aria-labelledby="doctor-settings-title">
+    <section class="v1-card" id="doctor-settings-card" aria-labelledby="doctor-settings-title">
       <div class="v1-card__header">
         <div>
           <p class="v1-page__eyebrow">Profil professionnel</p>
-          <h3 id="doctor-settings-title">Médecin sélectionné</h3>
+          <h3 id="doctor-settings-title">Profil du médecin</h3>
         </div>
       </div>
 
@@ -95,7 +95,7 @@
       </div>
     </section>
 
-    <div class="v1-settings-actions">
+    <div class="v1-settings-actions" id="settings-actions">
       <p id="settings-context-note">Vérifiez les informations avant de les enregistrer.</p>
       <button type="submit" class="v1-button v1-button--primary" id="settings-save-button">
         Enregistrer les paramètres
@@ -108,7 +108,7 @@
       <div>
         <p class="v1-page__eyebrow">Équipe et accès</p>
         <h3 id="team-settings-title">Comptes de la structure</h3>
-        <p>Chaque personne utilise son propre compte. Les anciens comptes sont désactivés, jamais supprimés.</p>
+        <p>Chaque personne utilise son propre compte. Un compte désactivé conserve tout son historique.</p>
       </div>
       <button type="button" class="v1-button v1-button--primary" id="team-new-account-button">
         Nouveau compte
@@ -117,26 +117,35 @@
 
     <div id="team-message" class="v1-message" role="status" aria-live="polite"></div>
 
-    <div class="team-layout">
-      <div class="v1-table-wrap team-table-wrap">
-        <table class="v1-table team-table">
-          <thead>
-            <tr>
-              <th>Utilisateur</th>
-              <th>Type</th>
-              <th>Accès</th>
-              <th>État</th>
-              <th>Dernière connexion</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="team-table-body">
-            <tr><td colspan="6" class="v1-empty-cell">Chargement de l’équipe…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="v1-table-wrap team-table-wrap">
+      <table class="v1-table team-table">
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Type</th>
+            <th>Accès</th>
+            <th>État</th>
+            <th>Dernière connexion</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="team-table-body">
+          <tr><td colspan="6" class="v1-empty-cell">Chargement de l’équipe…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-      <form id="team-account-form" class="v1-form team-form" novalidate hidden>
+  <div id="team-account-modal" class="team-modal" hidden aria-hidden="true">
+    <button
+      type="button"
+      class="team-modal__backdrop"
+      id="team-account-modal-backdrop"
+      aria-label="Fermer"
+    ></button>
+
+    <div class="team-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="team-form-title">
+      <form id="team-account-form" class="v1-form team-form" novalidate>
         <div class="team-form__header">
           <div>
             <p class="v1-page__eyebrow">Compte</p>
@@ -151,6 +160,7 @@
           <label class="v1-field v1-field--wide">
             <span>Nom complet <strong class="required-mark" aria-hidden="true">*</strong></span>
             <input type="text" id="team-full-name" name="full_name" required>
+            <small class="v1-field-error" data-team-error="full_name"></small>
           </label>
 
           <label class="v1-field">
@@ -159,51 +169,73 @@
               <option value="secretary">Secrétariat</option>
               <option value="doctor">Médecin</option>
             </select>
+            <small class="v1-field-error" data-team-error="account_type"></small>
           </label>
 
           <label class="v1-field">
             <span>Courriel</span>
             <input type="email" id="team-email" name="email" autocomplete="email">
+            <small class="v1-field-error" data-team-error="email"></small>
           </label>
 
           <label class="v1-field">
             <span>Téléphone</span>
-            <input type="tel" id="team-phone" name="phone" inputmode="tel" placeholder="0551223344">
+            <input
+              type="tel"
+              id="team-phone"
+              name="phone"
+              inputmode="numeric"
+              autocomplete="tel"
+              maxlength="13"
+              placeholder="0550 80 30 90"
+            >
+            <small class="v1-field-hint">Format local : 0550 80 30 90</small>
+            <small class="v1-field-error" data-team-error="phone"></small>
           </label>
 
           <label class="v1-field v1-field--wide">
             <span>Mot de passe temporaire</span>
             <input type="password" id="team-temporary-password" name="temporary_password" autocomplete="new-password">
-            <small>Obligatoire à la création. L’utilisateur devra le modifier à sa première connexion.</small>
+            <small class="v1-field-hint" id="team-password-hint">10 caractères minimum, avec majuscule, minuscule et chiffre.</small>
+            <small class="v1-field-error" data-team-error="temporary_password"></small>
           </label>
 
           <label class="v1-field v1-field--wide" id="team-job-title-field">
             <span>Fonction</span>
             <input type="text" id="team-job-title" name="job_title" placeholder="Secrétaire médicale">
+            <small class="v1-field-error" data-team-error="job_title"></small>
           </label>
 
           <label class="v1-field v1-field--wide" id="team-specialty-field" hidden>
             <span>Spécialité</span>
             <input type="text" id="team-specialty" name="specialty">
+            <small class="v1-field-error" data-team-error="specialty"></small>
           </label>
 
           <label class="v1-field v1-field--wide" id="team-license-field" hidden>
             <span>Numéro d’agrément / licence</span>
             <input type="text" id="team-license-number" name="license_number">
+            <small class="v1-field-error" data-team-error="license_number"></small>
           </label>
+
+          <div class="team-doctor-access-note v1-field--wide" id="team-doctor-access-note" hidden>
+            Un médecin accède à sa Liste du jour, à ses patients, à ses historiques et à son profil. Les niveaux ci-dessous concernent uniquement le secrétariat.
+          </div>
 
           <label class="v1-field v1-field--wide" id="team-access-level-field">
             <span>Niveau d’accès</span>
             <select id="team-access-level" name="access_level">
               <option value="queue_only">Liste du jour seulement</option>
               <option value="queue_and_patients">Liste, patients et historique</option>
-              <option value="full">Accès opérationnel complet</option>
+              <option value="full">Accès opérationnel étendu</option>
             </select>
+            <small class="v1-field-error" data-team-error="access_level"></small>
           </label>
 
           <fieldset class="team-doctors-field v1-field--wide" id="team-doctors-field">
             <legend>Médecins autorisés <strong class="required-mark" aria-hidden="true">*</strong></legend>
             <div id="team-doctors-options" class="team-doctors-options"></div>
+            <small class="v1-field-error" data-team-error="doctor_ids"></small>
           </fieldset>
         </div>
 
@@ -213,5 +245,31 @@
         </div>
       </form>
     </div>
-  </section>
+  </div>
+
+  <div id="team-confirm-modal" class="team-modal team-modal--confirm" hidden aria-hidden="true">
+    <button
+      type="button"
+      class="team-modal__backdrop"
+      id="team-confirm-backdrop"
+      aria-label="Fermer"
+    ></button>
+
+    <div class="team-modal__dialog team-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="team-confirm-title">
+      <div class="team-form__header">
+        <div>
+          <p class="v1-page__eyebrow">Confirmation</p>
+          <h4 id="team-confirm-title">Modifier ce compte ?</h4>
+        </div>
+        <button type="button" class="v1-icon-button" id="team-confirm-close-button" aria-label="Fermer">×</button>
+      </div>
+
+      <p id="team-confirm-message"></p>
+
+      <div class="v1-form__actions">
+        <button type="button" class="v1-button v1-button--secondary" id="team-confirm-cancel-button">Annuler</button>
+        <button type="button" class="v1-button v1-button--primary" id="team-confirm-button">Confirmer</button>
+      </div>
+    </div>
+  </div>
 </section>

@@ -20,6 +20,7 @@ try {
 
     $settings['permissions'] = [
         'can_manage_clinic' => (bool) ($context['capabilities']['settings.manage_clinic'] ?? false),
+        'can_manage_doctor' => (bool) ($context['capabilities']['settings.manage_doctor'] ?? false),
         'can_manage_team' => (bool) ($context['capabilities']['team.manage'] ?? false),
     ];
 

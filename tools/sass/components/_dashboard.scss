@@ -968,8 +968,8 @@
 .marki-toast-container {
   position: fixed;
   z-index: 12000;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   width: min(92vw, 380px);
   display: grid;
   gap: 10px;
@@ -987,7 +987,7 @@
   font-weight: 600;
   line-height: 1.45;
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(8px);
   transition: opacity 0.2s ease, transform 0.2s ease;
 
   &.is-visible {
@@ -1112,7 +1112,7 @@
   }
 
   .marki-toast-container {
-    top: 12px;
+    bottom: 12px;
     right: 12px;
     left: 12px;
     width: auto;

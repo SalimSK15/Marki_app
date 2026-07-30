@@ -52,7 +52,14 @@
 
       location.reload();
     } catch (error) {
-      alert(error.message || 'Impossible de changer de médecin.');
+      const message = error.message || 'Impossible de changer de médecin.';
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(message, 'error');
+      } else {
+        console.error(message);
+      }
+
       select.disabled = false;
     }
   }

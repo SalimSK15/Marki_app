@@ -6,6 +6,21 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../helpers/PatientDataNormalizer.php';
 require_once __DIR__ . '/AuthRepository.php';
 
+final class TeamValidationException extends InvalidArgumentException
+{
+    public function __construct(
+        string $message,
+        private array $errors = []
+    ) {
+        parent::__construct($message);
+    }
+
+    public function errors(): array
+    {
+        return $this->errors;
+    }
+}
+
 final class TeamRepository
 {
     private PDO $pdo;
@@ -172,27 +187,41 @@ final class TeamRepository
         ), static fn(int $id): bool => $id > 0)));
 
         if ($fullName === '') {
-            throw new InvalidArgumentException('Le nom complet est obligatoire.');
+            throw new TeamValidationException(
+                'Le nom complet est obligatoire.',
+                ['full_name' => 'Le nom complet est obligatoire.']
+            );
         }
 
         if ($email === '' && $phone === null) {
-            throw new InvalidArgumentException(
-                'Un courriel ou un numéro de téléphone est obligatoire.'
+            throw new TeamValidationException(
+                'Un courriel ou un numéro de téléphone est obligatoire.',
+                [
+                    'email' => 'Saisissez un courriel ou un téléphone.',
+                    'phone' => 'Saisissez un courriel ou un téléphone.',
+                ]
             );
         }
 
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            throw new InvalidArgumentException('Adresse courriel invalide.');
+            throw new TeamValidationException(
+                'Adresse courriel invalide.',
+                ['email' => 'Adresse courriel invalide.']
+            );
         }
 
         if ($phone !== null && !PatientDataNormalizer::isValidPhone($phone)) {
-            throw new InvalidArgumentException(
-                PatientDataNormalizer::phoneValidationMessage()
+            throw new TeamValidationException(
+                PatientDataNormalizer::phoneValidationMessage(),
+                ['phone' => PatientDataNormalizer::phoneValidationMessage()]
             );
         }
 
         if (!in_array($accountType, ['doctor', 'secretary'], true)) {
-            throw new InvalidArgumentException('Type de compte invalide.');
+            throw new TeamValidationException(
+                'Type de compte invalide.',
+                ['account_type' => 'Type de compte invalide.']
+            );
         }
 
         if (!in_array(
@@ -200,7 +229,10 @@ final class TeamRepository
             ['queue_only', 'queue_and_patients', 'full'],
             true
         )) {
-            throw new InvalidArgumentException('Niveau d’accès invalide.');
+            throw new TeamValidationException(
+                'Niveau d’accès invalide.',
+                ['access_level' => 'Niveau d’accès invalide.']
+            );
         }
 
         if ($userId === 0) {
@@ -216,8 +248,9 @@ final class TeamRepository
         }
 
         if ($accountType === 'secretary' && $doctorIds === []) {
-            throw new InvalidArgumentException(
-                'Attribuez au moins un médecin à ce compte.'
+            throw new TeamValidationException(
+                'Attribuez au moins un médecin à ce compte.',
+                ['doctor_ids' => 'Attribuez au moins un médecin à ce compte.']
             );
         }
 
@@ -268,15 +301,19 @@ final class TeamRepository
                 $action = 'USER_CREATED';
             } else {
                 $existing = $this->findEditableUser($clinicId, $userId);
-                if (in_array('clinic_admin', $existing['roles'], true)) {
-                    throw new InvalidArgumentException(
-                        'Le compte administrateur principal est protégé.'
-                    );
-                }
-
                 $existingType = in_array('doctor', $existing['roles'], true)
                     ? 'doctor'
                     : 'secretary';
+
+                if ($userId === $actorUserId && $temporaryPassword !== '') {
+                    throw new TeamValidationException(
+                        'Utilisez le menu de votre compte pour changer votre mot de passe.',
+                        [
+                            'temporary_password' =>
+                                'Utilisez « Changer le mot de passe » dans le menu de votre compte.',
+                        ]
+                    );
+                }
 
                 if ($existingType !== $accountType) {
                     throw new InvalidArgumentException(
@@ -695,8 +732,9 @@ final class TeamRepository
                 ':excluded_user_id' => $excludedUserId,
             ]);
             if ($stmt->fetch()) {
-                throw new InvalidArgumentException(
-                    'Ce courriel est déjà utilisé dans cette structure.'
+                throw new TeamValidationException(
+                    'Ce courriel est déjà utilisé dans cette structure.',
+                    ['email' => 'Ce courriel est déjà utilisé dans cette structure.']
                 );
             }
         }
@@ -716,8 +754,9 @@ final class TeamRepository
                 ':excluded_user_id' => $excludedUserId,
             ]);
             if ($stmt->fetch()) {
-                throw new InvalidArgumentException(
-                    'Ce téléphone est déjà utilisé dans cette structure.'
+                throw new TeamValidationException(
+                    'Ce téléphone est déjà utilisé dans cette structure.',
+                    ['phone' => 'Ce téléphone est déjà utilisé dans cette structure.']
                 );
             }
         }
@@ -750,8 +789,12 @@ final class TeamRepository
         int $minimumLength
     ): void {
         if (mb_strlen($password) < $minimumLength) {
-            throw new InvalidArgumentException(
-                "Le mot de passe temporaire doit contenir au moins {$minimumLength} caractères."
+            $message =
+                "Le mot de passe temporaire doit contenir au moins {$minimumLength} caractères.";
+
+            throw new TeamValidationException(
+                $message,
+                ['temporary_password' => $message]
             );
         }
 
@@ -760,8 +803,12 @@ final class TeamRepository
             || preg_match('/[a-z]/', $password) !== 1
             || preg_match('/[0-9]/', $password) !== 1
         ) {
-            throw new InvalidArgumentException(
-                'Le mot de passe temporaire doit contenir une majuscule, une minuscule et un chiffre.'
+            $message =
+                'Le mot de passe temporaire doit contenir une majuscule, une minuscule et un chiffre.';
+
+            throw new TeamValidationException(
+                $message,
+                ['temporary_password' => $message]
             );
         }
     }

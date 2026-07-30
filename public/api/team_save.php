@@ -28,6 +28,14 @@ try {
         'message' => 'Compte enregistré avec succès.',
         'data' => $data,
     ], JSON_UNESCAPED_UNICODE);
+} catch (TeamValidationException $exception) {
+    http_response_code(422);
+
+    echo json_encode([
+        'ok' => false,
+        'message' => $exception->getMessage(),
+        'errors' => $exception->errors(),
+    ], JSON_UNESCAPED_UNICODE);
 } catch (InvalidArgumentException | RuntimeException $exception) {
     Auth::jsonError(422, $exception->getMessage());
 } catch (Throwable $exception) {

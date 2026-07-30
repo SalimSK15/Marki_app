@@ -668,11 +668,15 @@ async function handleAddPatientSubmit(event) {
 |--------------------------------------------------------------------------
 */
 function showToast(message, type = 'info') {
-  const container = document.getElementById('marki-toast-container');
+  let container = document.getElementById('marki-toast-container');
 
   if (!container) {
-    console.log(message);
-    return;
+    container = document.createElement('div');
+    container.id = 'marki-toast-container';
+    container.className = 'marki-toast-container';
+    container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-atomic', 'true');
+    document.body.append(container);
   }
 
   const toast = document.createElement('div');
@@ -689,8 +693,10 @@ function showToast(message, type = 'info') {
   window.setTimeout(() => {
     toast.classList.remove('is-visible');
     window.setTimeout(() => toast.remove(), 250);
-  }, 3500);
+  }, 3200);
 }
+
+window.showToast = showToast;
 
 /*
 |--------------------------------------------------------------------------

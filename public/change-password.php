@@ -12,7 +12,7 @@ $context = require __DIR__ . '/../app/web_bootstrap.php';
     <meta name="csrf-token" content="<?= htmlspecialchars($context['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
     <meta name="marki-base-path" content="<?= htmlspecialchars(Auth::baseUrl($context['config']), ENT_QUOTES, 'UTF-8') ?>">
     <title>Changer le mot de passe — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260728-auth1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260729-auth2">
 </head>
 <body class="auth-page">
     <main class="auth-card">
@@ -44,7 +44,7 @@ $context = require __DIR__ . '/../app/web_bootstrap.php';
             <a class="auth-link" href="index.php">Retour à l’application</a>
         <?php endif; ?>
     </main>
-    <script src="assets/js/auth-client.js?v=20260728-auth1" defer></script>
-    <script src="assets/js/login.js?v=20260728-auth1" defer></script>
+    <script src="assets/js/auth-client.js?v=20260729-auth2" defer></script>
+    <script src="assets/js/login.js?v=20260729-auth2" defer></script>
 </body>
 </html>

@@ -10,7 +10,7 @@ if (!empty($_SESSION['user_id'])) {
     exit;
 }
 
-$clinicSlug = trim((string) ($_GET['clinic'] ?? 'cabinet-el-amal'));
+$clinicSlug = trim((string) ($_GET['clinic'] ?? 'clinique-el-amal'));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -18,7 +18,7 @@ $clinicSlug = trim((string) ($_GET['clinic'] ?? 'cabinet-el-amal'));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260728-auth1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260729-auth2">
 </head>
 <body class="auth-page">
     <main class="auth-card">
@@ -82,6 +82,6 @@ $clinicSlug = trim((string) ($_GET['clinic'] ?? 'cabinet-el-amal'));
         <a class="auth-link" href="forgot-password.php">Mot de passe oublié ?</a>
     </main>
 
-    <script src="assets/js/login.js?v=20260728-auth1" defer></script>
+    <script src="assets/js/login.js?v=20260729-auth2" defer></script>
 </body>
 </html>
