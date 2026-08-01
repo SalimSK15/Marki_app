@@ -82,18 +82,36 @@ final class Auth
             !empty($user['locked_until'])
             && strtotime((string) $user['locked_until']) > time()
         ) {
+            $remainingSeconds = max(
+                60,
+                strtotime((string) $user['locked_until']) - time()
+            );
+            $remainingMinutes = (int) ceil($remainingSeconds / 60);
+
             throw new AuthException(
-                'Ce compte est temporairement verrouillé. Réessayez plus tard.'
+                sprintf(
+                    'Trop de tentatives. Ce compte est verrouillé pendant encore %d minute(s).',
+                    $remainingMinutes
+                )
             );
         }
 
         if (!password_verify($password, (string) $user['password_hash'])) {
-            $repository->recordFailedLogin(
+            $failure = $repository->recordFailedLogin(
                 (int) $user['id'],
                 (int) ($user['failed_login_attempts'] ?? 0),
                 (int) ($config['auth']['max_failed_attempts'] ?? 5),
                 (int) ($config['auth']['lock_minutes'] ?? 15)
             );
+
+            if (!empty($failure['locked_until'])) {
+                throw new AuthException(
+                    sprintf(
+                        'Trop de tentatives. Ce compte est verrouillé pendant %d minute(s).',
+                        (int) ($config['auth']['lock_minutes'] ?? 15)
+                    )
+                );
+            }
 
             throw new AuthException('Identifiant ou mot de passe incorrect.');
         }

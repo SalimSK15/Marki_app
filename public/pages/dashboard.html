@@ -197,6 +197,7 @@
                                 type="button"
                                 class="btn-patient-full-record"
                                 id="view-full-patient-record-btn"
+                                hidden
                                 disabled
                             >
                                 <span>Voir la fiche complète</span>
@@ -443,9 +444,11 @@
                         type="tel"
                         id="addPatientPhone"
                         name="phone"
-                        placeholder="Ex. 0551223344"
-                        inputmode="tel"
+                        placeholder="0550 80 30 90"
+                        inputmode="numeric"
                         autocomplete="tel"
+                        maxlength="13"
+                        data-dz-mobile
                         required
                     >
                 </div>

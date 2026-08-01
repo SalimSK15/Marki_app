@@ -2052,3 +2052,16 @@ p {
 }
 
 /*# sourceMappingURL=styles.css.map */
+
+/* MARKI pre-QR: téléphone complet et dates relatives dans la Liste du jour */
+.waiting-list .col-num { width: 11%; }
+.waiting-list .col-patient { width: 23%; }
+.waiting-list .col-phone { width: 18%; }
+.waiting-list .col-time { width: 9%; }
+.waiting-list .col-status { width: 15%; }
+.waiting-list .col-actions { width: 24%; }
+.patient-name-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patient-phone-cell { overflow: visible !important; text-overflow: clip !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.visit-date-stack { display: inline-flex; flex-direction: column; gap: .1rem; }
+.visit-date-stack small { color: #7a6d86; font-size: .75rem; font-weight: 500; }
+.btn-patient-full-record[hidden] { display: none !important; }

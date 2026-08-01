@@ -104,6 +104,15 @@
     }
 
     const activeClinicSlug = clinicInput?.value || rememberedSlug || '';
+
+    if (loginForm && !activeClinicSlug) {
+      message(
+        'Lien de connexion incomplet. Ouvrez le lien fourni par votre cabinet ou votre clinique.'
+      );
+      const submitButton = loginForm.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+    }
+
     const forgotLink = document.querySelector('a[href^="forgot-password.php"]');
 
     if (forgotLink && activeClinicSlug) {

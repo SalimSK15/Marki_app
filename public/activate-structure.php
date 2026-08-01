@@ -69,8 +69,9 @@ $recipientName = (string) (
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activer votre espace — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260731-setup1">
-    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260731-setup1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260801-preqr1">
+    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260801-preqr1">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
 </head>
 <body class="activation-page">
     <main class="activation-shell">
@@ -132,7 +133,7 @@ $recipientName = (string) (
 
                         <label class="activation-field">
                             <span>Téléphone de la structure</span>
-                            <input type="tel" name="clinic_phone" value="<?= activationE($_POST['clinic_phone'] ?? '') ?>" autocomplete="tel">
+                            <input type="tel" name="clinic_phone" value="<?= activationE($_POST['clinic_phone'] ?? '') ?>" autocomplete="tel" data-dz-phone-auto>
                         </label>
 
                         <label class="activation-field activation-field--wide">
@@ -140,33 +141,41 @@ $recipientName = (string) (
                             <input type="text" name="clinic_address" value="<?= activationE($_POST['clinic_address'] ?? '') ?>" autocomplete="street-address">
                         </label>
 
-                        <label class="activation-field">
-                            <span>Ville</span>
-                            <input type="text" name="clinic_city" value="<?= activationE($_POST['clinic_city'] ?? '') ?>">
-                        </label>
+                        <div class="activation-location-fields activation-field--wide" data-algeria-location-group>
+                            <label class="activation-field">
+                                <span>Wilaya / région</span>
+                                <select name="clinic_wilaya" data-algeria-wilaya data-initial-value="<?= activationE($_POST['clinic_wilaya'] ?? '') ?>">
+                                    <option value="">Choisir une wilaya</option>
+                                </select>
+                            </label>
 
-                        <label class="activation-field">
-                            <span>Wilaya / région</span>
-                            <input type="text" name="clinic_wilaya" value="<?= activationE($_POST['clinic_wilaya'] ?? '') ?>">
-                        </label>
+                            <label class="activation-field">
+                                <span>Ville / commune</span>
+                                <input type="text" name="clinic_city" value="<?= activationE($_POST['clinic_city'] ?? '') ?>" list="activation-city-options" data-algeria-city autocomplete="address-level2">
+                                <datalist id="activation-city-options"></datalist>
+                            </label>
+                        </div>
 
                         <label class="activation-field activation-field--wide <?= isset($fieldErrors['clinic_timezone']) ? 'has-error' : '' ?>">
                             <span>Fuseau horaire <strong>*</strong></span>
-                            <select name="clinic_timezone" required>
+                            <span class="activation-timezone-wrap">
+                                <img id="activation-timezone-flag" class="activation-timezone-flag" src="assets/icons/flags/dz.svg" alt="">
+                                <select id="activation-timezone" name="clinic_timezone" required>
                                 <?php
                                 $selectedTimezone = (string) ($_POST['clinic_timezone'] ?? 'Africa/Algiers');
                                 $timezones = [
-                                    'Africa/Algiers' => '🇩🇿 Algérie — Africa/Algiers',
-                                    'America/Toronto' => '🇨🇦 Montréal / Toronto — America/Toronto',
-                                    'Europe/Paris' => '🇫🇷 France — Europe/Paris',
-                                    'Africa/Tunis' => '🇹🇳 Tunisie — Africa/Tunis',
-                                    'America/New_York' => '🇺🇸 États-Unis — America/New_York',
+                                    'Africa/Algiers' => 'Algérie — Africa/Algiers',
+                                    'America/Toronto' => 'Canada — America/Toronto',
+                                    'Europe/Paris' => 'France — Europe/Paris',
+                                    'Africa/Tunis' => 'Tunisie — Africa/Tunis',
+                                    'America/New_York' => 'États-Unis — America/New_York',
                                 ];
                                 foreach ($timezones as $value => $label):
                                 ?>
                                     <option value="<?= activationE($value) ?>" <?= $selectedTimezone === $value ? 'selected' : '' ?>><?= activationE($label) ?></option>
                                 <?php endforeach; ?>
-                            </select>
+                                </select>
+                            </span>
                             <small><?= activationE($fieldErrors['clinic_timezone'] ?? '') ?></small>
                         </label>
                     </div>
@@ -205,6 +214,7 @@ $recipientName = (string) (
                                 autocomplete="tel"
                                 maxlength="13"
                                 placeholder="0550 80 30 90"
+                                data-dz-mobile
                             >
                             <small><?= activationE($fieldErrors['phone'] ?? '') ?></small>
                         </label>
@@ -268,41 +278,6 @@ $recipientName = (string) (
 
     <script>
         (function () {
-            const phoneInput = document.getElementById('activation-phone');
-
-            function localDigits(value) {
-                let digits = String(value || '').replace(/\D+/g, '');
-
-                if (digits.startsWith('00213')) {
-                    digits = digits.slice(5);
-                } else if (digits.startsWith('213')) {
-                    digits = digits.slice(3);
-                }
-
-                if (/^[567]/.test(digits)) {
-                    digits = `0${digits}`;
-                }
-
-                return digits.slice(0, 10);
-            }
-
-            function formatPhone(value) {
-                const digits = localDigits(value);
-                return [
-                    digits.slice(0, 4),
-                    digits.slice(4, 6),
-                    digits.slice(6, 8),
-                    digits.slice(8, 10)
-                ].filter(Boolean).join(' ');
-            }
-
-            if (phoneInput) {
-                phoneInput.value = formatPhone(phoneInput.value);
-                phoneInput.addEventListener('input', () => {
-                    phoneInput.value = formatPhone(phoneInput.value);
-                });
-            }
-
             const fullName = document.querySelector('[name="full_name"]');
             const doctorName = document.querySelector('[name="doctor_display_name"]');
 
@@ -316,6 +291,22 @@ $recipientName = (string) (
                 doctorName.dataset.edited = 'true';
             });
         })();
+    </script>
+    <script src="assets/js/phone-input.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/algeria-locations.js?v=20260801-preqr1" defer></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const select = document.getElementById('activation-timezone');
+      const flag = document.getElementById('activation-timezone-flag');
+      const flags = {
+        'Africa/Algiers': 'dz.svg', 'America/Toronto': 'ca.svg',
+        'Europe/Paris': 'fr.svg', 'Africa/Tunis': 'tn.svg',
+        'America/New_York': 'us.svg'
+      };
+      const update = () => { if (select && flag) flag.src = `assets/icons/flags/${flags[select.value] || 'dz.svg'}`; };
+      select?.addEventListener('change', update); update();
+    });
     </script>
 </body>
 </html>

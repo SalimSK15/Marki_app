@@ -1137,3 +1137,15 @@
   .marki-form__group input { min-height: 44px; }
   .marki-confirm-box { padding: 14px; }
 }
+
+/* MARKI pre-QR — téléphone complet dans le tableau. */
+.waiting-list {
+  .col-num { width: 11%; }
+  .col-patient { width: 23%; }
+  .col-phone { width: 18%; }
+  .col-time { width: 9%; }
+  .col-status { width: 15%; }
+  .col-actions { width: 24%; }
+}
+.patient-name-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patient-phone-cell { overflow: visible; text-overflow: clip; white-space: nowrap; font-variant-numeric: tabular-nums; }

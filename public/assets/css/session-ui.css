@@ -276,3 +276,19 @@ body.team-modal-open {
     padding: 18px;
   }
 }
+
+/* MARKI pre-QR: comptes actifs/désactivés et actions lisibles */
+.team-actions { flex-wrap: nowrap; align-items: center; min-width: 210px; }
+.team-actions .team-action { min-width: 92px; justify-content: center; white-space: nowrap; }
+.team-action--edit { color: #6433c9; background: #f5f0ff; border-color: #d9c9fb; }
+.team-action--deactivate { color: #b42318; background: #fff1f0; border-color: #fecaca; }
+.team-action--reactivate { color: #067647; background: #ecfdf3; border-color: #a6f4c5; }
+.team-action.is-disabled, .team-action:disabled { color: #98a2b3; background: #f2f4f7; border-color: #e4e7ec; opacity: .72; cursor: not-allowed; }
+.team-row--disabled { background: #fafafa; }
+.team-row--disabled td:not(:last-child) { opacity: .68; }
+.team-row--disabled strong { color: #667085; }
+.team-row--active { opacity: 1; }
+@media (max-width: 1180px) {
+  .team-actions { min-width: 100px; flex-direction: column; align-items: stretch; }
+  .team-actions .team-action { width: 100%; min-width: 92px; }
+}

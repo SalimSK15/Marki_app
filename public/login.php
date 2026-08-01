@@ -20,7 +20,8 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260731-final1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260801-preqr1">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
 </head>
 <body class="auth-page">
     <main class="auth-card">
@@ -85,6 +86,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         <a class="auth-link" href="forgot-password.php?clinic=<?= rawurlencode($clinicSlug) ?>">Mot de passe oublié ?</a>
     </main>
 
-    <script src="assets/js/login.js?v=20260731-final1" defer></script>
+    <script src="assets/js/login.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
 </body>
 </html>

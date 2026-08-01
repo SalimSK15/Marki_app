@@ -35,7 +35,7 @@
 
         <label class="v1-field">
           <span>Téléphone de la structure</span>
-          <input type="tel" id="settings-clinic-phone" name="clinic_phone" inputmode="tel">
+          <input type="tel" id="settings-clinic-phone" name="clinic_phone" inputmode="tel" data-dz-phone-auto>
         </label>
 
         <label class="v1-field v1-field--wide">
@@ -43,25 +43,33 @@
           <input type="text" id="settings-clinic-address" name="clinic_address" autocomplete="street-address">
         </label>
 
-        <label class="v1-field">
-          <span>Ville</span>
-          <input type="text" id="settings-clinic-city" name="clinic_city">
-        </label>
+        <div class="v1-location-fields" data-algeria-location-group>
+          <label class="v1-field">
+            <span>Wilaya / région</span>
+            <select id="settings-clinic-wilaya" name="clinic_wilaya" data-algeria-wilaya>
+              <option value="">Choisir une wilaya</option>
+            </select>
+          </label>
 
-        <label class="v1-field">
-          <span>Wilaya / région</span>
-          <input type="text" id="settings-clinic-wilaya" name="clinic_wilaya">
-        </label>
+          <label class="v1-field">
+            <span>Ville / commune</span>
+            <input type="text" id="settings-clinic-city" name="clinic_city" list="settings-clinic-city-options" data-algeria-city autocomplete="address-level2">
+            <datalist id="settings-clinic-city-options"></datalist>
+          </label>
+        </div>
 
         <label class="v1-field v1-field--wide">
           <span>Fuseau horaire <strong class="required-mark" aria-hidden="true">*</strong></span>
-          <select id="settings-clinic-timezone" name="clinic_timezone" required>
-            <option value="Africa/Algiers">🇩🇿 Algérie — Africa/Algiers</option>
-            <option value="America/Toronto">🇨🇦 Montréal / Toronto — America/Toronto</option>
-            <option value="Europe/Paris">🇫🇷 France — Europe/Paris</option>
-            <option value="Africa/Tunis">🇹🇳 Tunisie — Africa/Tunis</option>
-            <option value="America/New_York">🇺🇸 États-Unis — America/New_York</option>
-          </select>
+          <span class="timezone-select-wrap">
+            <img id="settings-timezone-flag" class="timezone-flag" src="assets/icons/flags/dz.svg" alt="">
+            <select id="settings-clinic-timezone" name="clinic_timezone" required>
+              <option value="Africa/Algiers">Algérie — Africa/Algiers</option>
+              <option value="America/Toronto">Canada — America/Toronto</option>
+              <option value="Europe/Paris">France — Europe/Paris</option>
+              <option value="Africa/Tunis">Tunisie — Africa/Tunis</option>
+              <option value="America/New_York">États-Unis — America/New_York</option>
+            </select>
+          </span>
           <small>Les dates et les heures seront affichées selon le fuseau choisi.</small>
         </label>
       </div>
@@ -191,6 +199,7 @@
               autocomplete="tel"
               maxlength="13"
               placeholder="0550 80 30 90"
+              data-dz-mobile
             >
             <small class="v1-field-hint">Format local : 0550 80 30 90</small>
             <small class="v1-field-error" data-team-error="phone"></small>

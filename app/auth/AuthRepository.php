@@ -201,7 +201,7 @@ final class AuthRepository
         int $currentAttempts,
         int $maxAttempts,
         int $lockMinutes
-    ): void {
+    ): array {
         $newAttempts = $currentAttempts + 1;
         $lockedUntil = $newAttempts >= $maxAttempts
             ? date('Y-m-d H:i:s', time() + ($lockMinutes * 60))
@@ -220,6 +220,11 @@ final class AuthRepository
             ':locked_until' => $lockedUntil,
             ':user_id' => $userId,
         ]);
+
+        return [
+            'attempts' => $newAttempts,
+            'locked_until' => $lockedUntil,
+        ];
     }
 
     public function recordSuccessfulLogin(int $userId): void

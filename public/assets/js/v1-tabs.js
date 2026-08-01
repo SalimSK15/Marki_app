@@ -106,27 +106,38 @@
   |--------------------------------------------------------------------------
   */
   function formatPhoneForDisplay(value) {
-    const original = String(value ?? '').trim();
-
-    if (original === '') {
-      return '';
+    if (window.MarkiPhone) {
+      const local = window.MarkiPhone.localMobileDigits(value);
+      return /^0[567]\d{8}$/.test(local)
+        ? window.MarkiPhone.formatMobile(local)
+        : window.MarkiPhone.formatAdaptivePhone(value);
     }
 
-    const digits = original.replace(/\D+/g, '');
+    return String(value ?? '').trim();
+  }
 
-    if (/^0[567]\d{8}$/.test(digits)) {
-      return digits;
-    }
-
-    if (/^213[567]\d{8}$/.test(digits)) {
-      return `0${digits.slice(3)}`;
-    }
-
-    if (/^00213[567]\d{8}$/.test(digits)) {
-      return `0${digits.slice(5)}`;
-    }
-
-    return original;
+  function formatRelativeDate(value) {
+    const match = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return '';
+    const timezone = document.querySelector('meta[name="marki-timezone"]')?.content
+      || 'Africa/Algiers';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    const part = type => Number(parts.find(item => item.type === type)?.value || 0);
+    const todayUtc = Date.UTC(part('year'), part('month') - 1, part('day'));
+    const visitUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const days = Math.max(0, Math.round((todayUtc - visitUtc) / 86400000));
+    if (days === 0) return 'Aujourd’hui';
+    if (days === 1) return 'Hier';
+    if (days < 31) return `Il y a ${days} jours`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `Il y a ${months} mois`;
+    const years = Math.floor(days / 365);
+    return `Il y a ${years} an${years > 1 ? 's' : ''}`;
   }
 
   function formatAlgerianPhoneForDisplay(value) {
@@ -469,6 +480,7 @@
       setInputValue('patient-profile-id', patient.id);
       setInputValue('patient-profile-full-name', patient.full_name);
       setInputValue('patient-profile-phone', formatPhoneForDisplay(patient.phone));
+      window.MarkiPhone?.bind(content);
       setInputValue('patient-profile-birth-date', patient.birth_date);
       setInputValue('patient-profile-email', patient.email);
       setInputValue('patient-profile-address', patient.address);
@@ -524,6 +536,7 @@
         <article class="v1-timeline__item">
           <div>
             <strong>Visite du ${formatDateTime(date)}</strong>
+            <p class="v1-relative-date">${formatRelativeDate(date)}</p>
             <p>${visit.queue_entry_id ? `Reliée à l’entrée n° ${visit.queue_entry_id}` : 'Visite sans entrée de file'}</p>
           </div>
           ${renderStatus(visit.status)}
@@ -888,6 +901,7 @@
     if (!form) return;
 
     form.addEventListener('submit', saveSettings);
+    bindSettingsEnhancements();
     loadSettings();
   }
 
@@ -917,16 +931,51 @@
   function fillSettingsForm(clinic, doctor) {
     setInputValue('settings-clinic-name', clinic.name);
     setInputValue('settings-clinic-type', clinic.type || 'solo');
-    setInputValue('settings-clinic-phone', formatPhoneForDisplay(clinic.phone));
+    setInputValue('settings-clinic-phone', window.MarkiPhone
+      ? window.MarkiPhone.formatAdaptivePhone(clinic.phone)
+      : formatPhoneForDisplay(clinic.phone));
     setInputValue('settings-clinic-address', clinic.address);
+
+    const wilayaSelect = document.getElementById('settings-clinic-wilaya');
+    if (wilayaSelect) {
+      wilayaSelect.dataset.initialValue = clinic.wilaya || '';
+      window.MarkiAlgeriaLocations?.fillWilayas(wilayaSelect, clinic.wilaya || '');
+    }
     setInputValue('settings-clinic-city', clinic.city);
-    setInputValue('settings-clinic-wilaya', clinic.wilaya);
-    setInputValue('settings-clinic-timezone', clinic.timezone || 'Africa/Algiers');
+    window.MarkiAlgeriaLocations?.bind(document);
+    const cityInput = document.getElementById('settings-clinic-city');
+    const cityList = document.getElementById('settings-clinic-city-options');
+    window.MarkiAlgeriaLocations?.fillCommunes(wilayaSelect, cityInput, cityList);
+
+    const timezone = clinic.timezone || 'Africa/Algiers';
+    setInputValue('settings-clinic-timezone', timezone);
+    updateTimezoneFlag(timezone);
+    window.MarkiPhone?.bind(document);
 
     setInputValue('settings-doctor-name', doctor.display_name);
     setInputValue('settings-doctor-specialty', doctor.specialty);
     setInputValue('settings-doctor-license', doctor.license_number);
     setInputValue('settings-doctor-address', doctor.address);
+  }
+
+  function updateTimezoneFlag(timezone) {
+    const flag = document.getElementById('settings-timezone-flag');
+    if (!flag) return;
+    const files = {
+      'Africa/Algiers': 'dz.svg',
+      'America/Toronto': 'ca.svg',
+      'Europe/Paris': 'fr.svg',
+      'Africa/Tunis': 'tn.svg',
+      'America/New_York': 'us.svg'
+    };
+    flag.src = `assets/icons/flags/${files[timezone] || 'dz.svg'}`;
+  }
+
+  function bindSettingsEnhancements() {
+    const timezone = document.getElementById('settings-clinic-timezone');
+    timezone?.addEventListener('change', () => updateTimezoneFlag(timezone.value));
+    window.MarkiPhone?.bind(document);
+    window.MarkiAlgeriaLocations?.bind(document);
   }
 
   function applySettingsPermissions(permissions) {

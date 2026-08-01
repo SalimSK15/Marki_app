@@ -230,7 +230,7 @@
           : actionLabel;
 
       return `
-        <tr data-team-user-id="${member.id}">
+        <tr class="team-row team-row--${member.status === 'active' ? 'active' : 'disabled'}" data-team-user-id="${member.id}">
           <td>
             <strong>${escapeHtml(member.full_name)}</strong>
             ${member.is_current_user ? '<span class="team-current-badge">Compte actuel</span>' : ''}
@@ -248,13 +248,13 @@
             <div class="team-actions">
               <button
                 type="button"
-                class="v1-icon-button"
+                class="v1-icon-button team-action team-action--edit"
                 data-team-edit="${member.id}"
                 title="Modifier ce compte"
               >Modifier</button>
               <button
                 type="button"
-                class="v1-icon-button ${toggleDisabled ? 'is-disabled' : ''}"
+                class="v1-icon-button team-action ${member.status === 'active' ? 'team-action--deactivate' : 'team-action--reactivate'} ${toggleDisabled ? 'is-disabled' : ''}"
                 data-team-toggle="${member.id}"
                 title="${escapeHtml(toggleTitle)}"
                 aria-disabled="${toggleDisabled ? 'true' : 'false'}"

@@ -12,7 +12,8 @@ $token = trim((string) ($_GET['token'] ?? ''));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nouveau mot de passe — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260729-auth2">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260801-preqr1">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
 </head>
 <body class="auth-page">
     <main class="auth-card">
@@ -39,6 +40,7 @@ $token = trim((string) ($_GET['token'] ?? ''));
             <button type="submit" class="auth-button">Modifier le mot de passe</button>
         </form>
     </main>
-    <script src="assets/js/login.js?v=20260729-auth2" defer></script>
+    <script src="assets/js/login.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
 </body>
 </html>

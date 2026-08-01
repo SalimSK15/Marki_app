@@ -415,3 +415,8 @@ body.activation-page {
     grid-column: auto;
   }
 }
+.activation-location-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.activation-timezone-wrap { position: relative; display: flex; align-items: center; }
+.activation-timezone-flag { position: absolute; left: .85rem; z-index: 1; width: 28px; height: 19px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(15,23,42,.12); pointer-events: none; }
+.activation-timezone-wrap select { width: 100%; padding-left: 3.2rem !important; }
+@media (max-width: 720px) { .activation-location-fields { grid-template-columns: 1fr; } }

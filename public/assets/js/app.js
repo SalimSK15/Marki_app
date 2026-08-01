@@ -124,29 +124,11 @@ function normalizePersonName(value) {
 |--------------------------------------------------------------------------
 */
 function normalizePhoneNumber(value) {
-  let digits = String(value ?? '').replace(/\D+/g, '');
-
-  let hadAlgerianCountryCode = false;
-
-  if (digits.startsWith('00213')) {
-    digits = digits.slice(5);
-    hadAlgerianCountryCode = true;
-  } else if (
-    digits.startsWith('213')
-    && digits.length >= 12
-  ) {
-    digits = digits.slice(3);
-    hadAlgerianCountryCode = true;
+  if (window.MarkiPhone) {
+    return window.MarkiPhone.localMobileDigits(value);
   }
 
-  if (
-    hadAlgerianCountryCode
-    && digits.length === 9
-  ) {
-    digits = `0${digits}`;
-  }
-
-  return digits;
+  return String(value ?? '').replace(/\D+/g, '').slice(0, 10);
 }
 
 /*
@@ -155,7 +137,9 @@ function normalizePhoneNumber(value) {
 |--------------------------------------------------------------------------
 */
 function isValidPhoneNumber(phone) {
-  return /^0[567]\d{8}$/.test(phone);
+  return window.MarkiPhone
+    ? window.MarkiPhone.isValidMobile(phone)
+    : /^0[567]\d{8}$/.test(phone);
 }
 /*
 |--------------------------------------------------------------------------
@@ -497,7 +481,7 @@ async function handleAddPatientSubmit(event) {
   | Afficher le téléphone normalisé dans le formulaire
   |--------------------------------------------------------------------------
   */
-  phoneInput.value = phone;
+  phoneInput.value = window.MarkiPhone ? window.MarkiPhone.formatMobile(phone) : phone;
   /*
   |--------------------------------------------------------------------------
   | Validation du nom
@@ -2342,7 +2326,7 @@ function renderDashboardTable(entries) {
           ${escapeHtml(entry.display_name ?? '')}
         </td>
         <td class="patient-phone-cell">
-          ${escapeHtml(entry.phone ?? '-')}
+          ${escapeHtml(window.MarkiPhone ? window.MarkiPhone.formatMobile(entry.phone ?? '') : (entry.phone ?? '-'))}
         </td>
         <td>${escapeHtml(entry.time ?? '-')}</td>
         <td>${renderStatusPill(entry.status)}</td>
@@ -2548,6 +2532,32 @@ function formatVisitDate(value) {
   }).format(date);
 }
 
+function formatRelativeVisitDate(value) {
+  const match = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return '';
+
+  const timezone = document.querySelector('meta[name="marki-timezone"]')?.content
+    || 'Africa/Algiers';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const part = type => Number(parts.find(item => item.type === type)?.value || 0);
+  const todayUtc = Date.UTC(part('year'), part('month') - 1, part('day'));
+  const visitUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const days = Math.max(0, Math.round((todayUtc - visitUtc) / 86400000));
+
+  if (days === 0) return 'Aujourd’hui';
+  if (days === 1) return 'Hier';
+  if (days < 31) return `Il y a ${days} jours`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `Il y a ${months} mois`;
+  const years = Math.floor(days / 365);
+  return `Il y a ${years} an${years > 1 ? 's' : ''}`;
+}
+
 function getVisitStatusLabel(status) {
   if (status === 'done') return 'Terminée';
   if (status === 'in_progress') return 'En cours';
@@ -2562,7 +2572,10 @@ function renderPatientHistory(visits) {
 
   return visits.map(visit => `
     <li>
-      <span>${formatVisitDate(visit.visit_at)}</span>
+      <span class="visit-date-stack">
+        <span>${formatVisitDate(visit.visit_at)}</span>
+        <small>${formatRelativeVisitDate(visit.visit_at)}</small>
+      </span>
       <strong class="history-status history-status--${escapeHtml(visit.status)}">
         ${escapeHtml(getVisitStatusLabel(visit.status))}
       </strong>
@@ -2629,6 +2642,7 @@ function updatePatientDetails(entry) {
   if (!entry) {
     emptyState.hidden = false;
     detailsContent.hidden = true;
+    fullRecordButton.hidden = !document.querySelector('.sidebar__item[data-page="patients"]');
     fullRecordButton.disabled = true;
     delete fullRecordButton.dataset.patientId;
     return;
@@ -2638,7 +2652,7 @@ function updatePatientDetails(entry) {
   detailsContent.hidden = false;
 
   nameEl.textContent = entry.display_name || '-';
-  phoneEl.textContent = entry.phone || '-';
+  phoneEl.textContent = window.MarkiPhone ? window.MarkiPhone.formatMobile(entry.phone || '') : (entry.phone || '-');
   birthDateEl.textContent = formatBirthDate(entry.birth_date);
   sourceEl.textContent = formatSourceLabel(entry.source);
   statusEl.innerHTML = renderDetailStatusPill(entry.status);
@@ -2651,9 +2665,14 @@ function updatePatientDetails(entry) {
   );
 
   const patientId = Number(entry.patient_id || 0);
-  fullRecordButton.disabled = patientId <= 0;
+  const canViewPatients = Boolean(
+    document.querySelector('.sidebar__item[data-page="patients"]')
+  );
 
-  if (patientId > 0) {
+  fullRecordButton.hidden = !canViewPatients;
+  fullRecordButton.disabled = !canViewPatients || patientId <= 0;
+
+  if (canViewPatients && patientId > 0) {
     fullRecordButton.dataset.patientId = String(patientId);
   } else {
     delete fullRecordButton.dataset.patientId;
@@ -2952,7 +2971,8 @@ function setPatientModalMode(mode = 'create', entry = null) {
     }
 
     if (phoneInput) {
-      phoneInput.value = entry?.phone ?? '';
+      phoneInput.value = window.MarkiPhone ? window.MarkiPhone.formatMobile(entry?.phone ?? '') : (entry?.phone ?? '');
+      window.MarkiPhone?.bind(modal);
     }
 
     if (birthDateInput) {
