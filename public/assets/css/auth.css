@@ -108,3 +108,20 @@ body.auth-page {
   font-weight: 650;
   text-decoration: none;
 }
+
+.auth-message--visible {
+  min-height: 0;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.auth-message--visible.is-success {
+  border: 1px solid #a8dfc6;
+  background: #ecfbf4;
+}
+
+.auth-message--visible.is-error {
+  border: 1px solid #efb9c1;
+  background: #fff1f3;
+}

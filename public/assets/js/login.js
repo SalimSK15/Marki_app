@@ -103,6 +103,19 @@
       clinicInput.value = rememberedSlug;
     }
 
+    const activeClinicSlug = clinicInput?.value || rememberedSlug || '';
+    const forgotLink = document.querySelector('a[href^="forgot-password.php"]');
+
+    if (forgotLink && activeClinicSlug) {
+      forgotLink.href = `forgot-password.php?clinic=${encodeURIComponent(activeClinicSlug)}`;
+    }
+
+    const loginLink = document.querySelector('a[href^="login.php"]');
+
+    if (loginLink && activeClinicSlug) {
+      loginLink.href = `login.php?clinic=${encodeURIComponent(activeClinicSlug)}`;
+    }
+
     loginForm?.addEventListener('submit', event => {
       event.preventDefault();
       submitJson(loginForm, 'api/auth_login.php');

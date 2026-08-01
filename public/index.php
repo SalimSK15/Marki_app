@@ -25,15 +25,15 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <meta name="marki-timezone" content="<?= e($context['timezone']) ?>">
     <title>MARKI — Gestion des patients</title>
 
-    <link rel="stylesheet" href="assets/css/styles.css?v=20260729-auth2">
-    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260729-auth2">
-    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260729-auth2">
+    <link rel="stylesheet" href="assets/css/styles.css?v=20260731-final1">
+    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260731-final1">
+    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260731-final1">
 
-    <script src="assets/js/auth-client.js?v=20260729-auth2" defer></script>
-    <script src="assets/js/app.js?v=20260729-auth2" defer></script>
-    <script src="assets/js/v1-tabs.js?v=20260729-auth2" defer></script>
-    <script src="assets/js/team.js?v=20260729-auth2" defer></script>
-    <script src="assets/js/header.js?v=20260729-auth2" defer></script>
+    <script src="assets/js/auth-client.js?v=20260731-final1" defer></script>
+    <script src="assets/js/app.js?v=20260731-final1" defer></script>
+    <script src="assets/js/v1-tabs.js?v=20260731-final1" defer></script>
+    <script src="assets/js/team.js?v=20260731-final1" defer></script>
+    <script src="assets/js/header.js?v=20260731-final1" defer></script>
 </head>
 
 <body>

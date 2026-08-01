@@ -384,6 +384,18 @@
   cursor: pointer;
 }
 
+
+.v1-icon-button:disabled,
+.v1-icon-button.is-disabled {
+  border-color: #e1e4ea;
+  background: #f1f2f5;
+  color: #9aa1ad;
+  cursor: not-allowed;
+  opacity: 0.72;
+  box-shadow: none;
+  transform: none;
+}
+
 .v1-message {
   min-height: 0;
   border-radius: 12px;

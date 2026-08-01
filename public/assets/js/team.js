@@ -254,9 +254,10 @@
               >Modifier</button>
               <button
                 type="button"
-                class="v1-icon-button"
+                class="v1-icon-button ${toggleDisabled ? 'is-disabled' : ''}"
                 data-team-toggle="${member.id}"
                 title="${escapeHtml(toggleTitle)}"
+                aria-disabled="${toggleDisabled ? 'true' : 'false'}"
                 ${toggleDisabled ? 'disabled' : ''}
               >${actionLabel}</button>
             </div>
