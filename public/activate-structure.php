@@ -294,7 +294,7 @@ $recipientName = (string) (
     </script>
     <script src="assets/js/phone-input.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/algeria-locations.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/algeria-locations.js?v=20260802-local1" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
       const select = document.getElementById('activation-timezone');

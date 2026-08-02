@@ -40,7 +40,7 @@ $token = trim((string) ($_GET['token'] ?? ''));
             <button type="submit" class="auth-button">Modifier le mot de passe</button>
         </form>
     </main>
-    <script src="assets/js/login.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/login.js?v=20260802-login2" defer></script>
     <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
 </body>
 </html>

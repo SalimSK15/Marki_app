@@ -33,7 +33,7 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <script src="assets/js/auth-client.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/phone-input.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/algeria-locations.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/algeria-locations.js?v=20260802-local1" defer></script>
     <script src="assets/js/app.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/v1-tabs.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/team.js?v=20260801-preqr1" defer></script>

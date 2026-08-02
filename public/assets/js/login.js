@@ -6,7 +6,11 @@
     if (!element) return;
 
     element.textContent = text;
-    element.className = `auth-message is-${type}`;
+    element.className = 'auth-message';
+
+    if (text && type) {
+      element.classList.add(`is-${type}`);
+    }
   }
 
   async function readJson(response) {
@@ -26,6 +30,22 @@
     return document.querySelector('meta[name="csrf-token"]')?.content
       || form.querySelector('[name="csrf_token"]')?.value
       || '';
+  }
+
+  function normalizeClinicSlug(value) {
+    return String(value || '')
+      .trim()
+      .toLocaleLowerCase('fr')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function clinicLoginUrl(slug) {
+    const url = new URL('login.php', window.location.href);
+    url.searchParams.set('clinic', slug);
+    return url.toString();
   }
 
   async function submitJson(form, endpoint) {
@@ -90,28 +110,72 @@
     }
   }
 
+  function bindClinicLookupForm(form) {
+    if (!form) {
+      return;
+    }
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const input = form.querySelector('[name="clinic_code"]');
+      const slug = normalizeClinicSlug(input?.value);
+
+      if (!slug) {
+        message('Le code de la structure est obligatoire.');
+        input?.focus();
+        return;
+      }
+
+      if (input) {
+        input.value = slug;
+      }
+
+      localStorage.setItem('marki.clinicSlug', slug);
+      location.href = clinicLoginUrl(slug);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
+    const clinicLookupForm = document.getElementById('clinic-lookup-form');
     const forgotForm = document.getElementById('forgot-password-form');
     const resetForm = document.getElementById('reset-password-form');
     const changeForm = document.getElementById('change-password-form');
 
     const clinicInput = document.querySelector('[name="clinic_slug"]');
-    const rememberedSlug = localStorage.getItem('marki.clinicSlug');
+    const rememberedSlug = localStorage.getItem('marki.clinicSlug') || '';
+    const clinicWasRequested = document.body.dataset.clinicRequested === '1';
+    const query = new URLSearchParams(window.location.search);
+    const forceStructureLookup = query.get('change') === '1';
 
-    if (clinicInput && !clinicInput.value && rememberedSlug) {
-      clinicInput.value = rememberedSlug;
+    if (forceStructureLookup) {
+      localStorage.removeItem('marki.clinicSlug');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Connexion ouverte sans code dans l'URL
+    |--------------------------------------------------------------------------
+    | Sur un appareil déjà utilisé, on reprend automatiquement le dernier code.
+    | En navigation privée, le formulaire de secours reste visible.
+    |--------------------------------------------------------------------------
+    */
+    if (
+      clinicLookupForm
+      && !clinicWasRequested
+      && !forceStructureLookup
+      && rememberedSlug
+    ) {
+      location.replace(clinicLoginUrl(rememberedSlug));
+      return;
+    }
+
+    if (clinicInput?.value) {
+      localStorage.setItem('marki.clinicSlug', clinicInput.value);
     }
 
     const activeClinicSlug = clinicInput?.value || rememberedSlug || '';
-
-    if (loginForm && !activeClinicSlug) {
-      message(
-        'Lien de connexion incomplet. Ouvrez le lien fourni par votre cabinet ou votre clinique.'
-      );
-      const submitButton = loginForm.querySelector('button[type="submit"]');
-      if (submitButton) submitButton.disabled = true;
-    }
 
     const forgotLink = document.querySelector('a[href^="forgot-password.php"]');
 
@@ -119,11 +183,7 @@
       forgotLink.href = `forgot-password.php?clinic=${encodeURIComponent(activeClinicSlug)}`;
     }
 
-    const loginLink = document.querySelector('a[href^="login.php"]');
-
-    if (loginLink && activeClinicSlug) {
-      loginLink.href = `login.php?clinic=${encodeURIComponent(activeClinicSlug)}`;
-    }
+    bindClinicLookupForm(clinicLookupForm);
 
     loginForm?.addEventListener('submit', event => {
       event.preventDefault();

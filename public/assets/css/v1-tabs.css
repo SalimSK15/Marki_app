@@ -745,3 +745,23 @@
 .timezone-select-wrap select { padding-left: 3.25rem !important; width: 100%; }
 .v1-relative-date { margin: .2rem 0 0; color: #7a6d86; font-size: .82rem; }
 @media (max-width: 720px) { .v1-location-fields { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------
+   Sélecteur Wilaya / Commune
+--------------------------------------------------------- */
+.marki-location-status {
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 1.1rem;
+  margin-top: -0.35rem;
+  color: #6f6879;
+  font-size: 0.78rem;
+}
+
+.marki-location-status:empty {
+  display: none;
+}
+
+.marki-location-status.is-warning {
+  color: #a45100;
+}

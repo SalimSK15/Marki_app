@@ -125,3 +125,72 @@ body.auth-page {
   border: 1px solid #efb9c1;
   background: #fff1f3;
 }
+
+/* =========================================================
+   Structure sélectionnée et recherche par code
+   ========================================================= */
+.auth-structure {
+  display: grid;
+  gap: 4px;
+  margin: -8px 0 22px;
+  padding: 13px 15px;
+  border: 1px solid #ded5ef;
+  border-radius: 14px;
+  background: #faf8fd;
+}
+
+.auth-structure__label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auth-structure strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  margin-top: 20px;
+}
+
+.auth-links .auth-link {
+  margin-top: 0;
+}
+
+.auth-link--secondary {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.auth-link--secondary:hover,
+.auth-link--secondary:focus-visible {
+  color: var(--primary-dark);
+}
+
+/* ---------------------------------------------------------
+   Sélecteur Wilaya / Commune
+--------------------------------------------------------- */
+.marki-location-status {
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 1.1rem;
+  margin-top: -0.35rem;
+  color: #6f6879;
+  font-size: 0.78rem;
+}
+
+.marki-location-status:empty {
+  display: none;
+}
+
+.marki-location-status.is-warning {
+  color: #a45100;
+}

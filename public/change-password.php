@@ -46,7 +46,7 @@ $context = require __DIR__ . '/../app/web_bootstrap.php';
         <?php endif; ?>
     </main>
     <script src="assets/js/auth-client.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/login.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/login.js?v=20260802-login2" defer></script>
     <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
 </body>
 </html>

@@ -39,6 +39,6 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
         <a class="auth-link" href="login.php?clinic=<?= rawurlencode($clinicSlug) ?>">Retour à la connexion</a>
     </main>
-    <script src="assets/js/login.js?v=20260731-final1" defer></script>
+    <script src="assets/js/login.js?v=20260802-login2" defer></script>
 </body>
 </html>
