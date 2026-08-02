@@ -1,0 +1,24 @@
+# Secrets locaux
+.env
+.env.local
+.env.*.local
+
+# Journaux et fichiers temporaires
+storage/logs/*.log
+storage/cache/*
+!storage/logs/.gitkeep
+
+# Outils locaux
+.vscode/
+.idea/
+node_modules/
+
+# Systeme
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Sauvegardes
+*.bak
+*.tmp
+*.swp

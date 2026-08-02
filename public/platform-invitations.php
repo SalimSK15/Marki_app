@@ -12,6 +12,14 @@ function platformE(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function platformShortcutIcon(): string
+{
+    return '<svg viewBox="0 0 24 24" aria-hidden="true">'
+        . '<path d="M12 3v11m0 0 4-4m-4 4-4-4"/>'
+        . '<path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>'
+        . '</svg>';
+}
+
 function platformAbsoluteBaseUrl(array $config): string
 {
     $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
@@ -26,26 +34,97 @@ function platformAbsoluteBaseUrl(array $config): string
 }
 
 $expectedKey = (string) ($config['platform']['setup_key'] ?? '');
-$providedKey = trim((string) ($_GET['key'] ?? ''));
-
-if (
-    $expectedKey !== ''
-    && $providedKey !== ''
-    && hash_equals($expectedKey, $providedKey)
-) {
-    $_SESSION['marki_platform_setup_authorized'] = true;
-
-    header(
-        'Location: '
-        . rtrim((string) $config['app']['base_path'], '/')
-        . '/platform-invitations.php'
-    );
-    exit;
-}
+$platformLoginError = $expectedKey === ''
+    ? 'La clé interne n’est pas configurée. Ajoutez MARKI_PLATFORM_SETUP_KEY dans le fichier .env.'
+    : '';
 
 if (empty($_SESSION['marki_platform_setup_authorized'])) {
-    http_response_code(404);
-    echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Page introuvable</title></head><body><h1>Page introuvable</h1></body></html>';
+    if (
+        $_SERVER['REQUEST_METHOD'] === 'POST'
+        && (string) ($_POST['action'] ?? '') === 'platform_login'
+    ) {
+        try {
+            Auth::validateCsrf((string) ($_POST['csrf_token'] ?? ''));
+            $submittedKey = trim((string) ($_POST['platform_key'] ?? ''));
+
+            if (
+                $expectedKey === ''
+                || $submittedKey === ''
+                || !hash_equals($expectedKey, $submittedKey)
+            ) {
+                throw new AuthException(
+                    $expectedKey === ''
+                        ? 'La clé interne n’est pas configurée dans le fichier .env.'
+                        : 'Clé d’administration incorrecte.'
+                );
+            }
+
+            $_SESSION['marki_platform_setup_authorized'] = true;
+            session_regenerate_id(true);
+
+            header(
+                'Location: '
+                . rtrim((string) $config['app']['base_path'], '/')
+                . '/platform-invitations.php'
+            );
+            exit;
+        } catch (Throwable $exception) {
+            $platformLoginError = $exception->getMessage();
+        }
+    }
+
+    ?>
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
+        <title>Administration MARKI</title>
+        <link rel="stylesheet" href="assets/css/auth.css?v=20260802-platform3">
+        <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-platform3">
+        <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform3">
+    </head>
+    <body class="platform-page">
+        <main class="platform-shell platform-shell--login">
+            <section class="platform-card platform-login-card">
+                <a
+                    class="platform-icon-button platform-login-shortcut"
+                    href="download-shortcut.php?type=platform"
+                    aria-label="Télécharger le raccourci de l’administration MARKI"
+                    title="Télécharger le raccourci bureau"
+                    download
+                >
+                    <?= platformShortcutIcon() ?>
+                </a>
+                <p class="platform-eyebrow">Administration interne MARKI</p>
+                <h1>Accès à la plateforme</h1>
+                <p>Entrez la clé interne pour créer et suivre les invitations des structures.</p>
+
+                <?php if ($platformLoginError !== ''): ?>
+                    <div class="platform-message is-error" role="alert">
+                        <?= platformE($platformLoginError) ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="post" class="platform-form">
+                    <input type="hidden" name="csrf_token" value="<?= platformE($public['csrf_token']) ?>">
+                    <input type="hidden" name="action" value="platform_login">
+
+                    <label>
+                        <span>Clé d’administration</span>
+                        <input type="password" name="platform_key" autocomplete="current-password" required autofocus <?= $expectedKey === '' ? 'disabled' : '' ?>>
+                    </label>
+
+                    <button type="submit" class="platform-button" <?= $expectedKey === '' ? 'disabled' : '' ?>>Ouvrir l’administration</button>
+                </form>
+
+            </section>
+        </main>
+        <script src="assets/js/password-toggle.js?v=20260802-platform3" defer></script>
+    </body>
+    </html>
+    <?php
     exit;
 }
 
@@ -124,9 +203,10 @@ $defaultExpiry = (int) (
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
     <title>Invitations de structure — MARKI</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20260731-setup1">
-    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260731-setup1">
+    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform3">
 </head>
 <body class="platform-page">
     <main class="platform-shell">
@@ -137,11 +217,22 @@ $defaultExpiry = (int) (
                 <p>Générez un lien unique pour le médecin responsable d’un cabinet ou d’une clinique.</p>
             </div>
 
-            <form method="post">
-                <input type="hidden" name="csrf_token" value="<?= platformE($csrfToken) ?>">
-                <input type="hidden" name="action" value="logout_platform">
-                <button class="platform-button platform-button--ghost" type="submit">Fermer l’accès interne</button>
-            </form>
+            <div class="platform-header-actions">
+                <a
+                    class="platform-icon-button"
+                    href="download-shortcut.php?type=platform"
+                    aria-label="Télécharger le raccourci de l’administration MARKI"
+                    title="Télécharger le raccourci bureau"
+                    download
+                >
+                    <?= platformShortcutIcon() ?>
+                </a>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?= platformE($csrfToken) ?>">
+                    <input type="hidden" name="action" value="logout_platform">
+                    <button class="platform-button platform-button--ghost" type="submit">Fermer l’accès interne</button>
+                </form>
+            </div>
         </header>
 
         <?php if ($message !== ''): ?>

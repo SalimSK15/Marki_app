@@ -38,8 +38,9 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
     <title>Connexion — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260802-login1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260802-login2">
     <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-login1">
 </head>
 <body
@@ -48,6 +49,20 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     data-clinic-valid="<?= $hasValidClinic ? '1' : '0' ?>"
 >
     <main class="auth-card">
+        <?php if ($hasValidClinic): ?>
+            <a
+                class="auth-shortcut-button"
+                href="download-shortcut.php?type=clinic&amp;clinic=<?= rawurlencode($clinicSlug) ?>"
+                aria-label="Télécharger le raccourci MARKI de cette structure"
+                title="Télécharger le raccourci bureau"
+                download
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v11m0 0 4-4m-4 4-4-4"></path>
+                    <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path>
+                </svg>
+            </a>
+        <?php endif; ?>
         <div class="auth-brand">
             <span class="auth-brand__mark">M</span>
             <div>

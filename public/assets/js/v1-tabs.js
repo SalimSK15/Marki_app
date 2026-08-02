@@ -896,13 +896,47 @@
      PARAMÈTRES
      ======================================================= */
 
+  function setSettingsSectionExpanded(section, button, expanded) {
+    section.classList.toggle('is-collapsed', !expanded);
+    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+
+    const label = button.querySelector('[data-section-toggle-label]');
+    if (label) {
+      label.textContent = expanded ? 'Réduire' : 'Afficher';
+    }
+  }
+
+  function bindSettingsCollapsibleSections() {
+    document
+      .querySelectorAll('[data-settings-section-toggle]')
+      .forEach(button => {
+        if (button.dataset.sectionToggleBound === '1') return;
+
+        const section = document.getElementById(
+          button.dataset.settingsSectionToggle || ''
+        );
+
+        if (!section) return;
+
+        button.dataset.sectionToggleBound = '1';
+        setSettingsSectionExpanded(section, button, false);
+
+        button.addEventListener('click', () => {
+          const expanded = button.getAttribute('aria-expanded') === 'true';
+          setSettingsSectionExpanded(section, button, !expanded);
+        });
+      });
+  }
+
   function initSettingsPage() {
     const form = document.getElementById('settings-form');
     if (!form) return;
 
     form.addEventListener('submit', saveSettings);
     bindSettingsEnhancements();
+    bindSettingsCollapsibleSections();
     loadSettings();
+    window.initMarkiPublicRegistration?.();
   }
 
   async function loadSettings() {

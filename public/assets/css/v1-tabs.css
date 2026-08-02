@@ -765,3 +765,53 @@
 .marki-location-status.is-warning {
   color: #a45100;
 }
+
+/* =========================================================
+   Parametres - sections secondaires repliables
+   ========================================================= */
+.v1-collapsible-section__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.v1-section-toggle {
+  min-width: 7.5rem;
+  justify-content: center;
+}
+
+.v1-section-toggle__chevron {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 1rem;
+  transition: transform 180ms ease;
+}
+
+.v1-collapsible-section:not(.is-collapsed) .v1-section-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+.v1-collapsible-section.is-collapsed > .v1-collapsible-section__body {
+  display: none !important;
+}
+
+.v1-collapsible-section.is-collapsed #team-new-account-button {
+  display: none;
+}
+
+.v1-collapsible-section.is-collapsed .v1-card__header {
+  margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .v1-collapsible-section__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .v1-section-toggle {
+    width: 100%;
+  }
+}

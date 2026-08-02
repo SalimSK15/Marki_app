@@ -114,18 +114,205 @@
     </div>
   </form>
 
-  <section id="team-settings-section" class="v1-card team-card" aria-labelledby="team-settings-title" hidden>
+  <section id="public-registration-section" class="v1-card qr-admin-card v1-collapsible-section is-collapsed" aria-labelledby="public-registration-title" hidden>
+    <div class="v1-card__header qr-admin-card__header">
+      <div>
+        <p class="v1-page__eyebrow">Inscription publique</p>
+        <h3 id="public-registration-title">QR code du médecin</h3>
+        <p>Permettez aux patients de rejoindre la liste d’attente depuis leur téléphone.</p>
+      </div>
+      <div class="v1-collapsible-section__actions">
+        <span id="qr-admin-status" class="qr-admin-status">Chargement…</span>
+        <button
+          type="button"
+          class="v1-button v1-button--secondary v1-section-toggle"
+          data-settings-section-toggle="public-registration-section"
+          aria-expanded="false"
+          aria-controls="public-registration-section-body"
+        >
+          <span data-section-toggle-label>Afficher</span>
+          <span class="v1-section-toggle__chevron" aria-hidden="true">⌄</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="public-registration-section-body" class="v1-collapsible-section__body">
+    <div id="qr-admin-message" class="v1-message" role="status" aria-live="polite"></div>
+
+    <div class="qr-admin-layout">
+      <section class="qr-admin-preview" aria-labelledby="qr-preview-title">
+        <div class="qr-admin-preview__top">
+          <div>
+            <p class="v1-page__eyebrow">QR permanent</p>
+            <h4 id="qr-preview-title">Affiche à imprimer</h4>
+          </div>
+          <span id="qr-token-version" class="v1-soft-badge">Version —</span>
+        </div>
+
+        <div id="qr-code-canvas" class="qr-code-canvas" aria-label="QR code d’inscription"></div>
+        <p class="qr-admin-doctor" id="qr-admin-doctor-name">—</p>
+        <p class="qr-admin-clinic" id="qr-admin-clinic-name">—</p>
+        <p class="qr-admin-scan-hint">Scannez pour rejoindre la liste d’attente</p>
+
+        <label class="v1-field qr-admin-link-field">
+          <span>Lien public</span>
+          <input type="text" id="qr-public-url" readonly>
+        </label>
+
+        <div class="qr-admin-actions">
+          <button type="button" class="v1-button v1-button--secondary" id="qr-copy-link">Copier le lien</button>
+          <button type="button" class="v1-button v1-button--secondary" id="qr-open-link">Tester la page</button>
+          <button type="button" class="v1-button v1-button--secondary" id="qr-download">Télécharger</button>
+          <button type="button" class="v1-button v1-button--secondary" id="qr-print">Imprimer</button>
+        </div>
+
+        <p class="qr-admin-network-warning" id="qr-network-warning" hidden>
+          Pour tester le QR avec un téléphone sur le réseau local, ouvrez MARKI avec l’adresse IP de cet ordinateur avant de télécharger le QR.
+        </p>
+      </section>
+
+      <div class="qr-admin-settings">
+        <section class="qr-admin-panel">
+          <div class="qr-admin-panel__header">
+            <div>
+              <h4>Disponibilité</h4>
+              <p>Le QR imprimé reste identique lors d’une désactivation temporaire.</p>
+            </div>
+            <button type="button" class="v1-button v1-button--primary" id="qr-toggle-button">Activer</button>
+          </div>
+
+          <div class="qr-admin-metrics">
+            <div><span>Scans aujourd’hui</span><strong id="qr-scans-today">0</strong></div>
+            <div><span>Inscriptions aujourd’hui</span><strong id="qr-registrations-today">0</strong></div>
+            <div><span>Dernier scan</span><strong id="qr-last-scan">—</strong></div>
+          </div>
+        </section>
+
+        <form id="qr-settings-form" class="qr-admin-panel" novalidate>
+          <div class="qr-admin-panel__header">
+            <div>
+              <h4>Règles d’inscription</h4>
+              <p>Le téléphone et le consentement restent obligatoires pour la V1.</p>
+            </div>
+          </div>
+
+          <div class="v1-form__grid">
+            <label class="qr-admin-check v1-field--wide">
+              <input type="checkbox" id="qr-birth-date-required" name="birth_date_required">
+              <span>Rendre la date de naissance obligatoire</span>
+            </label>
+
+            <label class="v1-field">
+              <span>Limite d’inscriptions QR par jour</span>
+              <input type="number" id="qr-max-registrations" name="max_public_registrations_per_day" min="1" max="1000" placeholder="Sans limite">
+              <small class="v1-field-error" data-qr-error="max_public_registrations_per_day"></small>
+            </label>
+
+            <label class="v1-field">
+              <span>Durée du lien de suivi</span>
+              <select id="qr-session-duration" name="public_session_duration_minutes">
+                <option value="120">2 heures</option>
+                <option value="360">6 heures</option>
+                <option value="720">12 heures</option>
+                <option value="1440">24 heures</option>
+                <option value="4320">3 jours</option>
+                <option value="10080">7 jours</option>
+              </select>
+              <small class="v1-field-error" data-qr-error="public_session_duration_minutes"></small>
+            </label>
+          </div>
+
+          <details class="qr-admin-messages">
+            <summary>Personnaliser les messages publics</summary>
+            <div class="qr-admin-messages__grid">
+              <label class="v1-field">
+                <span>Liste du jour non ouverte</span>
+                <textarea id="qr-message-day-not-open" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>Inscriptions ouvertes</span>
+                <textarea id="qr-message-open" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>Inscriptions fermées</span>
+                <textarea id="qr-message-closed" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>Liste en pause</span>
+                <textarea id="qr-message-paused" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>Journée terminée</span>
+                <textarea id="qr-message-completed" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>QR désactivé</span>
+                <textarea id="qr-message-disabled" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>En dehors des horaires</span>
+                <textarea id="qr-message-outside-schedule" rows="3" maxlength="1000"></textarea>
+              </label>
+              <label class="v1-field">
+                <span>Inscription confirmée</span>
+                <textarea id="qr-message-success" rows="3" maxlength="1000"></textarea>
+              </label>
+            </div>
+          </details>
+
+          <div class="qr-admin-form-actions">
+            <button type="submit" class="v1-button v1-button--primary" id="qr-save-settings">Enregistrer les réglages</button>
+            <button type="button" class="v1-button v1-button--danger-outline" id="qr-regenerate">Régénérer pour sécurité</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <div id="qr-confirm-modal" class="team-modal" hidden aria-hidden="true">
+    <button type="button" class="team-modal__backdrop" data-close-qr-confirm aria-label="Fermer"></button>
+    <div class="team-modal__dialog team-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="qr-confirm-title">
+      <div class="team-form__header">
+        <div>
+          <p class="v1-page__eyebrow">Sécurité</p>
+          <h4 id="qr-confirm-title">Confirmer l’action</h4>
+        </div>
+        <button type="button" class="v1-icon-button" data-close-qr-confirm aria-label="Fermer">×</button>
+      </div>
+      <p id="qr-confirm-message"></p>
+      <div class="v1-form__actions">
+        <button type="button" class="v1-button v1-button--secondary" data-close-qr-confirm>Annuler</button>
+        <button type="button" class="v1-button v1-button--primary" id="qr-confirm-action">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="team-settings-section" class="v1-card team-card v1-collapsible-section is-collapsed" aria-labelledby="team-settings-title" hidden>
     <div class="v1-card__header team-card__header">
       <div>
         <p class="v1-page__eyebrow">Équipe et accès</p>
         <h3 id="team-settings-title">Comptes de la structure</h3>
         <p>Chaque personne utilise son propre compte. Un compte désactivé conserve tout son historique.</p>
       </div>
-      <button type="button" class="v1-button v1-button--primary" id="team-new-account-button">
-        Nouveau compte
-      </button>
+      <div class="v1-collapsible-section__actions">
+        <button
+          type="button"
+          class="v1-button v1-button--secondary v1-section-toggle"
+          data-settings-section-toggle="team-settings-section"
+          aria-expanded="false"
+          aria-controls="team-settings-section-body"
+        >
+          <span data-section-toggle-label>Afficher</span>
+          <span class="v1-section-toggle__chevron" aria-hidden="true">⌄</span>
+        </button>
+        <button type="button" class="v1-button v1-button--primary" id="team-new-account-button">
+          Nouveau compte
+        </button>
+      </div>
     </div>
 
+    <div id="team-settings-section-body" class="v1-collapsible-section__body">
     <div id="team-message" class="v1-message" role="status" aria-live="polite"></div>
 
     <div class="v1-table-wrap team-table-wrap">
@@ -144,6 +331,7 @@
           <tr><td colspan="6" class="v1-empty-cell">Chargement de l’équipe…</td></tr>
         </tbody>
       </table>
+    </div>
     </div>
   </section>
 

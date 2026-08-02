@@ -55,6 +55,83 @@ const dashboardState = {
 |--------------------------------------------------------------------------
 */
 let dashboardSearchTimer = null;
+let dashboardAutoRefreshTimer = null;
+let dashboardLoadInFlight = false;
+let dashboardKnownEntryIds = new Set();
+let dashboardInitialLoadComplete = false;
+let dashboardVisibilityHandlerBound = false;
+
+function stopDashboardAutoRefresh() {
+  if (dashboardAutoRefreshTimer !== null) {
+    window.clearInterval(dashboardAutoRefreshTimer);
+    dashboardAutoRefreshTimer = null;
+  }
+}
+
+function dashboardHasOpenModal() {
+  return Boolean(
+    document.querySelector(
+      '[role="dialog"]:not([hidden]), [role="alertdialog"]:not([hidden])'
+    )
+  );
+}
+
+function notifyNewQrRegistrations(entries) {
+  const currentIds = new Set(
+    entries.map(entry => String(entry.id))
+  );
+
+  if (dashboardInitialLoadComplete) {
+    const newQrEntries = entries.filter(entry => (
+      entry.source === 'qr'
+      && !dashboardKnownEntryIds.has(String(entry.id))
+    ));
+
+    if (newQrEntries.length > 0) {
+      const message = newQrEntries.length === 1
+        ? `Nouvelle inscription en ligne : ${newQrEntries[0].display_name}.`
+        : `${newQrEntries.length} nouvelles inscriptions en ligne.`;
+
+      showToast(message, 'success');
+    }
+  }
+
+  dashboardKnownEntryIds = currentIds;
+  dashboardInitialLoadComplete = true;
+}
+
+function startDashboardAutoRefresh() {
+  stopDashboardAutoRefresh();
+
+  dashboardAutoRefreshTimer = window.setInterval(() => {
+    const dashboardVisible = Boolean(
+      document.getElementById('day-list-table-body')
+    );
+
+    if (
+      !dashboardVisible
+      || document.hidden
+      || dashboardHasOpenModal()
+    ) {
+      return;
+    }
+
+    loadDashboardData({ silent: true });
+  }, 3000);
+
+  if (!dashboardVisibilityHandlerBound) {
+    document.addEventListener('visibilitychange', () => {
+      if (
+        !document.hidden
+        && document.getElementById('day-list-table-body')
+      ) {
+        loadDashboardData({ silent: true });
+      }
+    });
+
+    dashboardVisibilityHandlerBound = true;
+  }
+}
 /*
 |--------------------------------------------------------------------------
 | Récupérer les éléments de la modal patient
@@ -1251,6 +1328,8 @@ function loadPage(page) {
 }
 
 function initPage(page) {
+  stopDashboardAutoRefresh();
+
   if (page === 'dashboard') {
     initDashboardPage();
     return;
@@ -1274,6 +1353,8 @@ window.setActiveMenuItem = setActiveMenuItem;
 |--------------------------------------------------------------------------
 */
 function resetDashboardViewState() {
+  dashboardKnownEntryIds = new Set();
+  dashboardInitialLoadComplete = false;
   dashboardState.entries = [];
   dashboardState.queue = null;
   dashboardState.searchTerm = '';
@@ -1959,6 +2040,7 @@ function initDashboardPage() {
   loadDashboardData({
     focusCurrent: true
   });
+  startDashboardAutoRefresh();
 }
 
 /*
@@ -1970,7 +2052,13 @@ function initDashboardPage() {
 | en attente après Terminer ou Absent.
 |--------------------------------------------------------------------------
 */
-async function loadDashboardData({ focusCurrent = false } = {}) {
+async function loadDashboardData({ focusCurrent = false, silent = false } = {}) {
+  if (dashboardLoadInFlight) {
+    return;
+  }
+
+  dashboardLoadInFlight = true;
+
   try {
     const response = await fetch(
       QUEUE_ENTRIES_API_URL
@@ -2004,6 +2092,8 @@ async function loadDashboardData({ focusCurrent = false } = {}) {
         Number(left.number)
         - Number(right.number)
     );
+
+    notifyNewQrRegistrations(dashboardState.entries);
 
     const currentEntry =
       getCurrentWaitingEntry();
@@ -2062,23 +2152,27 @@ async function loadDashboardData({ focusCurrent = false } = {}) {
       error
     );
 
-    const tableBody =
-      document.getElementById(
-        'day-list-table-body'
-      );
+    if (!silent) {
+      const tableBody =
+        document.getElementById(
+          'day-list-table-body'
+        );
 
-    if (tableBody) {
-      tableBody.innerHTML = `
-        <tr>
-          <td
-            colspan="6"
-            class="table-empty-state"
-          >
-            Impossible de charger les données.
-          </td>
-        </tr>
-      `;
+      if (tableBody) {
+        tableBody.innerHTML = `
+          <tr>
+            <td
+              colspan="6"
+              class="table-empty-state"
+            >
+              Impossible de charger les données.
+            </td>
+          </tr>
+        `;
+      }
     }
+  } finally {
+    dashboardLoadInFlight = false;
   }
 }
 /*

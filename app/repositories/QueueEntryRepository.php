@@ -679,62 +679,104 @@ class QueueEntryRepository
             $source = 'secretary';
         }
 
-        $positionNumber = $this->getNextPositionNumber($queueId);
+        $ownsTransaction = !$this->pdo->inTransaction();
 
-        $sql = "
-            INSERT INTO queue_entries (
-                queue_id,
-                clinic_id,
-                patient_id,
-                display_name,
-                phone,
-                birth_date,
-                source,
-                status,
-                position_number,
-                created_by_user_id,
-                updated_by_user_id,
-                created_at
-            ) VALUES (
-                :queue_id,
-                :clinic_id,
-                :patient_id,
-                :display_name,
-                :phone,
-                :birth_date,
-                :source,
-                'waiting',
-                :position_number,
-                :created_by_user_id,
-                :updated_by_user_id,
-                NOW()
-            )
-        ";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':queue_id' => $queueId,
-            ':clinic_id' => $clinicId,
-            ':patient_id' => $patientId,
-            ':display_name' => $displayName,
-            ':phone' => $phone,
-            ':birth_date' => $birthDate,
-            ':source' => $source,
-            ':position_number' => $positionNumber,
-            ':created_by_user_id' => $createdByUserId,
-            ':updated_by_user_id' => $createdByUserId,
-        ]);
-
-        $entryId = (int) $this->pdo->lastInsertId();
-        $createdEntry = $this->findById($entryId, $clinicId);
-
-        if ($createdEntry === null) {
-            throw new RuntimeException(
-                'Impossible de récupérer l’entrée après création.'
-            );
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
         }
 
-        return $createdEntry;
+        try {
+            /*
+            |------------------------------------------------------------------
+            | Verrou commun avec l'inscription QR
+            |------------------------------------------------------------------
+            | Toute creation d'une entree verrouille la ligne de la queue.
+            | Les ajouts QR, secretaire et medecin sont donc ordonnes meme
+            | lorsqu'ils arrivent exactement au meme moment.
+            |------------------------------------------------------------------
+            */
+            $queueLock = $this->pdo->prepare(
+                'SELECT id FROM queues '
+                . 'WHERE id = :queue_id AND clinic_id = :clinic_id '
+                . 'LIMIT 1 FOR UPDATE'
+            );
+            $queueLock->execute([
+                ':queue_id' => $queueId,
+                ':clinic_id' => $clinicId,
+            ]);
+
+            if (!$queueLock->fetch()) {
+                throw new RuntimeException('La liste du jour est introuvable.');
+            }
+
+            $positionNumber = $this->getNextPositionNumber($queueId);
+
+            $sql = "
+                INSERT INTO queue_entries (
+                    queue_id,
+                    clinic_id,
+                    patient_id,
+                    display_name,
+                    phone,
+                    birth_date,
+                    source,
+                    status,
+                    position_number,
+                    created_by_user_id,
+                    updated_by_user_id,
+                    created_at
+                ) VALUES (
+                    :queue_id,
+                    :clinic_id,
+                    :patient_id,
+                    :display_name,
+                    :phone,
+                    :birth_date,
+                    :source,
+                    'waiting',
+                    :position_number,
+                    :created_by_user_id,
+                    :updated_by_user_id,
+                    NOW()
+                )
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':queue_id' => $queueId,
+                ':clinic_id' => $clinicId,
+                ':patient_id' => $patientId,
+                ':display_name' => $displayName,
+                ':phone' => $phone,
+                ':birth_date' => $birthDate,
+                ':source' => $source,
+                ':position_number' => $positionNumber,
+                ':created_by_user_id' => $createdByUserId,
+                ':updated_by_user_id' => $createdByUserId,
+            ]);
+
+            $entryId = (int) $this->pdo->lastInsertId();
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            $createdEntry = $this->findById($entryId, $clinicId);
+
+            if ($createdEntry === null) {
+                throw new RuntimeException(
+                    'Impossible de récupérer l’entrée après création.'
+                );
+            }
+
+            return $createdEntry;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     /*

@@ -1,38 +1,77 @@
 <?php
 
+declare(strict_types=1);
+
+require_once __DIR__ . '/env.php';
+
 return [
     'app' => [
-        'name' => 'MARKI',
-        'env' => 'local',
-        'debug' => true,
-        'timezone' => 'Africa/Algiers',
-        'base_path' => '/Marki_app/Partie_medecin/public',
-        'app_key' => 'marki-v1-change-this-key-before-production-2026',
+        'name' => markiEnv('MARKI_APP_NAME', 'MARKI'),
+        'env' => markiEnv('MARKI_APP_ENV', 'local'),
+        'debug' => markiEnvBool('MARKI_APP_DEBUG', true),
+        'timezone' => markiEnv('MARKI_APP_TIMEZONE', 'Africa/Algiers'),
+        'base_path' => markiEnv(
+            'MARKI_APP_BASE_PATH',
+            '/Marki_app/Partie_medecin/public'
+        ),
+        'app_key' => markiEnv(
+            'MARKI_APP_KEY',
+            ''
+        ),
     ],
 
     'db' => [
-        'host' => '127.0.0.1',
-        'port' => 3307,
-        'dbname' => 'markii_db',
-        'charset' => 'utf8mb4',
-        'username' => 'root',
-        'password' => '',
+        'host' => markiEnv('MARKI_DB_HOST', '127.0.0.1'),
+        'port' => markiEnvInt('MARKI_DB_PORT', 3307),
+        'dbname' => markiEnv('MARKI_DB_NAME', 'markii_db'),
+        'charset' => markiEnv('MARKI_DB_CHARSET', 'utf8mb4'),
+        'username' => markiEnv('MARKI_DB_USERNAME', 'marki_app'),
+        'password' => markiEnv('MARKI_DB_PASSWORD', ''),
+    ],
+
+    'qr' => [
+        'hmac_secret' => markiEnv(
+            'MARKI_QR_HMAC_SECRET',
+            ''
+        ),
+        // Pour un test mobile local : http://192.168.x.x
+        'public_origin' => markiEnv('MARKI_QR_PUBLIC_ORIGIN', ''),
+        'rate_limit_attempts' => markiEnvInt(
+            'MARKI_QR_RATE_LIMIT_ATTEMPTS',
+            20
+        ),
+        'rate_limit_minutes' => markiEnvInt(
+            'MARKI_QR_RATE_LIMIT_MINUTES',
+            15
+        ),
     ],
 
     'auth' => [
-        'session_name' => 'marki_session',
-        'idle_timeout_seconds' => 43200,
-        'remember_days' => 30,
-        'max_failed_attempts' => 5,
-        'lock_minutes' => 15,
-        'password_min_length' => 10,
+        'session_name' => markiEnv('MARKI_SESSION_NAME', 'marki_session'),
+        'idle_timeout_seconds' => markiEnvInt(
+            'MARKI_IDLE_TIMEOUT_SECONDS',
+            43200
+        ),
+        'remember_days' => markiEnvInt('MARKI_REMEMBER_DAYS', 30),
+        'max_failed_attempts' => markiEnvInt(
+            'MARKI_MAX_FAILED_ATTEMPTS',
+            5
+        ),
+        'lock_minutes' => markiEnvInt('MARKI_LOCK_MINUTES', 15),
+        'password_min_length' => markiEnvInt(
+            'MARKI_PASSWORD_MIN_LENGTH',
+            10
+        ),
     ],
 
-    // Accès interne V1 utilisé uniquement pour générer le premier lien
-    // d’activation d’un nouveau cabinet ou d’une nouvelle clinique.
-    // Remplace cette valeur avant toute mise en ligne.
     'platform' => [
-        'setup_key' => 'marki-local-change-this-platform-key-2026',
-        'invitation_expiry_hours' => 72,
+        'setup_key' => markiEnv(
+            'MARKI_PLATFORM_SETUP_KEY',
+            ''
+        ),
+        'invitation_expiry_hours' => markiEnvInt(
+            'MARKI_INVITATION_EXPIRY_HOURS',
+            72
+        ),
     ],
 ];

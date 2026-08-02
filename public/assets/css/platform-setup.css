@@ -420,3 +420,73 @@ body.activation-page {
 .activation-timezone-flag { position: absolute; left: .85rem; z-index: 1; width: 28px; height: 19px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(15,23,42,.12); pointer-events: none; }
 .activation-timezone-wrap select { width: 100%; padding-left: 3.2rem !important; }
 @media (max-width: 720px) { .activation-location-fields { grid-template-columns: 1fr; } }
+
+.platform-shell--login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.platform-login-card {
+  width: min(100%, 34rem);
+}
+
+.platform-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+
+/* Raccourci bureau compact */
+.platform-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid var(--platform-border);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--platform-purple-dark);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(79, 42, 168, 0.08);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.platform-icon-button:hover,
+.platform-icon-button:focus-visible {
+  border-color: var(--platform-purple);
+  background: #f6f1ff;
+  outline: 3px solid rgba(111, 66, 217, 0.14);
+  transform: translateY(-1px);
+}
+
+.platform-icon-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.platform-login-card {
+  position: relative;
+  padding-top: 32px;
+}
+
+.platform-login-shortcut {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.platform-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}

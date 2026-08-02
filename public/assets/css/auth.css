@@ -25,6 +25,7 @@ body.auth-page {
 }
 
 .auth-card {
+  position: relative;
   width: min(100%, 440px);
   padding: 32px;
   border: 1px solid var(--border);
@@ -193,4 +194,39 @@ body.auth-page {
 
 .marki-location-status.is-warning {
   color: #a45100;
+}
+
+
+.auth-shortcut-button {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--primary-dark);
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(84, 45, 156, .08);
+}
+
+.auth-shortcut-button:hover,
+.auth-shortcut-button:focus-visible {
+  border-color: var(--primary);
+  background: #f7f2ff;
+  outline: 3px solid rgba(111, 66, 193, .15);
+}
+
+.auth-shortcut-button svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
