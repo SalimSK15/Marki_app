@@ -1,0 +1,59 @@
+/* =========================================================
+   RESPONSIVE — adaptation visuelle par taille d'écran
+   ========================================================= */
+@media (max-width: 1440px) {
+  :root {
+    --mk-header-height: 6.25rem;
+    --mk-sidebar-width: 17.5rem;
+    --mk-control-height: 2.75rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --mk-sidebar-width: 15.5rem;
+  }
+
+  .v1-page__header h2 {
+    font-size: clamp(1.65rem, 2vw, 2rem);
+  }
+
+  .v1-button {
+    padding-inline: 0.9rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .v1-card,
+  .team-card,
+  .qr-admin-card {
+    border-radius: var(--mk-radius-lg);
+  }
+
+  .v1-collapsible-section__actions {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --mk-control-height: 2.75rem;
+  }
+
+  .v1-page__header h2 {
+    font-size: 1.5rem;
+  }
+
+  .v1-button,
+  .auth-button,
+  .platform-button {
+    width: 100%;
+  }
+
+  .team-modal__dialog,
+  .marki-modal__dialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--mk-radius-lg);
+  }
+}

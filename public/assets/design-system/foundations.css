@@ -1,0 +1,48 @@
+/* =========================================================
+   FOUNDATIONS — règles générales visuelles
+   ========================================================= */
+html {
+  font-family: var(--mk-font-family);
+  color: var(--mk-text-main);
+  background: var(--mk-surface-page);
+}
+
+body,
+input,
+button,
+select,
+textarea {
+  font-family: var(--mk-font-family);
+}
+
+body {
+  color: var(--mk-text-main);
+  background: var(--mk-surface-page);
+}
+
+::selection {
+  color: var(--mk-color-neutral-0);
+  background: var(--mk-color-primary-600);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--mk-color-primary-500) 35%, transparent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--mk-text-main);
+  letter-spacing: -0.015em;
+}
+
+small,
+.text-secondary,
+.v1-page__header p,
+.v1-card__header p {
+  color: var(--mk-text-muted);
+}

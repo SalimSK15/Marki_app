@@ -13,6 +13,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mot de passe oublié — MARKI</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20260731-final1">
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 <body class="auth-page">
     <main class="auth-card">

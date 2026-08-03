@@ -43,6 +43,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     <link rel="stylesheet" href="assets/css/auth.css?v=20260802-login2">
     <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-login1">
     <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final2">
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 <body
     class="auth-page"

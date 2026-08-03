@@ -1,0 +1,81 @@
+/* =========================================================
+   DESIGN TOKENS — couleurs, typographie, espaces, rayons
+   Le collègue peut commencer par ce fichier pour changer
+   rapidement l'identité visuelle sans toucher à la logique.
+   ========================================================= */
+:root {
+  --mk-color-primary-50: #f6f0ff;
+  --mk-color-primary-100: #eee2ff;
+  --mk-color-primary-200: #dec7ff;
+  --mk-color-primary-300: #c59bff;
+  --mk-color-primary-400: #a967f5;
+  --mk-color-primary-500: #8a2be2;
+  --mk-color-primary-600: #7421c9;
+  --mk-color-primary-700: #601dad;
+  --mk-color-primary-800: #4f1b8a;
+  --mk-color-primary-900: #42196f;
+
+  --mk-color-neutral-0: #ffffff;
+  --mk-color-neutral-25: #fcfcfd;
+  --mk-color-neutral-50: #f8f7fb;
+  --mk-color-neutral-100: #f2f0f6;
+  --mk-color-neutral-200: #e6e2ed;
+  --mk-color-neutral-300: #d5cfde;
+  --mk-color-neutral-500: #756e82;
+  --mk-color-neutral-700: #40394c;
+  --mk-color-neutral-900: #171320;
+
+  --mk-color-success: #10b981;
+  --mk-color-success-soft: #d1fae5;
+  --mk-color-danger: #ef4444;
+  --mk-color-danger-soft: #fee2e2;
+  --mk-color-warning: #f59e0b;
+  --mk-color-warning-soft: #fef3c7;
+  --mk-color-info: #2563eb;
+  --mk-color-info-soft: #dbeafe;
+
+  --mk-font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mk-font-size-xs: 0.75rem;
+  --mk-font-size-sm: 0.875rem;
+  --mk-font-size-md: 1rem;
+  --mk-font-size-lg: 1.125rem;
+  --mk-font-size-xl: 1.25rem;
+  --mk-font-size-2xl: 1.5rem;
+  --mk-font-size-3xl: 2rem;
+
+  --mk-font-weight-regular: 400;
+  --mk-font-weight-medium: 500;
+  --mk-font-weight-semibold: 600;
+  --mk-font-weight-bold: 700;
+
+  --mk-space-1: 0.25rem;
+  --mk-space-2: 0.5rem;
+  --mk-space-3: 0.75rem;
+  --mk-space-4: 1rem;
+  --mk-space-5: 1.25rem;
+  --mk-space-6: 1.5rem;
+  --mk-space-8: 2rem;
+  --mk-space-10: 2.5rem;
+
+  --mk-radius-sm: 0.5rem;
+  --mk-radius-md: 0.75rem;
+  --mk-radius-lg: 1rem;
+  --mk-radius-xl: 1.25rem;
+  --mk-radius-pill: 999px;
+
+  --mk-shadow-sm: 0 1px 2px rgba(23, 19, 32, 0.05);
+  --mk-shadow-md: 0 8px 24px rgba(66, 25, 111, 0.08);
+  --mk-shadow-lg: 0 20px 48px rgba(39, 25, 61, 0.14);
+
+  --mk-border-color: var(--mk-color-neutral-200);
+  --mk-surface-page: var(--mk-color-neutral-25);
+  --mk-surface-card: var(--mk-color-neutral-0);
+  --mk-text-main: var(--mk-color-neutral-900);
+  --mk-text-muted: var(--mk-color-neutral-500);
+
+  --mk-header-height: 7rem;
+  --mk-sidebar-width: 20rem;
+  --mk-control-height: 2.875rem;
+  --mk-transition-fast: 150ms ease;
+  --mk-transition-normal: 240ms ease;
+}

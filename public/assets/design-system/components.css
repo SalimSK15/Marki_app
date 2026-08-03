@@ -1,0 +1,99 @@
+/* =========================================================
+   COMPONENTS — boutons, cartes, champs, tableaux, badges
+   ========================================================= */
+.v1-card,
+.team-card,
+.qr-admin-card,
+.auth-card,
+.platform-card {
+  border-color: var(--mk-border-color);
+  border-radius: var(--mk-radius-xl);
+  background: var(--mk-surface-card);
+  box-shadow: var(--mk-shadow-sm);
+}
+
+.v1-button,
+.auth-button,
+.platform-button {
+  min-height: var(--mk-control-height);
+  border-radius: var(--mk-radius-md);
+  font-weight: var(--mk-font-weight-semibold);
+  transition: transform var(--mk-transition-fast), box-shadow var(--mk-transition-fast), opacity var(--mk-transition-fast);
+}
+
+.v1-button:hover:not(:disabled),
+.auth-button:hover:not(:disabled),
+.platform-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.v1-button--primary,
+.auth-button,
+.platform-button {
+  color: var(--mk-color-neutral-0);
+  background: var(--mk-color-primary-600);
+  box-shadow: 0 5px 14px rgba(116, 33, 201, 0.2);
+}
+
+.v1-button--primary:hover:not(:disabled),
+.auth-button:hover:not(:disabled),
+.platform-button:hover:not(:disabled) {
+  background: var(--mk-color-primary-700);
+}
+
+.v1-button--secondary {
+  color: var(--mk-color-primary-700);
+  border-color: var(--mk-color-primary-200);
+  background: var(--mk-color-primary-50);
+}
+
+.v1-field input,
+.v1-field select,
+.v1-field textarea,
+.auth-field input,
+.auth-field select,
+.auth-field textarea {
+  border-color: var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-color-neutral-0);
+  transition: border-color var(--mk-transition-fast), box-shadow var(--mk-transition-fast);
+}
+
+.v1-field input:focus,
+.v1-field select:focus,
+.v1-field textarea:focus,
+.auth-field input:focus,
+.auth-field select:focus,
+.auth-field textarea:focus {
+  border-color: var(--mk-color-primary-500);
+  box-shadow: 0 0 0 4px var(--mk-color-primary-100);
+}
+
+.v1-table thead,
+.team-table thead {
+  background: var(--mk-color-neutral-50);
+}
+
+.v1-table th,
+.v1-table td,
+.team-table th,
+.team-table td {
+  border-color: var(--mk-border-color);
+}
+
+.v1-soft-badge,
+.qr-admin-status,
+.status-badge {
+  border-radius: var(--mk-radius-pill);
+}
+
+.team-modal__dialog,
+.marki-modal__dialog {
+  border-radius: var(--mk-radius-xl);
+  box-shadow: var(--mk-shadow-lg);
+}
+
+.marki-toast {
+  border-radius: var(--mk-radius-lg);
+  box-shadow: var(--mk-shadow-md);
+}

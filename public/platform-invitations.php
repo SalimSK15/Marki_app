@@ -90,7 +90,8 @@ if ($platformAdmin === null) {
         <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-platform4">
         <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform4">
         <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final2">
-    </head>
+        <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
+</head>
     <body class="platform-page">
         <main class="platform-shell platform-shell--login">
             <section class="platform-card platform-login-card">
@@ -264,6 +265,7 @@ $defaultExpiry = (int) (
     <link rel="stylesheet" href="assets/css/auth.css?v=20260731-setup1">
     <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform4">
     <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final2">
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 <body class="platform-page">
     <main class="platform-shell">
