@@ -6,6 +6,7 @@ $public = require __DIR__ . '/../app/public_bootstrap.php';
 $config = $public['config'];
 
 require_once __DIR__ . '/../app/platform/StructureInvitationRepository.php';
+require_once __DIR__ . '/../app/platform/PlatformAuth.php';
 
 function platformE(?string $value): string
 {
@@ -33,46 +34,50 @@ function platformAbsoluteBaseUrl(array $config): string
     return $scheme . '://' . $host . $basePath;
 }
 
-$expectedKey = (string) ($config['platform']['setup_key'] ?? '');
-$platformLoginError = $expectedKey === ''
-    ? 'La clé interne n’est pas configurée. Ajoutez MARKI_PLATFORM_SETUP_KEY dans le fichier .env.'
-    : '';
+$platformLoginError = '';
+$platformAdmin = null;
 
-if (empty($_SESSION['marki_platform_setup_authorized'])) {
-    if (
-        $_SERVER['REQUEST_METHOD'] === 'POST'
-        && (string) ($_POST['action'] ?? '') === 'platform_login'
-    ) {
-        try {
-            Auth::validateCsrf((string) ($_POST['csrf_token'] ?? ''));
-            $submittedKey = trim((string) ($_POST['platform_key'] ?? ''));
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && (string) ($_POST['action'] ?? '') === 'platform_login'
+) {
+    try {
+        Auth::validateCsrf((string) ($_POST['csrf_token'] ?? ''));
+        PlatformAuth::attemptLogin(
+            $config,
+            (string) ($_POST['email'] ?? ''),
+            (string) ($_POST['password'] ?? ''),
+            !empty($_POST['remember'])
+        );
 
-            if (
-                $expectedKey === ''
-                || $submittedKey === ''
-                || !hash_equals($expectedKey, $submittedKey)
-            ) {
-                throw new AuthException(
-                    $expectedKey === ''
-                        ? 'La clé interne n’est pas configurée dans le fichier .env.'
-                        : 'Clé d’administration incorrecte.'
-                );
-            }
-
-            $_SESSION['marki_platform_setup_authorized'] = true;
-            session_regenerate_id(true);
-
-            header(
-                'Location: '
-                . rtrim((string) $config['app']['base_path'], '/')
-                . '/platform-invitations.php'
-            );
-            exit;
-        } catch (Throwable $exception) {
-            $platformLoginError = $exception->getMessage();
-        }
+        header(
+            'Location: '
+            . rtrim((string) $config['app']['base_path'], '/')
+            . '/platform-invitations.php'
+        );
+        exit;
+    } catch (PlatformAuthException | AuthException $exception) {
+        $platformLoginError = $exception->getMessage();
+    } catch (PDOException $exception) {
+        $platformLoginError = str_contains($exception->getMessage(), 'platform_admins')
+            ? 'La migration des comptes administrateurs MARKI n’est pas encore installée.'
+            : 'Impossible de joindre la base de données. Vérifiez le fichier .env et le compte MySQL marki_app.';
+    } catch (Throwable $exception) {
+        $platformLoginError = (bool) ($config['app']['debug'] ?? false)
+            ? $exception->getMessage()
+            : 'Impossible d’ouvrir l’administration MARKI.';
     }
+}
 
+try {
+    $platformAdmin = PlatformAuth::current($config);
+} catch (Throwable $exception) {
+    $platformLoginError = (bool) ($config['app']['debug'] ?? false)
+        ? $exception->getMessage()
+        : 'Impossible de vérifier la session administrateur.';
+}
+
+if ($platformAdmin === null) {
     ?>
     <!DOCTYPE html>
     <html lang="fr">
@@ -81,9 +86,10 @@ if (empty($_SESSION['marki_platform_setup_authorized'])) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
         <title>Administration MARKI</title>
-        <link rel="stylesheet" href="assets/css/auth.css?v=20260802-platform3">
-        <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-platform3">
-        <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform3">
+        <link rel="stylesheet" href="assets/css/auth.css?v=20260802-platform4">
+        <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-platform4">
+        <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform4">
+        <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260802-density1">
     </head>
     <body class="platform-page">
         <main class="platform-shell platform-shell--login">
@@ -91,15 +97,15 @@ if (empty($_SESSION['marki_platform_setup_authorized'])) {
                 <a
                     class="platform-icon-button platform-login-shortcut"
                     href="download-shortcut.php?type=platform"
-                    aria-label="Télécharger le raccourci de l’administration MARKI"
-                    title="Télécharger le raccourci bureau"
+                    aria-label="Créer le raccourci de l’administration MARKI"
+                    title="Créer le raccourci MARKI sur le Bureau"
                     download
                 >
                     <?= platformShortcutIcon() ?>
                 </a>
                 <p class="platform-eyebrow">Administration interne MARKI</p>
-                <h1>Accès à la plateforme</h1>
-                <p>Entrez la clé interne pour créer et suivre les invitations des structures.</p>
+                <h1>Connexion à la plateforme</h1>
+                <p>Utilisez votre compte administrateur MARKI pour créer et suivre les invitations des structures.</p>
 
                 <?php if ($platformLoginError !== ''): ?>
                     <div class="platform-message is-error" role="alert">
@@ -112,16 +118,39 @@ if (empty($_SESSION['marki_platform_setup_authorized'])) {
                     <input type="hidden" name="action" value="platform_login">
 
                     <label>
-                        <span>Clé d’administration</span>
-                        <input type="password" name="platform_key" autocomplete="current-password" required autofocus <?= $expectedKey === '' ? 'disabled' : '' ?>>
+                        <span>Adresse courriel</span>
+                        <input
+                            type="email"
+                            name="email"
+                            autocomplete="username"
+                            value="<?= platformE((string) ($_POST['email'] ?? '')) ?>"
+                            required
+                            autofocus
+                        >
                     </label>
 
-                    <button type="submit" class="platform-button" <?= $expectedKey === '' ? 'disabled' : '' ?>>Ouvrir l’administration</button>
+                    <label>
+                        <span>Mot de passe</span>
+                        <input
+                            type="password"
+                            name="password"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </label>
+
+                    <label class="platform-checkbox">
+                        <input type="checkbox" name="remember" value="1">
+                        <span>Se souvenir de cet appareil pendant 30 jours</span>
+                    </label>
+
+                    <button type="submit" class="platform-button">Ouvrir l’administration</button>
                 </form>
 
+                <p class="platform-help">Ces identifiants sont réservés à l’équipe MARKI. Les médecins et les secrétaires utilisent le lien de leur structure.</p>
             </section>
         </main>
-        <script src="assets/js/password-toggle.js?v=20260802-platform3" defer></script>
+        <script src="assets/js/password-toggle.js?v=20260802-platform4" defer></script>
     </body>
     </html>
     <?php
@@ -129,6 +158,7 @@ if (empty($_SESSION['marki_platform_setup_authorized'])) {
 }
 
 $repository = new StructureInvitationRepository();
+$platformAuditRepository = new PlatformAdminRepository();
 $message = '';
 $messageType = '';
 $generatedLink = '';
@@ -143,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = trim((string) ($_POST['action'] ?? 'create'));
 
         if ($action === 'logout_platform') {
-            unset($_SESSION['marki_platform_setup_authorized']);
+            PlatformAuth::logout($config);
             header(
                 'Location: '
                 . rtrim((string) $config['app']['base_path'], '/')
@@ -153,8 +183,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($action === 'revoke') {
-            $repository->revokeInvitation(
-                (int) ($_POST['invitation_id'] ?? 0)
+            $invitationId = (int) ($_POST['invitation_id'] ?? 0);
+            $repository->revokeInvitation($invitationId);
+            $platformAuditRepository->log(
+                (int) $platformAdmin['id'],
+                'STRUCTURE_INVITATION_REVOKED',
+                ['invitation_id' => $invitationId]
             );
             $message = 'Invitation révoquée.';
             $messageType = 'success';
@@ -172,6 +206,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $generatedLink = platformAbsoluteBaseUrl($config)
                 . '/activate-structure.php?token='
                 . rawurlencode((string) $invitation['token']);
+
+            $platformAuditRepository->log(
+                (int) $platformAdmin['id'],
+                'STRUCTURE_INVITATION_CREATED',
+                [
+                    'invitation_id' => (int) $invitation['id'],
+                    'recipient_email' => $invitation['recipient_email'],
+                    'expires_at' => $invitation['expires_at'],
+                ]
+            );
 
             $message = 'Invitation créée. Copiez ce lien maintenant : le jeton complet n’est pas conservé en clair.';
             $messageType = 'success';
@@ -206,7 +250,8 @@ $defaultExpiry = (int) (
     <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
     <title>Invitations de structure — MARKI</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20260731-setup1">
-    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform3">
+    <link rel="stylesheet" href="assets/css/platform-setup.css?v=20260802-platform4">
+    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260802-density1">
 </head>
 <body class="platform-page">
     <main class="platform-shell">
@@ -221,16 +266,20 @@ $defaultExpiry = (int) (
                 <a
                     class="platform-icon-button"
                     href="download-shortcut.php?type=platform"
-                    aria-label="Télécharger le raccourci de l’administration MARKI"
-                    title="Télécharger le raccourci bureau"
+                    aria-label="Installer le raccourci de l’administration MARKI"
+                    title="Installer le raccourci MARKI sur le Bureau"
                     download
                 >
                     <?= platformShortcutIcon() ?>
                 </a>
+                <div class="platform-admin-identity" aria-label="Compte administrateur connecté">
+                    <strong><?= platformE((string) $platformAdmin['full_name']) ?></strong>
+                    <small><?= platformE((string) $platformAdmin['email']) ?></small>
+                </div>
                 <form method="post">
                     <input type="hidden" name="csrf_token" value="<?= platformE($csrfToken) ?>">
                     <input type="hidden" name="action" value="logout_platform">
-                    <button class="platform-button platform-button--ghost" type="submit">Fermer l’accès interne</button>
+                    <button class="platform-button platform-button--ghost" type="submit">Se déconnecter</button>
                 </form>
             </div>
         </header>

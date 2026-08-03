@@ -31,6 +31,7 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <link rel="stylesheet" href="assets/css/session-ui.css?v=20260801-preqr1">
     <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
     <link rel="stylesheet" href="assets/css/public-registration-admin.css?v=20260802-qr1">
+    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260802-density1">
 
     <script src="assets/js/auth-client.js?v=20260801-preqr1" defer></script>
     <script src="assets/js/phone-input.js?v=20260801-preqr1" defer></script>

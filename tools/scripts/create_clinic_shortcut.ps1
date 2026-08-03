@@ -16,16 +16,17 @@ if ([string]::IsNullOrWhiteSpace($clinic)) {
 $desktop = [Environment]::GetFolderPath("Desktop")
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $icon = Join-Path $projectRoot "public\assets\icons\marki-app.ico"
-$shortcut = Join-Path $desktop ($ShortcutName + ".url")
+$shortcutPath = Join-Path $desktop ($ShortcutName + ".lnk")
 $url = $base + "/login.php?clinic=" + [Uri]::EscapeDataString($clinic)
 
-$content = @(
-    "[InternetShortcut]"
-    "URL=$url"
-    "IconFile=$icon"
-    "IconIndex=0"
-)
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = Join-Path $env:WINDIR "explorer.exe"
+$shortcut.Arguments = $url
+$shortcut.WorkingDirectory = $env:USERPROFILE
+$shortcut.IconLocation = $icon + ",0"
+$shortcut.Description = "Ouvrir MARKI"
+$shortcut.Save()
 
-Set-Content -Path $shortcut -Value $content -Encoding ASCII
-Write-Host "Raccourci cree : $shortcut"
+Write-Host "Raccourci MARKI cree avec son icone : $shortcutPath" -ForegroundColor Green
 Write-Host "Adresse : $url"

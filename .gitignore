@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.env.backup-*
 
 # Journaux et fichiers temporaires
 storage/logs/*.log

@@ -25,7 +25,7 @@ return [
         'port' => markiEnvInt('MARKI_DB_PORT', 3307),
         'dbname' => markiEnv('MARKI_DB_NAME', 'markii_db'),
         'charset' => markiEnv('MARKI_DB_CHARSET', 'utf8mb4'),
-        'username' => markiEnv('MARKI_DB_USERNAME', 'marki_app'),
+        'username' => markiEnv('MARKI_DB_USERNAME', ''),
         'password' => markiEnv('MARKI_DB_PASSWORD', ''),
     ],
 
@@ -65,13 +65,25 @@ return [
     ],
 
     'platform' => [
-        'setup_key' => markiEnv(
-            'MARKI_PLATFORM_SETUP_KEY',
-            ''
-        ),
         'invitation_expiry_hours' => markiEnvInt(
             'MARKI_INVITATION_EXPIRY_HOURS',
             72
+        ),
+        'remember_days' => markiEnvInt(
+            'MARKI_PLATFORM_REMEMBER_DAYS',
+            30
+        ),
+        'max_failed_attempts' => markiEnvInt(
+            'MARKI_PLATFORM_MAX_FAILED_ATTEMPTS',
+            5
+        ),
+        'lock_minutes' => markiEnvInt(
+            'MARKI_PLATFORM_LOCK_MINUTES',
+            15
+        ),
+        'idle_timeout_seconds' => markiEnvInt(
+            'MARKI_PLATFORM_IDLE_TIMEOUT_SECONDS',
+            14400
         ),
     ],
 ];

@@ -13,6 +13,16 @@ function db(): PDO
     $config = require __DIR__ . '/config.php';
     $dbConfig = $config['db'];
 
+    if (
+        trim((string) ($dbConfig['username'] ?? '')) === ''
+        || trim((string) ($dbConfig['password'] ?? '')) === ''
+    ) {
+        throw new RuntimeException(
+            'La connexion MySQL n est pas configuree. ' .
+            'Renseignez MARKI_DB_USERNAME et MARKI_DB_PASSWORD dans le fichier .env.'
+        );
+    }
+
     $fallbackTimezone = (string) ($config['app']['timezone'] ?? 'UTC');
     if (!isValidTimezone($fallbackTimezone)) {
         $fallbackTimezone = 'UTC';

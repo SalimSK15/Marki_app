@@ -1,5 +1,6 @@
 param(
-    [int]$Port = 80
+    [int]$Port = 80,
+    [string]$RuleName = "MARKI Local HTTP"
 )
 
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -11,23 +12,38 @@ if (-not $isAdmin) {
     exit 1
 }
 
-$ruleName = 'MARKI Laragon HTTP'
-$existing = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+$existing = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
 
 if ($existing) {
-    Set-NetFirewallRule -DisplayName $ruleName -Enabled True -Direction Inbound -Action Allow -Profile Private | Out-Null
-    Set-NetFirewallPortFilter -AssociatedNetFirewallRule $existing -Protocol TCP -LocalPort $Port | Out-Null
-    Write-Host "Regle mise a jour pour le port $Port sur les reseaux prives." -ForegroundColor Green
+    Set-NetFirewallRule `
+        -DisplayName $RuleName `
+        -Enabled True `
+        -Direction Inbound `
+        -Action Allow `
+        -Profile Private | Out-Null
+
+    Set-NetFirewallAddressFilter `
+        -AssociatedNetFirewallRule $existing `
+        -RemoteAddress LocalSubnet | Out-Null
+
+    Set-NetFirewallPortFilter `
+        -AssociatedNetFirewallRule $existing `
+        -Protocol TCP `
+        -LocalPort $Port | Out-Null
+
+    Write-Host "Regle mise a jour pour le port $Port." -ForegroundColor Green
 } else {
     New-NetFirewallRule `
-        -DisplayName $ruleName `
+        -DisplayName $RuleName `
         -Direction Inbound `
         -Action Allow `
         -Protocol TCP `
         -LocalPort $Port `
-        -Profile Private | Out-Null
-    Write-Host "Regle creee pour le port $Port sur les reseaux prives." -ForegroundColor Green
+        -Profile Private `
+        -RemoteAddress LocalSubnet | Out-Null
+
+    Write-Host "Regle creee pour le port $Port." -ForegroundColor Green
 }
 
-Write-Host 'Aucun acces n a ete ouvert sur les reseaux publics.' -ForegroundColor Cyan
-Read-Host 'Appuyez sur Entree pour fermer'
+Write-Host 'Acces limite au profil Prive et aux appareils du sous-reseau local.' -ForegroundColor Cyan
+Write-Host 'Aucun port du routeur Internet n a ete ouvert.' -ForegroundColor Cyan

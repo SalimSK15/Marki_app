@@ -42,6 +42,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     <title>Connexion — MARKI</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20260802-login2">
     <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-login1">
+    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260802-density1">
 </head>
 <body
     class="auth-page"
@@ -53,8 +54,8 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             <a
                 class="auth-shortcut-button"
                 href="download-shortcut.php?type=clinic&amp;clinic=<?= rawurlencode($clinicSlug) ?>"
-                aria-label="Télécharger le raccourci MARKI de cette structure"
-                title="Télécharger le raccourci bureau"
+                aria-label="Installer le raccourci MARKI de cette structure"
+                title="Installer le raccourci MARKI sur le Bureau"
                 download
             >
                 <svg viewBox="0 0 24 24" aria-hidden="true">

@@ -1,5 +1,5 @@
 param(
-    [int]$Port = 80
+    [int]$Port = 8080
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -45,15 +45,15 @@ if ($listeners) {
         Write-Host 'Le serveur ecoute sur le reseau local.' -ForegroundColor Green
     }
 } else {
-    Write-Host ("Aucun serveur n'ecoute sur le port {0}. Demarrez Apache/Laragon." -f $Port) -ForegroundColor Red
+    Write-Host ("Aucun serveur n'ecoute sur le port {0}. Lancez start_marki_mobile_test.bat." -f $Port) -ForegroundColor Red
 }
 
 Write-Host '4. Regle pare-feu MARKI' -ForegroundColor Yellow
-$rule = Get-NetFirewallRule -DisplayName 'MARKI Laragon HTTP' -ErrorAction SilentlyContinue
+$rule = Get-NetFirewallRule -DisplayName "MARKI Mobile Test $Port" -ErrorAction SilentlyContinue
 if ($rule) {
     $rule | Select-Object DisplayName, Enabled, Direction, Action, Profile | Format-Table -AutoSize
 } else {
-    Write-Host 'Regle absente. Lancez allow_marki_private_network.bat en administrateur.' -ForegroundColor DarkYellow
+    Write-Host 'Regle absente. Lancez start_marki_mobile_test.bat pour la creer.' -ForegroundColor DarkYellow
 }
 
 Write-Host ''

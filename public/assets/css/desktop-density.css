@@ -1,0 +1,166 @@
+/*
+ * Densite desktop MARKI
+ * Rend l interface confortable a 100 % de zoom sans utiliser CSS zoom.
+ * Le mobile conserve une taille de texte normale.
+ */
+@media (min-width: 1100px) {
+  html {
+    font-size: 14px;
+  }
+
+  .header {
+    min-height: 74px;
+    padding: 0.7rem 1.35rem;
+  }
+
+  .header__profile {
+    gap: 0.8rem;
+  }
+
+  .header__profile .avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .header__profile .profile-info h1 {
+    font-size: 1.1rem;
+  }
+
+  .header__profile .profile-info p,
+  .header__datetime .date {
+    font-size: 0.8rem;
+  }
+
+  .header__datetime .time {
+    font-size: 1.3rem;
+  }
+
+  .account-menu summary {
+    min-width: 170px;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .sidebar {
+    width: 18%;
+    min-width: 190px;
+    max-width: 260px;
+    padding: 1.15rem 0.75rem 0.75rem;
+  }
+
+  .sidebar__item {
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 16px 0 16px 0;
+  }
+
+  .sidebar__item .icon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .content-wrapper {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .main-content {
+    gap: 0.75rem;
+    min-height: calc(100vh - 74px);
+    padding: 1rem;
+  }
+
+  .patient-details {
+    width: 280px;
+  }
+
+  .day-list-page,
+  .day-list-page__top {
+    gap: 1rem;
+  }
+
+  .day-list-page__heading h2 {
+    font-size: clamp(1.55rem, 1.8vw, 2rem);
+  }
+
+  .day-list-page__heading p {
+    font-size: 0.9rem;
+  }
+
+  .btn-primary,
+  .btn-toggle-list {
+    padding: 0.6rem 1rem;
+  }
+
+  .v1-page {
+    padding: 0.85rem;
+  }
+
+  .v1-page__header {
+    margin-bottom: 1rem;
+  }
+
+  .v1-card {
+    padding: 1rem;
+  }
+
+  .v1-card__header {
+    padding-bottom: 0.85rem;
+  }
+
+  .v1-form__grid {
+    gap: 0.85rem;
+  }
+
+  .v1-field input,
+  .v1-field select,
+  .v1-field textarea {
+    min-height: 42px;
+    padding: 0.65rem 0.8rem;
+  }
+
+  .v1-button {
+    min-height: 40px;
+    padding: 0.6rem 0.9rem;
+  }
+
+  .platform-shell {
+    width: min(1080px, calc(100% - 40px));
+    padding: 24px 0 40px;
+  }
+
+  .platform-shell--login {
+    padding: 20px 0;
+  }
+
+  .platform-login-card {
+    width: min(100%, 31rem);
+    padding: 1.65rem;
+  }
+
+  .platform-login-card h1 {
+    font-size: 2rem;
+  }
+
+  .platform-form {
+    gap: 0.9rem;
+  }
+
+  .platform-form input,
+  .platform-form select {
+    min-height: 42px;
+  }
+}
+
+@media (min-width: 1100px) and (max-height: 820px) {
+  html {
+    font-size: 13.5px;
+  }
+
+  .main-content {
+    padding: 0.8rem;
+  }
+
+  .content-wrapper {
+    padding: 0.6rem;
+  }
+}
