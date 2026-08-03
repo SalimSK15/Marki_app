@@ -23,10 +23,22 @@ final class StructureActivationValidationException extends InvalidArgumentExcept
 final class StructureInvitationRepository
 {
     private PDO $pdo;
+    private array $config;
+    private string $invitationSecret;
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
         $this->pdo = db();
+        $this->config = $config ?? require __DIR__ . '/../config.php';
+        $this->invitationSecret = trim(
+            (string) ($this->config['app']['app_key'] ?? '')
+        );
+
+        if (strlen($this->invitationSecret) < 32) {
+            throw new RuntimeException(
+                'MARKI_APP_KEY doit contenir au moins 32 caractères.'
+            );
+        }
     }
 
     public function createInvitation(
@@ -40,19 +52,28 @@ final class StructureInvitationRepository
             'UTF-8'
         );
 
-        if (
-            $recipientEmail !== ''
-            && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL) === false
-        ) {
+        $errors = [];
+
+        if ($recipientLabel === '') {
+            $errors['recipient_label'] = 'Le nom du destinataire est obligatoire.';
+        }
+
+        if ($recipientEmail === '') {
+            $errors['recipient_email'] = 'Le courriel du destinataire est obligatoire.';
+        } elseif (filter_var($recipientEmail, FILTER_VALIDATE_EMAIL) === false) {
+            $errors['recipient_email'] = 'Adresse courriel invalide.';
+        }
+
+        if ($errors !== []) {
             throw new StructureActivationValidationException(
-                'Adresse courriel invalide.',
-                ['recipient_email' => 'Adresse courriel invalide.']
+                'Renseignez les informations du destinataire.',
+                $errors
             );
         }
 
         $expiryHours = max(1, min(168, $expiryHours));
         $selector = bin2hex(random_bytes(12));
-        $validator = bin2hex(random_bytes(32));
+        $validator = $this->validatorForSelector($selector);
         $tokenHash = hash('sha256', $validator);
         $expiresAt = date(
             'Y-m-d H:i:s',
@@ -120,6 +141,7 @@ final class StructureInvitationRepository
             "SELECT
                 sai.id,
                 sai.selector,
+                sai.token_hash,
                 sai.recipient_label,
                 sai.recipient_email,
                 sai.expires_at,
@@ -141,7 +163,7 @@ final class StructureInvitationRepository
         );
 
         return array_map(
-            static function (array $row): array {
+            function (array $row): array {
                 $now = time();
                 $expiresAt = strtotime((string) $row['expires_at']);
 
@@ -154,6 +176,16 @@ final class StructureInvitationRepository
                 } else {
                     $status = 'active';
                 }
+
+                $validator = $this->validatorForSelector(
+                    (string) $row['selector']
+                );
+                $token = hash_equals(
+                    (string) $row['token_hash'],
+                    hash('sha256', $validator)
+                )
+                    ? (string) $row['selector'] . '.' . $validator
+                    : null;
 
                 return [
                     'id' => (int) $row['id'],
@@ -174,6 +206,7 @@ final class StructureInvitationRepository
                     'clinic_slug' => $row['clinic_slug'],
                     'activated_by_name' => $row['activated_by_name'],
                     'status' => $status,
+                    'token' => $token,
                 ];
             },
             $stmt->fetchAll()
@@ -710,6 +743,16 @@ final class StructureInvitationRepository
         return hash_equals(
             (string) $row['token_hash'],
             hash('sha256', $validator)
+        );
+    }
+
+
+    private function validatorForSelector(string $selector): string
+    {
+        return hash_hmac(
+            'sha256',
+            'structure-invitation:' . strtolower(trim($selector)),
+            $this->invitationSecret
         );
     }
 

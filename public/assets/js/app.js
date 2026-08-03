@@ -1304,31 +1304,51 @@ function setActiveMenuItem(page) {
 // CHARGEMENT DES PAGES
 // ==========================================================
 
-function loadPage(page) {
+let markiPageLoadController = null;
+let markiPageLoadSequence = 0;
+
+async function loadPage(page) {
   const mainContent = document.getElementById('main-content');
 
   if (!mainContent) {
     return;
   }
 
-  fetch(`pages/${encodeURIComponent(page)}.html`, {
-    cache: 'no-store'
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erreur de chargement de la page');
-      }
+  markiPageLoadController?.abort();
+  markiPageLoadController = new AbortController();
+  const sequence = ++markiPageLoadSequence;
+  const extension = page === 'settings' ? 'php' : 'html';
+  const source = `pages/${encodeURIComponent(page)}.${extension}`;
 
-      return response.text();
-    })
-    .then(html => {
-      mainContent.innerHTML = html;
-      initPage(page);
-    })
-    .catch(error => {
-      console.error('Erreur :', error);
-      mainContent.innerHTML = '<p>Erreur de chargement de la page.</p>';
+  try {
+    const response = await fetch(source, {
+      cache: 'no-store',
+      signal: markiPageLoadController.signal,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
     });
+
+    if (!response.ok) {
+      throw new Error(`Erreur de chargement de la page (${response.status})`);
+    }
+
+    const html = await response.text();
+
+    if (sequence !== markiPageLoadSequence) {
+      return;
+    }
+
+    mainContent.innerHTML = html;
+    initPage(page);
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return;
+    }
+
+    console.error('Erreur de chargement MARKI :', error);
+    mainContent.innerHTML = '<div class="v1-message is-error">Impossible de charger cette page. Réessayez.</div>';
+  }
 }
 
 function initPage(page) {

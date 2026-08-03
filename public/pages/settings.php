@@ -1,3 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+header('Cache-Control: no-store');
+header('Content-Type: text/html; charset=utf-8');
+
+$context = require __DIR__ . '/../../app/web_bootstrap.php';
+$capabilities = $context['capabilities'] ?? [];
+
+if (!($capabilities['settings.view'] ?? false)) {
+    http_response_code(403);
+    echo '<section class="v1-page"><div class="v1-message is-error">Vous n’avez pas accès aux paramètres.</div></section>';
+    exit;
+}
+
+$canManageQr = (bool) ($capabilities['settings.manage_doctor'] ?? false);
+$canManageTeam = (bool) ($capabilities['team.manage'] ?? false);
+
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+?>
 <section class="v1-page v1-settings-page" aria-labelledby="settings-page-title">
   <header class="v1-page__header">
     <div>
@@ -114,7 +137,8 @@
     </div>
   </form>
 
-  <section id="public-registration-section" class="v1-card qr-admin-card v1-collapsible-section is-collapsed" aria-labelledby="public-registration-title" hidden>
+  <?php if ($canManageQr): ?>
+  <section id="public-registration-section" class="v1-card qr-admin-card v1-collapsible-section is-collapsed" aria-labelledby="public-registration-title">
     <div class="v1-card__header qr-admin-card__header">
       <div>
         <p class="v1-page__eyebrow">Inscription publique</p>
@@ -293,7 +317,10 @@
     </div>
   </div>
 
-  <section id="team-settings-section" class="v1-card team-card v1-collapsible-section is-collapsed" aria-labelledby="team-settings-title" hidden>
+  <?php endif; ?>
+
+  <?php if ($canManageTeam): ?>
+  <section id="team-settings-section" class="v1-card team-card v1-collapsible-section is-collapsed" aria-labelledby="team-settings-title">
     <div class="v1-card__header team-card__header">
       <div>
         <p class="v1-page__eyebrow">Équipe et accès</p>
@@ -481,4 +508,5 @@
       </div>
     </div>
   </div>
+  <?php endif; ?>
 </section>

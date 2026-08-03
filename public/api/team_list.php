@@ -5,6 +5,9 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
+$config = require __DIR__ . '/../../app/config.php';
+require_once __DIR__ . '/../../app/support.php';
+
 $context = null;
 
 try {
@@ -25,14 +28,15 @@ try {
         'data' => $data,
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $exception) {
-    error_log('[MARKI team_list] ' . $exception->getMessage());
-
-    $debug = (bool) ($context['config']['app']['debug'] ?? false);
-    http_response_code(500);
-
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Impossible de charger l’équipe.',
-        'error' => $debug ? $exception->getMessage() : null,
-    ], JSON_UNESCAPED_UNICODE);
+    markiJsonException(
+        'team_list',
+        $exception,
+        $config,
+        'Impossible de charger l’équipe.',
+        [
+            'user_id' => $context['user_id'] ?? null,
+            'clinic_id' => $context['clinic_id'] ?? null,
+            'roles' => $context['roles'] ?? [],
+        ]
+    );
 }

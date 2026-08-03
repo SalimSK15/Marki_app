@@ -5,6 +5,11 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
+$config = require __DIR__ . '/../../app/config.php';
+require_once __DIR__ . '/../../app/support.php';
+
+$context = null;
+
 try {
     $context = require __DIR__ . '/../../app/bootstrap.php';
     require_once __DIR__ . '/../../app/public_registration/PublicRegistrationRepository.php';
@@ -56,12 +61,15 @@ try {
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $exception) {
-    http_response_code(500);
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Impossible de charger la configuration du QR.',
-        'error' => !empty($context['config']['app']['debug'])
-            ? $exception->getMessage()
-            : null,
-    ], JSON_UNESCAPED_UNICODE);
+    markiJsonException(
+        'public_registration_get',
+        $exception,
+        $config,
+        'Impossible de charger la configuration du QR.',
+        [
+            'user_id' => $context['user_id'] ?? null,
+            'clinic_id' => $context['clinic_id'] ?? null,
+            'doctor_id' => $context['doctor_id'] ?? null,
+        ]
+    );
 }

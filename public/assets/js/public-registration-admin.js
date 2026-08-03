@@ -51,23 +51,39 @@
     }
   }
 
-  async function requestJson(url, options = {}) {
-    const response = await fetch(url, {
+  async function requestJson(url, options = {}, retries = 1) {
+    const requestOptions = {
       cache: 'no-store',
       ...options
-    });
-    const data = await readJson(response);
+    };
 
-    if (!response.ok || !data?.ok) {
-      const error = new Error(
-        data?.message || 'Une erreur est survenue.'
-      );
-      error.status = response.status;
-      error.data = data;
-      throw error;
+    try {
+      const response = await fetch(url, requestOptions);
+      const data = await readJson(response);
+
+      if (!response.ok || !data?.ok) {
+        const error = new Error(
+          data?.message || 'Une erreur est survenue.'
+        );
+        error.status = response.status;
+        error.data = data;
+        error.serverError = data?.error || '';
+        error.errorId = data?.error_id || '';
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      const method = String(requestOptions.method || 'GET').toUpperCase();
+      const retryable = method === 'GET'
+        && retries > 0
+        && (!error?.status || error.status >= 500);
+
+      if (!retryable) throw error;
+
+      await new Promise(resolve => window.setTimeout(resolve, 300));
+      return requestJson(url, options, retries - 1);
     }
-
-    return data;
   }
 
   function formatDateTime(value) {
@@ -259,7 +275,9 @@
       }
 
       console.error('[MARKI QR] Chargement :', error);
-      setMessage(error.message, 'error');
+      const detail = error.serverError ? ` Détail : ${error.serverError}` : '';
+      const reference = error.errorId ? ` Référence : ${error.errorId}.` : '';
+      setMessage(`${error.message}${detail}${reference}`, 'error');
     } finally {
       state.loading = false;
     }
@@ -540,9 +558,9 @@
     });
   }
 
-  window.initMarkiPublicRegistration = function () {
+  window.initMarkiPublicRegistration = async function () {
     const section = byId('public-registration-section');
-    if (!section) return;
+    if (!section) return false;
 
     const canManageQr = Boolean(
       window.MARKI_CONTEXT?.capabilities?.['settings.manage_doctor']
@@ -550,18 +568,22 @@
 
     if (!canManageQr) {
       section.remove();
-      return;
+      return false;
     }
 
     bindEvents(section);
-    const doctorId = document.querySelector('[data-selected-doctor-id]')
-      ?.dataset.selectedDoctorId || 'current';
+    const doctorId = String(
+      window.MARKI_CONTEXT?.doctor_id
+      || document.querySelector('[data-selected-doctor-id]')?.dataset.selectedDoctorId
+      || 'current'
+    );
 
     if (state.initializedForDoctor !== doctorId) {
       state.initializedForDoctor = doctorId;
       state.data = null;
     }
 
-    loadOverview();
+    await loadOverview();
+    return true;
   };
 })();

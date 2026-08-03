@@ -157,7 +157,7 @@ if ($platformAdmin === null) {
     exit;
 }
 
-$repository = new StructureInvitationRepository();
+$repository = new StructureInvitationRepository($config);
 $platformAuditRepository = new PlatformAdminRepository();
 $message = '';
 $messageType = '';
@@ -217,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]
             );
 
-            $message = 'Invitation créée. Copiez ce lien maintenant : le jeton complet n’est pas conservé en clair.';
+            $message = 'Invitation créée. Le lien reste disponible dans le tableau tant que l’invitation est active.';
             $messageType = 'success';
         }
     } catch (StructureActivationValidationException $exception) {
@@ -235,7 +235,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$invitations = $repository->listRecent();
+$invitations = array_map(
+    static function (array $invitation) use ($config): array {
+        $token = (string) ($invitation['token'] ?? '');
+        $invitation['public_url'] = $token !== ''
+            ? platformAbsoluteBaseUrl($config)
+                . '/activate-structure.php?token='
+                . rawurlencode($token)
+            : null;
+
+        return $invitation;
+    },
+    $repository->listRecent()
+);
 $csrfToken = Auth::csrfToken();
 $defaultExpiry = (int) (
     $config['platform']['invitation_expiry_hours']
@@ -315,12 +327,15 @@ $defaultExpiry = (int) (
 
                     <label>
                         <span>Nom du destinataire</span>
-                        <input type="text" name="recipient_label" value="<?= platformE($_POST['recipient_label'] ?? '') ?>" placeholder="Ex. Dr Samir Haddad">
+                        <input type="text" name="recipient_label" value="<?= platformE($_POST['recipient_label'] ?? '') ?>" placeholder="Ex. Dr Samir Haddad" required>
+                        <?php if (isset($fieldErrors['recipient_label'])): ?>
+                            <small class="platform-field-error"><?= platformE((string) $fieldErrors['recipient_label']) ?></small>
+                        <?php endif; ?>
                     </label>
 
                     <label>
                         <span>Courriel du destinataire</span>
-                        <input type="email" name="recipient_email" value="<?= platformE($_POST['recipient_email'] ?? '') ?>" placeholder="docteur@cabinet.dz">
+                        <input type="email" name="recipient_email" value="<?= platformE($_POST['recipient_email'] ?? '') ?>" placeholder="docteur@cabinet.dz" required>
                         <?php if (isset($fieldErrors['recipient_email'])): ?>
                             <small class="platform-field-error"><?= platformE((string) $fieldErrors['recipient_email']) ?></small>
                         <?php endif; ?>
@@ -371,12 +386,13 @@ $defaultExpiry = (int) (
                             <th>Expiration</th>
                             <th>État</th>
                             <th>Structure créée</th>
+                            <th>Lien</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($invitations === []): ?>
-                            <tr><td colspan="6">Aucune invitation.</td></tr>
+                            <tr><td colspan="7">Aucune invitation.</td></tr>
                         <?php else: ?>
                             <?php foreach ($invitations as $invitation): ?>
                                 <?php
@@ -399,6 +415,19 @@ $defaultExpiry = (int) (
                                         <?php if ($invitation['clinic_name']): ?>
                                             <strong><?= platformE($invitation['clinic_name']) ?></strong>
                                             <small><?= platformE($invitation['activated_by_name'] ?: '') ?></small>
+                                        <?php else: ?>
+                                            —
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($invitation['status'] === 'active' && $invitation['public_url']): ?>
+                                            <button
+                                                type="button"
+                                                class="platform-button platform-button--ghost"
+                                                data-copy-invitation-link="<?= platformE((string) $invitation['public_url']) ?>"
+                                            >Copier</button>
+                                        <?php elseif ($invitation['status'] === 'active'): ?>
+                                            <small>Lien ancien non récupérable</small>
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>
@@ -444,6 +473,33 @@ $defaultExpiry = (int) (
                     button.textContent = previous;
                 }, 1600);
             }
+        });
+
+        document.querySelectorAll('[data-copy-invitation-link]').forEach(button => {
+            button.addEventListener('click', async () => {
+                const value = button.dataset.copyInvitationLink || '';
+                if (!value) return;
+
+                try {
+                    await navigator.clipboard.writeText(value);
+                } catch (error) {
+                    const input = document.createElement('textarea');
+                    input.value = value;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'fixed';
+                    input.style.opacity = '0';
+                    document.body.append(input);
+                    input.select();
+                    document.execCommand('copy');
+                    input.remove();
+                }
+
+                const previous = button.textContent;
+                button.textContent = 'Copié';
+                window.setTimeout(() => {
+                    button.textContent = previous;
+                }, 1600);
+            });
         });
     </script>
 </body>

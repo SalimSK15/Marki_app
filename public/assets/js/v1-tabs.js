@@ -55,19 +55,39 @@
     }
   }
 
-  async function requestJson(url, options = {}) {
-    const response = await fetch(url, options);
-    const data = await readJson(response);
+  async function requestJson(url, options = {}, retries = 1) {
+    const requestOptions = {
+      cache: 'no-store',
+      ...options
+    };
 
-    if (!response.ok || !data?.ok) {
-      const error = new Error(data?.message || 'Une erreur est survenue.');
-      error.status = response.status;
-      error.data = data;
-      error.serverError = data?.error || '';
-      throw error;
+    try {
+      const response = await fetch(url, requestOptions);
+      const data = await readJson(response);
+
+      if (!response.ok || !data?.ok) {
+        const error = new Error(data?.message || 'Une erreur est survenue.');
+        error.status = response.status;
+        error.data = data;
+        error.serverError = data?.error || '';
+        error.errorId = data?.error_id || '';
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      const method = String(requestOptions.method || 'GET').toUpperCase();
+      const retryable = method === 'GET'
+        && retries > 0
+        && (!error?.status || error.status >= 500);
+
+      if (!retryable) {
+        throw error;
+      }
+
+      await new Promise(resolve => window.setTimeout(resolve, 300));
+      return requestJson(url, options, retries - 1);
     }
-
-    return data;
   }
 
   function setMessage(element, message = '', type = '') {
@@ -932,15 +952,26 @@
       });
   }
 
-  function initSettingsPage() {
+  async function initSettingsPage() {
     const form = document.getElementById('settings-form');
-    if (!form) return;
+    if (!form || form.dataset.markiInitialized === '1') return;
 
+    form.dataset.markiInitialized = '1';
     form.addEventListener('submit', saveSettings);
     bindSettingsEnhancements();
     bindSettingsCollapsibleSections();
-    loadSettings();
-    window.initMarkiPublicRegistration?.();
+
+    // Une seule sequence de chargement : Parametres, QR, puis Equipe.
+    // Cela evite trois requetes d'initialisation concurrentes sur la session PHP.
+    await loadSettings();
+
+    if (document.getElementById('public-registration-section')) {
+      await window.initMarkiPublicRegistration?.();
+    }
+
+    if (document.getElementById('team-settings-section')) {
+      await window.initMarkiTeam?.();
+    }
   }
 
   async function loadSettings() {
@@ -958,10 +989,13 @@
       fillSettingsForm(response.data?.clinic || {}, response.data?.doctor || {});
       applySettingsPermissions(response.data?.permissions || {});
       setMessage(message);
+      return true;
     } catch (error) {
       console.error('Paramètres :', error);
       const detail = error.serverError ? ` Détail : ${error.serverError}` : '';
-      setMessage(message, `${error.message}${detail}`, 'error');
+      const reference = error.errorId ? ` Référence : ${error.errorId}.` : '';
+      setMessage(message, `${error.message}${detail}${reference}`, 'error');
+      return false;
     } finally {
       if (button) button.disabled = false;
     }

@@ -32,20 +32,38 @@
     }
   }
 
-  async function requestJson(url, options = {}) {
-    const response = await fetch(url, options);
-    const data = await readJson(response);
+  async function requestJson(url, options = {}, retries = 1) {
+    const requestOptions = {
+      cache: 'no-store',
+      ...options
+    };
 
-    if (!response.ok || !data?.ok) {
-      const error = new Error(data?.message || 'Une erreur est survenue.');
-      error.status = response.status;
-      error.data = data;
-      error.fieldErrors = data?.errors || {};
-      error.serverError = data?.error || '';
-      throw error;
+    try {
+      const response = await fetch(url, requestOptions);
+      const data = await readJson(response);
+
+      if (!response.ok || !data?.ok) {
+        const error = new Error(data?.message || 'Une erreur est survenue.');
+        error.status = response.status;
+        error.data = data;
+        error.fieldErrors = data?.errors || {};
+        error.serverError = data?.error || '';
+        error.errorId = data?.error_id || '';
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      const method = String(requestOptions.method || 'GET').toUpperCase();
+      const retryable = method === 'GET'
+        && retries > 0
+        && (!error?.status || error.status >= 500);
+
+      if (!retryable) throw error;
+
+      await new Promise(resolve => window.setTimeout(resolve, 300));
+      return requestJson(url, options, retries - 1);
     }
-
-    return data;
   }
 
   function notify(message, type = 'info') {
@@ -496,7 +514,8 @@
       section.hidden = false;
       body.innerHTML = '<tr><td colspan="6" class="v1-empty-cell">Impossible de charger l’équipe.</td></tr>';
       const detail = error.serverError ? ` Détail : ${error.serverError}` : '';
-      setMessage(`${error.message}${detail}`, 'error');
+      const reference = error.errorId ? ` Référence : ${error.errorId}.` : '';
+      setMessage(`${error.message}${detail}${reference}`, 'error');
 
       if (error.serverError) {
         console.error('MARKI — détail technique équipe :', error.serverError);
@@ -702,18 +721,10 @@
       escapeHandlerBound = true;
     }
 
-    loadTeam();
+    return loadTeam();
   }
 
-  const previousInitializer = window.initMarkiV1Page;
-
-  window.initMarkiV1Page = function (page) {
-    if (typeof previousInitializer === 'function') {
-      previousInitializer(page);
-    }
-
-    if (page === 'settings') {
-      initTeamPage();
-    }
+  window.initMarkiTeam = async function () {
+    return initTeamPage();
   };
 })();
