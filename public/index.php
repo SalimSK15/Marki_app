@@ -24,6 +24,14 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <meta name="csrf-token" content="<?= e($context['csrf_token']) ?>">
     <meta name="marki-base-path" content="<?= e($basePath) ?>">
     <meta name="marki-timezone" content="<?= e($context['timezone']) ?>">
+    <script>
+        window.MARKI_CONTEXT = <?= json_encode([
+            'capabilities' => $capabilities,
+            'role_label' => $context['role_label'],
+            'user_id' => (int) $context['user_id'],
+            'doctor_id' => (int) $context['doctor_id'],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    </script>
     <title>MARKI — Gestion des patients</title>
 
     <link rel="stylesheet" href="assets/css/styles.css?v=20260803-stable1">
@@ -36,7 +44,7 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <script src="assets/js/auth-client.js?v=20260803-stable1" defer></script>
     <script src="assets/js/phone-input.js?v=20260803-stable1" defer></script>
     <script src="assets/js/password-toggle.js?v=20260803-stable1" defer></script>
-    <script src="assets/js/algeria-locations.js?v=20260802-local1" defer></script>
+    <script src="assets/js/algeria-locations.js?v=20260803-dbfix1" defer></script>
     <script src="assets/js/app.js?v=20260803-final2" defer></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"

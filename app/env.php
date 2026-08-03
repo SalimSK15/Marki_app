@@ -3,45 +3,80 @@
 declare(strict_types=1);
 
 /**
- * Charge un fichier .env simple situé à la racine du projet.
- * Les variables déjà définies par le serveur gardent la priorité.
+ * Charge le fichier .env situé à la racine du projet.
+ *
+ * Le parseur est volontairement simple et prévisible :
+ * - il ignore les lignes vides et les commentaires ;
+ * - il accepte les valeurs avec ou sans guillemets simples/doubles ;
+ * - il retire le BOM UTF-8 éventuel ;
+ * - le fichier .env local reste la source de vérité à chaque requête.
  */
 function loadMarkiEnvironment(?string $path = null): void
 {
-    static $loaded = false;
+    static $loadedPaths = [];
 
-    if ($loaded) {
+    $path ??= dirname(__DIR__) . '/.env';
+    $realPath = realpath($path) ?: $path;
+
+    if (isset($loadedPaths[$realPath])) {
         return;
     }
 
-    $loaded = true;
-    $path ??= dirname(__DIR__) . '/.env';
+    $loadedPaths[$realPath] = true;
 
     if (!is_file($path) || !is_readable($path)) {
         return;
     }
 
-    $values = parse_ini_file($path, false, INI_SCANNER_RAW);
-
-    if (!is_array($values)) {
-        throw new RuntimeException('Le fichier .env de MARKI est invalide.');
+    $contents = file_get_contents($path);
+    if ($contents === false) {
+        throw new RuntimeException('Impossible de lire le fichier .env de MARKI.');
     }
 
-    foreach ($values as $key => $value) {
-        $name = trim((string) $key);
+    // Retirer le BOM UTF-8 qui peut être ajouté par certains éditeurs Windows.
+    $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents) ?? $contents;
+    $lines = preg_split('/\R/', $contents) ?: [];
 
-        if ($name === '' || getenv($name) !== false) {
+    foreach ($lines as $lineNumber => $line) {
+        $line = trim($line);
+
+        if ($line === '' || str_starts_with($line, '#') || str_starts_with($line, ';')) {
             continue;
         }
 
-        $normalized = trim((string) $value);
-        putenv($name . '=' . $normalized);
-        $_ENV[$name] = $normalized;
-        $_SERVER[$name] = $normalized;
+        if (str_starts_with($line, 'export ')) {
+            $line = trim(substr($line, 7));
+        }
+
+        $separator = strpos($line, '=');
+        if ($separator === false) {
+            continue;
+        }
+
+        $name = trim(substr($line, 0, $separator));
+        $value = trim(substr($line, $separator + 1));
+
+        if (!preg_match('/^[A-Z_][A-Z0-9_]*$/i', $name)) {
+            continue;
+        }
+
+        if (strlen($value) >= 2) {
+            $first = $value[0];
+            $last = $value[strlen($value) - 1];
+
+            if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                $value = substr($value, 1, -1);
+            }
+        }
+
+        // Le .env local doit remplacer une ancienne valeur restée dans un processus Apache.
+        putenv($name . '=' . $value);
+        $_ENV[$name] = $value;
+        $_SERVER[$name] = $value;
     }
 }
 
-function markiEnv(string $key, ?string $default = null): ?string
+function markiEnvRaw(string $key, ?string $default = null): ?string
 {
     $value = getenv($key);
 
@@ -49,9 +84,18 @@ function markiEnv(string $key, ?string $default = null): ?string
         return $default;
     }
 
-    $value = trim((string) $value);
+    return trim((string) $value);
+}
 
-    return $value === '' ? $default : $value;
+function markiEnv(string $key, ?string $default = null): ?string
+{
+    $value = markiEnvRaw($key, $default);
+
+    if ($value === null || $value === '') {
+        return $default;
+    }
+
+    return $value;
 }
 
 function markiEnvBool(string $key, bool $default = false): bool

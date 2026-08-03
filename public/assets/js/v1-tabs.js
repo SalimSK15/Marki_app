@@ -60,7 +60,11 @@
     const data = await readJson(response);
 
     if (!response.ok || !data?.ok) {
-      throw new Error(data?.message || 'Une erreur est survenue.');
+      const error = new Error(data?.message || 'Une erreur est survenue.');
+      error.status = response.status;
+      error.data = data;
+      error.serverError = data?.error || '';
+      throw error;
     }
 
     return data;
@@ -956,7 +960,8 @@
       setMessage(message);
     } catch (error) {
       console.error('Paramètres :', error);
-      setMessage(message, error.message, 'error');
+      const detail = error.serverError ? ` Détail : ${error.serverError}` : '';
+      setMessage(message, `${error.message}${detail}`, 'error');
     } finally {
       if (button) button.disabled = false;
     }

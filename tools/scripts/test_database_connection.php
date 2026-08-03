@@ -16,7 +16,7 @@ fwrite(STDOUT, 'Utilisateur: ' . (string) $config['db']['username'] . "\n\n");
 try {
     $pdo = db();
     $row = $pdo->query(
-        'SELECT DATABASE() AS database_name, CURRENT_USER() AS current_user, VERSION() AS server_version'
+        'SELECT DATABASE() AS database_name, CURRENT_USER() AS mysql_account, VERSION() AS server_version'
     )->fetch();
 
     $requiredTables = [
@@ -45,7 +45,7 @@ try {
     }
 
     fwrite(STDOUT, "CONNEXION REUSSIE\n");
-    fwrite(STDOUT, 'Compte MySQL reel : ' . (string) ($row['current_user'] ?? '') . "\n");
+    fwrite(STDOUT, 'Compte MySQL reel : ' . (string) ($row['mysql_account'] ?? '') . "\n");
     fwrite(STDOUT, 'Serveur MySQL      : ' . (string) ($row['server_version'] ?? '') . "\n");
 
     if ($missing === []) {

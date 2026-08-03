@@ -544,6 +544,15 @@
     const section = byId('public-registration-section');
     if (!section) return;
 
+    const canManageQr = Boolean(
+      window.MARKI_CONTEXT?.capabilities?.['settings.manage_doctor']
+    );
+
+    if (!canManageQr) {
+      section.remove();
+      return;
+    }
+
     bindEvents(section);
     const doctorId = document.querySelector('[data-selected-doctor-id]')
       ?.dataset.selectedDoctorId || 'current';

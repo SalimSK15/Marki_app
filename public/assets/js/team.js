@@ -38,6 +38,8 @@
 
     if (!response.ok || !data?.ok) {
       const error = new Error(data?.message || 'Une erreur est survenue.');
+      error.status = response.status;
+      error.data = data;
       error.fieldErrors = data?.errors || {};
       error.serverError = data?.error || '';
       throw error;
@@ -486,14 +488,15 @@
       renderTable();
       renderDoctorsOptions();
     } catch (error) {
-      if (String(error.message).includes('accès')) {
-        section.hidden = true;
+      if (error.status === 403 || String(error.message).includes('accès')) {
+        section.remove();
         return;
       }
 
       section.hidden = false;
       body.innerHTML = '<tr><td colspan="6" class="v1-empty-cell">Impossible de charger l’équipe.</td></tr>';
-      setMessage(error.message, 'error');
+      const detail = error.serverError ? ` Détail : ${error.serverError}` : '';
+      setMessage(`${error.message}${detail}`, 'error');
 
       if (error.serverError) {
         console.error('MARKI — détail technique équipe :', error.serverError);
@@ -649,6 +652,15 @@
   function initTeamPage() {
     const section = document.getElementById('team-settings-section');
     if (!section) return;
+
+    const canManageTeam = Boolean(
+      window.MARKI_CONTEXT?.capabilities?.['team.manage']
+    );
+
+    if (!canManageTeam) {
+      section.remove();
+      return;
+    }
 
     document
       .getElementById('team-new-account-button')

@@ -13,15 +13,16 @@ function db(): PDO
     $config = require __DIR__ . '/config.php';
     $dbConfig = $config['db'];
 
-    if (
-        trim((string) ($dbConfig['username'] ?? '')) === ''
-        || trim((string) ($dbConfig['password'] ?? '')) === ''
-    ) {
+    if (trim((string) ($dbConfig['username'] ?? '')) === '') {
         throw new RuntimeException(
             'La connexion MySQL n est pas configuree. ' .
-            'Renseignez MARKI_DB_USERNAME et MARKI_DB_PASSWORD dans le fichier .env.'
+            'Renseignez MARKI_DB_USERNAME dans le fichier .env.'
         );
     }
+
+    // Laragon peut utiliser un compte root local sans mot de passe.
+    // Une chaîne vide est donc une valeur valide pour MARKI_DB_PASSWORD.
+    $dbConfig['password'] = (string) ($dbConfig['password'] ?? '');
 
     $fallbackTimezone = (string) ($config['app']['timezone'] ?? 'UTC');
     if (!isValidTimezone($fallbackTimezone)) {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
+$context = null;
+
 try {
     $context = require __DIR__ . '/../../app/bootstrap.php';
     require_once __DIR__ . '/../../app/auth/TeamRepository.php';
@@ -25,15 +27,12 @@ try {
 } catch (Throwable $exception) {
     error_log('[MARKI team_list] ' . $exception->getMessage());
 
-    $payload = [
+    $debug = (bool) ($context['config']['app']['debug'] ?? false);
+    http_response_code(500);
+
+    echo json_encode([
         'ok' => false,
         'message' => 'Impossible de charger l’équipe.',
-    ];
-
-    if (!empty($context['config']['app']['debug'])) {
-        $payload['error'] = $exception->getMessage();
-    }
-
-    http_response_code(500);
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+        'error' => $debug ? $exception->getMessage() : null,
+    ], JSON_UNESCAPED_UNICODE);
 }

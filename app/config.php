@@ -26,7 +26,7 @@ return [
         'dbname' => markiEnv('MARKI_DB_NAME', 'markii_db'),
         'charset' => markiEnv('MARKI_DB_CHARSET', 'utf8mb4'),
         'username' => markiEnv('MARKI_DB_USERNAME', ''),
-        'password' => markiEnv('MARKI_DB_PASSWORD', ''),
+        'password' => markiEnvRaw('MARKI_DB_PASSWORD', ''),
     ],
 
     'qr' => [
