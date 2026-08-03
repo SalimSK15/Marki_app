@@ -14,6 +14,7 @@ $context = require __DIR__ . '/../app/web_bootstrap.php';
     <title>Changer le mot de passe — MARKI</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20260801-preqr1">
     <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 <body class="auth-page">
     <main class="auth-card">

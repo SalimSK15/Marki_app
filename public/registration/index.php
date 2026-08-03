@@ -26,6 +26,7 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
     <link rel="stylesheet" href="assets/registration.css?v=20260803-final2">
     <script src="../assets/js/phone-input.js?v=20260803-stable1" defer></script>
     <script src="assets/registration.js?v=20260803-final2" defer></script>
+    <link rel="stylesheet" href="../assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 <body>
     <main

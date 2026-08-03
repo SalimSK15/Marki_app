@@ -1,0 +1,38 @@
+/* =========================================================
+   LAYOUT — structure visuelle générale
+   Ne contient aucune règle métier.
+   ========================================================= */
+.header {
+  background: var(--mk-surface-card);
+  border-color: var(--mk-border-color);
+}
+
+.sidebar {
+  background: var(--mk-surface-card);
+  border-color: var(--mk-border-color);
+}
+
+.main-content {
+  background: var(--mk-surface-page);
+}
+
+.sidebar__item {
+  border-radius: var(--mk-radius-lg);
+  transition: background-color var(--mk-transition-fast), color var(--mk-transition-fast);
+}
+
+.sidebar__item:hover {
+  background: var(--mk-color-primary-50);
+}
+
+.sidebar__item.active {
+  color: var(--mk-color-primary-600);
+  background: var(--mk-color-primary-100);
+}
+
+.account-menu summary,
+.header-doctor-switcher select {
+  border-color: var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-card);
+}

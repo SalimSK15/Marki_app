@@ -85,6 +85,15 @@ $description = '__DESCRIPTION__'
 $localDirectory = Join-Path $env:LOCALAPPDATA 'MARKI'
 $iconPath = Join-Path $localDirectory 'marki-app.ico'
 $desktop = [Environment]::GetFolderPath('Desktop')
+if ([string]::IsNullOrWhiteSpace($desktop)) {
+    $desktop = Join-Path $env:USERPROFILE 'Desktop'
+}
+if (-not (Test-Path $desktop)) {
+    $desktop = Join-Path $env:USERPROFILE 'Bureau'
+}
+if (-not (Test-Path $desktop)) {
+    throw 'Le dossier Bureau de Windows est introuvable.'
+}
 $shortcutPath = Join-Path $desktop ($shortcutName + '.lnk')
 
 New-Item -ItemType Directory -Force -Path $localDirectory | Out-Null
@@ -92,9 +101,9 @@ Invoke-WebRequest -UseBasicParsing -Uri $iconUrl -OutFile $iconPath
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = Join-Path $env:WINDIR 'explorer.exe'
-$shortcut.Arguments = $targetUrl
-$shortcut.WorkingDirectory = $env:USERPROFILE
+$shortcut.TargetPath = Join-Path $env:WINDIR 'System32\rundll32.exe'
+$shortcut.Arguments = 'url.dll,FileProtocolHandler "' + $targetUrl.Replace('"', '') + '"'
+$shortcut.WorkingDirectory = Join-Path $env:WINDIR 'System32'
 $shortcut.IconLocation = $iconPath + ',0'
 $shortcut.Description = $description
 $shortcut.Save()

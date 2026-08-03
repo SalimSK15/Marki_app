@@ -60,6 +60,7 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <script src="assets/js/public-registration-admin.js?v=20260803-final-webfix" defer></script>
     <script src="assets/js/team.js?v=20260803-final-webfix" defer></script>
     <script src="assets/js/header.js?v=20260803-final-webfix" defer></script>
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
 
 <body>

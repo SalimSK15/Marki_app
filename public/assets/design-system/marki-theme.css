@@ -1,0 +1,11 @@
+/*
+ * MARKI Design System
+ * Point d'entrée unique du design. Les fichiers sont chargés dans cet ordre.
+ * La logique PHP et JavaScript ne dépend pas de ces imports.
+ */
+@import url('./tokens.css');
+@import url('./foundations.css');
+@import url('./layout.css');
+@import url('./components.css');
+@import url('./pages.css');
+@import url('./responsive.css');
