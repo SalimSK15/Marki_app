@@ -23,5 +23,17 @@ try {
         'data' => $data,
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $exception) {
-    Auth::jsonError(500, 'Impossible de charger l’équipe.');
+    error_log('[MARKI team_list] ' . $exception->getMessage());
+
+    $payload = [
+        'ok' => false,
+        'message' => 'Impossible de charger l’équipe.',
+    ];
+
+    if (!empty($context['config']['app']['debug'])) {
+        $payload['error'] = $exception->getMessage();
+    }
+
+    http_response_code(500);
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
 }

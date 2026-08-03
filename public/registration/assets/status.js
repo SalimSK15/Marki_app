@@ -11,6 +11,8 @@
     timer: null
   };
 
+  const STORAGE_PREFIX = 'marki:public-registration:';
+
   const elements = {
     loading: document.getElementById('status-loading'),
     error: document.getElementById('status-error'),
@@ -22,6 +24,7 @@
     createdAt: document.getElementById('status-created-at'),
     label: document.getElementById('status-label'),
     ahead: document.getElementById('status-ahead'),
+    aheadNote: document.getElementById('status-ahead-note'),
     guidance: document.getElementById('status-guidance'),
     clinicName: document.getElementById('status-clinic-name'),
     phone: document.getElementById('status-phone'),
@@ -32,6 +35,24 @@
     modal: document.getElementById('status-cancel-modal'),
     confirmCancel: document.getElementById('status-confirm-cancel')
   };
+
+  function clearSavedSessionForCurrentToken() {
+    try {
+      for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+        const key = window.localStorage.key(index);
+        if (!key?.startsWith(STORAGE_PREFIX)) continue;
+
+        const raw = window.localStorage.getItem(key);
+        const saved = raw ? JSON.parse(raw) : null;
+
+        if (saved?.session === state.session) {
+          window.localStorage.removeItem(key);
+        }
+      }
+    } catch (error) {
+      console.warn('Impossible de nettoyer le suivi local :', error);
+    }
+  }
 
   async function readJson(response) {
     const raw = await response.text();
@@ -67,9 +88,14 @@
   function guidanceFor(registration) {
     const status = registration.status;
     if (status === 'waiting') {
-      return registration.patients_ahead > 0
-        ? `Il reste ${registration.patients_ahead} patient(s) devant vous. Gardez cette page pour suivre votre position.`
-        : 'Vous êtes le prochain patient en attente. Restez disponible.';
+      const ahead = Number(registration.patients_ahead ?? 0);
+      if (ahead === 1) {
+        return 'Il reste 1 patient devant vous. Gardez cette page pour suivre votre position.';
+      }
+      if (ahead > 1) {
+        return `Il reste ${ahead} patients devant vous. Gardez cette page pour suivre votre position.`;
+      }
+      return 'Vous êtes le prochain patient en attente. Restez disponible.';
     }
     if (status === 'called') return 'Le cabinet vous appelle. Présentez-vous auprès du secrétariat.';
     if (status === 'no_show') return 'Vous avez été marqué absent. Contactez le secrétariat pour savoir si vous pouvez être réintégré.';
@@ -102,7 +128,15 @@
       elements.label.textContent = registration.status_label || '—';
       elements.label.dataset.status = registration.status || '';
     }
-    if (elements.ahead) elements.ahead.textContent = String(registration.patients_ahead ?? 0);
+    const patientsAhead = Number(registration.patients_ahead ?? 0);
+    if (elements.ahead) elements.ahead.textContent = String(patientsAhead);
+    if (elements.aheadNote) {
+      elements.aheadNote.textContent = patientsAhead === 0
+        ? 'Vous êtes le prochain patient.'
+        : patientsAhead === 1
+          ? '1 patient doit passer avant vous.'
+          : `${patientsAhead} patients doivent passer avant vous.`;
+    }
     if (elements.guidance) {
       elements.guidance.textContent = guidanceFor(registration);
       elements.guidance.className = `public-registration-notice is-${registration.status || 'waiting'}`;
@@ -117,6 +151,10 @@
       }).format(new Date());
     }
     if (elements.cancel) elements.cancel.hidden = !registration.can_cancel;
+
+    if (['done', 'canceled', 'no_show'].includes(registration.status)) {
+      clearSavedSessionForCurrentToken();
+    }
   }
 
   async function loadStatus(options = {}) {
@@ -146,6 +184,7 @@
       elements.content.hidden = true;
       elements.error.hidden = false;
       if (elements.errorMessage) elements.errorMessage.textContent = error.message;
+      clearSavedSessionForCurrentToken();
       if (state.timer) clearInterval(state.timer);
     } finally {
       state.loading = false;

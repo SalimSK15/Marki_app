@@ -23,9 +23,9 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
     <meta name="csrf-token" content="<?= e($public['csrf_token']) ?>">
     <meta name="marki-base-path" content="<?= e($basePath) ?>">
     <title>MARKI — Inscription à la liste d’attente</title>
-    <link rel="stylesheet" href="assets/registration.css?v=20260802-qr2">
-    <script src="../assets/js/phone-input.js?v=20260801-preqr1" defer></script>
-    <script src="assets/registration.js?v=20260802-qr2" defer></script>
+    <link rel="stylesheet" href="assets/registration.css?v=20260803-final2">
+    <script src="../assets/js/phone-input.js?v=20260803-stable1" defer></script>
+    <script src="assets/registration.js?v=20260803-final2" defer></script>
 </head>
 <body>
     <main

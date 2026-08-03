@@ -32,8 +32,19 @@ final class TeamRepository
 
     public function index(int $clinicId, int $currentUserId): array
     {
-        $membersSql = "
-            SELECT
+        /*
+        |------------------------------------------------------------------
+        | Charger les comptes sans agrégation SQL fragile
+        |------------------------------------------------------------------
+        | L'ancienne requête regroupait les rôles avec GROUP_CONCAT puis
+        | réutilisait cet alias dans ORDER BY. Selon la version/configuration
+        | MySQL ou MariaDB, cela pouvait faire échouer uniquement la section
+        | « Équipe et accès ». Les comptes, rôles et accès sont maintenant
+        | chargés par requêtes simples et assemblés en PHP.
+        |------------------------------------------------------------------
+        */
+        $membersStmt = $this->pdo->prepare(
+            "SELECT
                 u.id,
                 u.full_name,
                 u.email,
@@ -42,74 +53,76 @@ final class TeamRepository
                 u.must_change_password,
                 u.last_login_at,
                 u.created_at,
-                GROUP_CONCAT(DISTINCT r.code ORDER BY r.id SEPARATOR ',') AS role_codes,
                 sp.id AS staff_profile_id,
                 sp.job_title,
                 dp.id AS doctor_profile_id,
                 dp.display_name AS doctor_display_name,
                 dp.specialty AS doctor_specialty,
                 dp.license_number AS doctor_license_number
-            FROM users u
-            LEFT JOIN user_roles ur ON ur.user_id = u.id
-            LEFT JOIN roles r ON r.id = ur.role_id
-            LEFT JOIN staff_profiles sp ON sp.user_id = u.id
-            LEFT JOIN doctor_profiles dp ON dp.user_id = u.id
-            WHERE u.clinic_id = :clinic_id
-            GROUP BY
-                u.id,
-                u.full_name,
-                u.email,
-                u.phone,
-                u.status,
-                u.must_change_password,
-                u.last_login_at,
-                u.created_at,
-                sp.id,
-                sp.job_title,
-                dp.id,
-                dp.display_name,
-                dp.specialty,
-                dp.license_number
-            ORDER BY
-                CASE WHEN FIND_IN_SET('clinic_admin', role_codes) > 0 THEN 0 ELSE 1 END,
-                u.full_name ASC
-        ";
+             FROM users u
+             LEFT JOIN staff_profiles sp
+               ON sp.user_id = u.id
+              AND sp.clinic_id = u.clinic_id
+             LEFT JOIN doctor_profiles dp
+               ON dp.user_id = u.id
+              AND dp.clinic_id = u.clinic_id
+             WHERE u.clinic_id = :clinic_id
+             ORDER BY u.full_name ASC, u.id ASC"
+        );
+        $membersStmt->execute([':clinic_id' => $clinicId]);
+        $rows = $membersStmt->fetchAll();
 
-        $stmt = $this->pdo->prepare($membersSql);
-        $stmt->execute([':clinic_id' => $clinicId]);
-        $rows = $stmt->fetchAll();
+        $rolesByUser = [];
+        $rolesStmt = $this->pdo->prepare(
+            "SELECT ur.user_id, r.code
+             FROM user_roles ur
+             INNER JOIN roles r ON r.id = ur.role_id
+             INNER JOIN users u ON u.id = ur.user_id
+             WHERE u.clinic_id = :clinic_id
+             ORDER BY ur.user_id ASC, r.id ASC"
+        );
+        $rolesStmt->execute([':clinic_id' => $clinicId]);
+
+        foreach ($rolesStmt->fetchAll() as $roleRow) {
+            $rolesByUser[(int) $roleRow['user_id']][] =
+                (string) $roleRow['code'];
+        }
+
+        $accessesByStaff = [];
+        $accessStmt = $this->pdo->prepare(
+            "SELECT
+                sda.staff_profile_id,
+                sda.doctor_id,
+                sda.access_level
+             FROM staff_doctor_access sda
+             INNER JOIN staff_profiles sp
+               ON sp.id = sda.staff_profile_id
+             WHERE sp.clinic_id = :clinic_id
+             ORDER BY sda.staff_profile_id ASC, sda.doctor_id ASC"
+        );
+        $accessStmt->execute([':clinic_id' => $clinicId]);
+
+        foreach ($accessStmt->fetchAll() as $accessRow) {
+            $accessesByStaff[(int) $accessRow['staff_profile_id']][] = [
+                'doctor_id' => (int) $accessRow['doctor_id'],
+                'access_level' => (string) $accessRow['access_level'],
+            ];
+        }
 
         $members = [];
+
         foreach ($rows as $row) {
-            $roles = array_values(array_filter(
-                explode(',', (string) ($row['role_codes'] ?? ''))
-            ));
+            $userId = (int) $row['id'];
+            $roles = array_values(array_unique($rolesByUser[$userId] ?? []));
+            $staffProfileId = $row['staff_profile_id'] !== null
+                ? (int) $row['staff_profile_id']
+                : null;
             $accountType = in_array('doctor', $roles, true)
                 ? 'doctor'
                 : 'secretary';
 
-            $accesses = [];
-            if ($row['staff_profile_id'] !== null) {
-                $accessStmt = $this->pdo->prepare(
-                    "SELECT doctor_id, access_level
-                     FROM staff_doctor_access
-                     WHERE staff_profile_id = :staff_profile_id
-                     ORDER BY doctor_id"
-                );
-                $accessStmt->execute([
-                    ':staff_profile_id' => (int) $row['staff_profile_id'],
-                ]);
-                $accesses = array_map(
-                    static fn(array $access): array => [
-                        'doctor_id' => (int) $access['doctor_id'],
-                        'access_level' => (string) $access['access_level'],
-                    ],
-                    $accessStmt->fetchAll()
-                );
-            }
-
             $members[] = [
-                'id' => (int) $row['id'],
+                'id' => $userId,
                 'full_name' => (string) $row['full_name'],
                 'email' => $row['email'],
                 'phone' => PatientDataNormalizer::formatPhoneForDisplay(
@@ -128,17 +141,36 @@ final class TeamRepository
                 'doctor_display_name' => $row['doctor_display_name'],
                 'doctor_specialty' => $row['doctor_specialty'],
                 'doctor_license_number' => $row['doctor_license_number'],
-                'doctor_accesses' => $accesses,
-                'is_current_user' => (int) $row['id'] === $currentUserId,
+                'doctor_accesses' => $staffProfileId !== null
+                    ? ($accessesByStaff[$staffProfileId] ?? [])
+                    : [],
+                'is_current_user' => $userId === $currentUserId,
                 'is_protected_admin' => in_array('clinic_admin', $roles, true),
             ];
         }
+
+        usort(
+            $members,
+            static function (array $left, array $right): int {
+                $leftAdmin = in_array('clinic_admin', $left['roles'], true);
+                $rightAdmin = in_array('clinic_admin', $right['roles'], true);
+
+                if ($leftAdmin !== $rightAdmin) {
+                    return $leftAdmin ? -1 : 1;
+                }
+
+                return strcasecmp(
+                    (string) $left['full_name'],
+                    (string) $right['full_name']
+                );
+            }
+        );
 
         $doctorsStmt = $this->pdo->prepare(
             "SELECT id, display_name, specialty, is_active
              FROM doctor_profiles
              WHERE clinic_id = :clinic_id
-             ORDER BY display_name"
+             ORDER BY display_name ASC, id ASC"
         );
         $doctorsStmt->execute([':clinic_id' => $clinicId]);
 

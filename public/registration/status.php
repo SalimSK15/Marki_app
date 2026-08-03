@@ -22,8 +22,8 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
     <meta name="csrf-token" content="<?= e($public['csrf_token']) ?>">
     <meta name="marki-base-path" content="<?= e($basePath) ?>">
     <title>MARKI — Suivi de votre inscription</title>
-    <link rel="stylesheet" href="assets/registration.css?v=20260802-qr2">
-    <script src="assets/status.js?v=20260802-qr2" defer></script>
+    <link rel="stylesheet" href="assets/registration.css?v=20260803-final2">
+    <script src="assets/status.js?v=20260803-final2" defer></script>
 </head>
 <body>
     <main
@@ -58,20 +58,24 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
                     <p id="status-doctor-line">—</p>
                 </div>
 
-                <div class="public-status-number-card">
-                    <span>Votre N° d’arrivée</span>
-                    <strong id="status-position">—</strong>
-                    <small id="status-created-at">—</small>
-                </div>
-
-                <div class="public-status-grid">
-                    <article class="public-status-info">
-                        <span>État</span>
-                        <strong id="status-label">—</strong>
+                <div class="public-status-position-grid">
+                    <article class="public-status-number-card public-status-number-card--arrival">
+                        <span>Votre N° d’arrivée</span>
+                        <strong id="status-position">—</strong>
+                        <small id="status-created-at">—</small>
                     </article>
-                    <article class="public-status-info">
+
+                    <article class="public-status-number-card public-status-number-card--ahead">
                         <span>Patients avant votre tour</span>
                         <strong id="status-ahead">—</strong>
+                        <small id="status-ahead-note">La position se met à jour automatiquement.</small>
+                    </article>
+                </div>
+
+                <div class="public-status-grid public-status-grid--single">
+                    <article class="public-status-info">
+                        <span>État actuel</span>
+                        <strong id="status-label">—</strong>
                     </article>
                 </div>
 

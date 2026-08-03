@@ -71,7 +71,11 @@ function stopDashboardAutoRefresh() {
 function dashboardHasOpenModal() {
   return Boolean(
     document.querySelector(
-      '[role="dialog"]:not([hidden]), [role="alertdialog"]:not([hidden])'
+      '.marki-modal.is-open, '
+      + '.team-modal:not([hidden]), '
+      + '.public-registration-modal:not([hidden]), '
+      + '[aria-hidden="false"][role="dialog"], '
+      + '[aria-hidden="false"][role="alertdialog"]'
     )
   );
 }
@@ -117,7 +121,7 @@ function startDashboardAutoRefresh() {
     }
 
     loadDashboardData({ silent: true });
-  }, 3000);
+  }, 2500);
 
   if (!dashboardVisibilityHandlerBound) {
     document.addEventListener('visibilitychange', () => {

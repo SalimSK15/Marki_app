@@ -41,6 +41,80 @@
     if (element) element.hidden = hidden;
   }
 
+  const STORAGE_PREFIX = 'marki:public-registration:';
+
+  function storageKey() {
+    return `${STORAGE_PREFIX}${state.link}`;
+  }
+
+  function readSavedSession() {
+    try {
+      const raw = window.localStorage.getItem(storageKey());
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn('Stockage local indisponible :', error);
+      return null;
+    }
+  }
+
+  function saveSession(sessionToken, statusPath) {
+    if (!sessionToken || !statusPath) return;
+
+    try {
+      window.localStorage.setItem(storageKey(), JSON.stringify({
+        session: sessionToken,
+        status_path: statusPath,
+        saved_at: Date.now()
+      }));
+    } catch (error) {
+      console.warn('Impossible de mémoriser le suivi :', error);
+    }
+  }
+
+  function clearSavedSession() {
+    try {
+      window.localStorage.removeItem(storageKey());
+    } catch (error) {
+      console.warn('Impossible de nettoyer le suivi mémorisé :', error);
+    }
+  }
+
+  async function restoreActiveSession() {
+    const saved = readSavedSession();
+
+    if (!saved?.session || !saved?.status_path) {
+      return false;
+    }
+
+    try {
+      const params = new URLSearchParams({ session: saved.session });
+      const response = await fetch(`api/status.php?${params.toString()}`, {
+        cache: 'no-store',
+        credentials: 'same-origin'
+      });
+      const data = await readJson(response);
+
+      if (!response.ok || !data?.ok) {
+        clearSavedSession();
+        return false;
+      }
+
+      const status = data.data?.registration?.status || '';
+      const activeStatuses = ['waiting', 'called'];
+
+      if (activeStatuses.includes(status)) {
+        window.location.replace(saved.status_path);
+        return true;
+      }
+
+      clearSavedSession();
+      return false;
+    } catch (error) {
+      clearSavedSession();
+      return false;
+    }
+  }
+
   function setMessage(message = '', type = '') {
     if (!elements.message) return;
     elements.message.textContent = message;
@@ -226,6 +300,7 @@
       }
 
       resetSharedPhoneConfirmation();
+      saveSession(data.data.session_token, data.data.status_path);
       setMessage(data.message || 'Inscription enregistrée.', 'success');
       window.location.assign(data.data.status_path);
     } catch (error) {
@@ -256,5 +331,12 @@
       });
     });
 
-  loadContext();
+  (async function initializeRegistration() {
+    setHidden(elements.loading, false);
+
+    const restored = await restoreActiveSession();
+    if (!restored) {
+      loadContext();
+    }
+  })();
 })();

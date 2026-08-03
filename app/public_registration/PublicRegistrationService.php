@@ -299,11 +299,41 @@ final class PublicRegistrationService
                 );
             }
 
-            $this->assertPublicDailyLimit(
+            /*
+            |--------------------------------------------------------------
+            | Bloquer les doubles inscriptions par identité dans la file
+            |--------------------------------------------------------------
+            | On vérifie d'abord la file elle-même. Cette protection reste
+            | efficace même si d'anciens tests ont créé deux fiches patient
+            | portant le même nom et le même téléphone.
+            |--------------------------------------------------------------
+            */
+            $existingEntry = $this->findQueueEntryByIdentityForUpdate(
                 (int) $queue['id'],
-                (int) $link['id'],
-                $settings['max_public_registrations_per_day']
+                (int) $link['clinic_id'],
+                $fullName,
+                $phone
             );
+
+            if ($existingEntry !== null) {
+                $this->validateAndCompleteExistingIdentity(
+                    $existingEntry,
+                    (int) $link['clinic_id'],
+                    $birthDate
+                );
+
+                return $this->finishExistingRegistration(
+                    $existingEntry,
+                    $settings,
+                    $link,
+                    $queue,
+                    $ipHash,
+                    $userAgent,
+                    $fullName,
+                    $phone,
+                    $birthDate
+                );
+            }
 
             $patient = $this->findExactPatientForUpdate(
                 (int) $link['clinic_id'],
@@ -377,42 +407,24 @@ final class PublicRegistrationService
             );
 
             if ($existingEntry !== null) {
-                $sessionToken = $this->createOrRotatePublicSession(
-                    (int) $existingEntry['id'],
+                return $this->finishExistingRegistration(
+                    $existingEntry,
                     $settings,
-                    $ipHash,
-                    $userAgent
-                );
-
-                $this->repository->logPublicEvent(
-                    (int) $link['id'],
-                    'registered',
-                    'already_registered',
+                    $link,
+                    $queue,
                     $ipHash,
                     $userAgent,
-                    (int) $queue['id'],
-                    (int) $existingEntry['id'],
-                    [
-                        'patient_id' => (int) $patient['id'],
-                        'status' => (string) $existingEntry['status'],
-                    ]
+                    $fullName,
+                    $phone,
+                    $birthDate
                 );
-
-                $this->pdo->commit();
-
-                return [
-                    'message' =>
-                        'Une inscription existe déjà pour aujourd’hui. Vous pouvez consulter son état.',
-                    'session_token' => $sessionToken,
-                    'already_registered' => true,
-                    'entry' => [
-                        'id' => (int) $existingEntry['id'],
-                        'position_number' =>
-                            (int) $existingEntry['position_number'],
-                        'status' => (string) $existingEntry['status'],
-                    ],
-                ];
             }
+
+            $this->assertPublicDailyLimit(
+                (int) $queue['id'],
+                (int) $link['id'],
+                $settings['max_public_registrations_per_day']
+            );
 
             $positionNumber = $this->nextPositionNumber((int) $queue['id']);
             $entryId = $this->createQueueEntry(
@@ -1002,6 +1014,204 @@ final class PublicRegistrationService
                 'PUBLIC_DAILY_LIMIT_REACHED'
             );
         }
+    }
+
+    private function findQueueEntryByIdentityForUpdate(
+        int $queueId,
+        int $clinicId,
+        string $fullName,
+        string $phone
+    ): ?array {
+        $sql = "
+            SELECT
+                qe.id,
+                qe.queue_id,
+                qe.patient_id,
+                qe.position_number,
+                qe.status,
+                qe.display_name,
+                qe.phone,
+                qe.birth_date,
+                qe.created_at,
+                p.birth_date AS patient_birth_date
+            FROM queue_entries qe
+            LEFT JOIN patients p
+              ON p.id = qe.patient_id
+             AND p.clinic_id = qe.clinic_id
+            WHERE qe.queue_id = :queue_id
+              AND qe.clinic_id = :clinic_id
+              AND qe.phone = :phone
+              AND (
+                    qe.display_name = :full_name
+                 OR p.full_name = :patient_full_name
+              )
+            ORDER BY
+                CASE
+                    WHEN qe.status IN ('waiting', 'called') THEN 0
+                    WHEN qe.status IN ('no_show', 'canceled') THEN 1
+                    ELSE 2
+                END,
+                qe.id ASC
+            LIMIT 1
+            FOR UPDATE
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':queue_id' => $queueId,
+            ':clinic_id' => $clinicId,
+            ':phone' => $phone,
+            ':full_name' => $fullName,
+            ':patient_full_name' => $fullName,
+        ]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    private function validateAndCompleteExistingIdentity(
+        array $entry,
+        int $clinicId,
+        string $birthDate
+    ): void {
+        $existingBirthDate = trim((string) (
+            $entry['patient_birth_date']
+            ?? $entry['birth_date']
+            ?? ''
+        ));
+
+        if (
+            $birthDate !== ''
+            && $existingBirthDate !== ''
+            && $birthDate !== $existingBirthDate
+        ) {
+            throw new PublicRegistrationException(
+                'Les informations saisies ne correspondent pas à l’inscription existante. Contactez le cabinet.',
+                409,
+                'IDENTITY_MISMATCH',
+                ['birth_date' => 'La date de naissance ne correspond pas à l’inscription existante.']
+            );
+        }
+
+        if (
+            $birthDate !== ''
+            && $existingBirthDate === ''
+            && !empty($entry['patient_id'])
+        ) {
+            $stmt = $this->pdo->prepare(
+                "UPDATE patients
+                 SET birth_date = :birth_date, updated_at = NOW()
+                 WHERE id = :patient_id
+                   AND clinic_id = :clinic_id
+                 LIMIT 1"
+            );
+            $stmt->execute([
+                ':birth_date' => $birthDate,
+                ':patient_id' => (int) $entry['patient_id'],
+                ':clinic_id' => $clinicId,
+            ]);
+        }
+    }
+
+    private function finishExistingRegistration(
+        array $entry,
+        array $settings,
+        array $link,
+        array $queue,
+        string $ipHash,
+        string $userAgent,
+        string $fullName,
+        string $phone,
+        string $birthDate
+    ): array {
+        $status = (string) $entry['status'];
+        $rejoined = in_array($status, ['no_show', 'canceled'], true);
+        $positionNumber = (int) $entry['position_number'];
+
+        if ($rejoined) {
+            $positionNumber = $this->nextPositionNumber((int) $queue['id']);
+            $sql = "
+                UPDATE queue_entries
+                SET
+                    display_name = :display_name,
+                    phone = :phone,
+                    birth_date = COALESCE(:birth_date, birth_date),
+                    source = 'qr',
+                    public_link_id = :public_link_id,
+                    status = 'waiting',
+                    position_number = :position_number,
+                    called_at = NULL,
+                    done_at = NULL,
+                    canceled_at = NULL,
+                    cancellation_reason = NULL,
+                    no_show_at = NULL,
+                    last_rejoined_at = NOW(),
+                    updated_by_user_id = NULL
+                WHERE id = :entry_id
+                  AND queue_id = :queue_id
+                LIMIT 1
+            ";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':display_name' => $fullName,
+                ':phone' => $phone,
+                ':birth_date' => $birthDate !== '' ? $birthDate : null,
+                ':public_link_id' => (int) $link['id'],
+                ':position_number' => $positionNumber,
+                ':entry_id' => (int) $entry['id'],
+                ':queue_id' => (int) $queue['id'],
+            ]);
+            $status = 'waiting';
+        }
+
+        $sessionToken = $this->createOrRotatePublicSession(
+            (int) $entry['id'],
+            $settings,
+            $ipHash,
+            $userAgent
+        );
+
+        $resultCode = $rejoined
+            ? 'rejoined_existing'
+            : 'already_registered';
+
+        $this->repository->logPublicEvent(
+            (int) $link['id'],
+            'registered',
+            $resultCode,
+            $ipHash,
+            $userAgent,
+            (int) $queue['id'],
+            (int) $entry['id'],
+            [
+                'patient_id' => isset($entry['patient_id'])
+                    ? (int) $entry['patient_id']
+                    : null,
+                'status' => $status,
+                'position_number' => $positionNumber,
+            ]
+        );
+
+        $this->pdo->commit();
+
+        if ($rejoined) {
+            $message = 'Votre inscription a été réactivée avec un nouveau numéro d’arrivée.';
+        } elseif ($status === 'done') {
+            $message = 'Votre passage est déjà enregistré comme terminé aujourd’hui.';
+        } else {
+            $message = 'Une inscription existe déjà pour aujourd’hui. Vous pouvez consulter son état.';
+        }
+
+        return [
+            'message' => $message,
+            'session_token' => $sessionToken,
+            'already_registered' => !$rejoined,
+            'rejoined' => $rejoined,
+            'entry' => [
+                'id' => (int) $entry['id'],
+                'position_number' => $positionNumber,
+                'status' => $status,
+            ],
+        ];
     }
 
     private function findExactPatientForUpdate(

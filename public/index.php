@@ -26,18 +26,18 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <meta name="marki-timezone" content="<?= e($context['timezone']) ?>">
     <title>MARKI — Gestion des patients</title>
 
-    <link rel="stylesheet" href="assets/css/styles.css?v=20260801-preqr1">
-    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260802-qr2">
-    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260801-preqr1">
-    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260801-preqr1">
-    <link rel="stylesheet" href="assets/css/public-registration-admin.css?v=20260802-qr1">
-    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260802-density1">
+    <link rel="stylesheet" href="assets/css/styles.css?v=20260803-stable1">
+    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260803-stable1">
+    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260803-stable1">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260803-stable1">
+    <link rel="stylesheet" href="assets/css/public-registration-admin.css?v=20260803-final2">
+    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final2">
 
-    <script src="assets/js/auth-client.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/phone-input.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/password-toggle.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/auth-client.js?v=20260803-stable1" defer></script>
+    <script src="assets/js/phone-input.js?v=20260803-stable1" defer></script>
+    <script src="assets/js/password-toggle.js?v=20260803-stable1" defer></script>
     <script src="assets/js/algeria-locations.js?v=20260802-local1" defer></script>
-    <script src="assets/js/app.js?v=20260802-qr2" defer></script>
+    <script src="assets/js/app.js?v=20260803-final2" defer></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
         integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA=="
@@ -45,10 +45,10 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
         referrerpolicy="no-referrer"
         defer
     ></script>
-    <script src="assets/js/v1-tabs.js?v=20260802-qr2" defer></script>
-    <script src="assets/js/public-registration-admin.js?v=20260802-qr2" defer></script>
-    <script src="assets/js/team.js?v=20260801-preqr1" defer></script>
-    <script src="assets/js/header.js?v=20260801-preqr1" defer></script>
+    <script src="assets/js/v1-tabs.js?v=20260803-stable1" defer></script>
+    <script src="assets/js/public-registration-admin.js?v=20260803-stable1" defer></script>
+    <script src="assets/js/team.js?v=20260803-final2" defer></script>
+    <script src="assets/js/header.js?v=20260803-stable1" defer></script>
 </head>
 
 <body>

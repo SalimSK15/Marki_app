@@ -194,6 +194,25 @@ TRUNCATE TABLE roles;
 TRUNCATE TABLE clinics;
 SET FOREIGN_KEY_CHECKS = 1;
 
+-- Une même fiche patient ne peut apparaître qu’une seule fois dans une file.
+-- L’index est ajouté après le nettoyage des données afin d’éviter les doublons
+-- lors d’inscriptions QR ou d’ajouts simultanés par le secrétariat.
+SET @marki_has_queue_patient_unique = (
+    SELECT COUNT(*)
+    FROM information_schema.statistics
+    WHERE table_schema = DATABASE()
+      AND table_name = 'queue_entries'
+      AND index_name = 'ux_qe_queue_patient'
+);
+SET @marki_add_queue_patient_unique = IF(
+    @marki_has_queue_patient_unique = 0,
+    'ALTER TABLE queue_entries ADD UNIQUE KEY ux_qe_queue_patient (queue_id, patient_id)',
+    'SELECT 1'
+);
+PREPARE marki_unique_stmt FROM @marki_add_queue_patient_unique;
+EXECUTE marki_unique_stmt;
+DEALLOCATE PREPARE marki_unique_stmt;
+
 START TRANSACTION;
 
 -- Compte de test pour l'administration interne MARKI.

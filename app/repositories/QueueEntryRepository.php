@@ -709,6 +709,25 @@ class QueueEntryRepository
                 throw new RuntimeException('La liste du jour est introuvable.');
             }
 
+            if ($patientId !== null) {
+                $duplicateStmt = $this->pdo->prepare(
+                    'SELECT id, status FROM queue_entries '
+                    . 'WHERE queue_id = :queue_id AND patient_id = :patient_id '
+                    . 'ORDER BY id ASC LIMIT 1 FOR UPDATE'
+                );
+                $duplicateStmt->execute([
+                    ':queue_id' => $queueId,
+                    ':patient_id' => $patientId,
+                ]);
+
+                if ($duplicateStmt->fetch()) {
+                    throw new InvalidArgumentException(
+                        'Ce patient est déjà inscrit dans la liste du jour. '
+                        . 'Utilisez sa ligne existante ou l’action Réintégrer.'
+                    );
+                }
+            }
+
             $positionNumber = $this->getNextPositionNumber($queueId);
 
             $sql = "

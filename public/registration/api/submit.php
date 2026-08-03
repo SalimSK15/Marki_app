@@ -35,6 +35,8 @@ try {
         'message' => $result['message'],
         'data' => [
             'already_registered' => $result['already_registered'],
+            'rejoined' => (bool) ($result['rejoined'] ?? false),
+            'session_token' => (string) $result['session_token'],
             'entry' => $result['entry'],
             'status_path' => $basePath
                 . '/registration/status.php?session='

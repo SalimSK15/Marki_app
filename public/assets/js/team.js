@@ -39,6 +39,7 @@
     if (!response.ok || !data?.ok) {
       const error = new Error(data?.message || 'Une erreur est survenue.');
       error.fieldErrors = data?.errors || {};
+      error.serverError = data?.error || '';
       throw error;
     }
 
@@ -493,6 +494,10 @@
       section.hidden = false;
       body.innerHTML = '<tr><td colspan="6" class="v1-empty-cell">Impossible de charger l’équipe.</td></tr>';
       setMessage(error.message, 'error');
+
+      if (error.serverError) {
+        console.error('MARKI — détail technique équipe :', error.serverError);
+      }
     }
   }
 

@@ -637,3 +637,75 @@ button:disabled {
     text-align: left;
   }
 }
+
+/* =========================================================
+   MARKI QR — suivi lisible et réellement responsive
+   ========================================================= */
+.public-status-position-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.public-status-number-card {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 24px);
+}
+
+.public-status-number-card--arrival {
+  background:
+    radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 15rem),
+    linear-gradient(135deg, #4f31d2, #7659ff);
+}
+
+.public-status-number-card--ahead {
+  background:
+    radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 15rem),
+    linear-gradient(135deg, #087b58, #13a875);
+}
+
+.public-status-number-card strong {
+  font-size: clamp(2.8rem, 9vw, 4.8rem);
+}
+
+.public-status-number-card small {
+  min-height: 2.5em;
+  line-height: 1.35;
+}
+
+.public-status-grid--single {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 620px) {
+  .public-status-position-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-status-number-card strong {
+    font-size: clamp(3rem, 19vw, 4.5rem);
+  }
+}
+
+@media (max-width: 390px) {
+  .public-registration-card__hero,
+  .public-registration-loading,
+  .public-registration-state,
+  #registration-content,
+  #status-content {
+    padding: 17px;
+  }
+
+  .public-registration-card__hero {
+    gap: 12px;
+  }
+
+  .public-registration-card__hero h1,
+  .public-status-header h1 {
+    font-size: 1.55rem;
+  }
+
+  .public-registration-button {
+    min-height: 46px;
+  }
+}

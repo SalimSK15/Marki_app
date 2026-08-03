@@ -28,3 +28,18 @@ LEFT JOIN user_roles ur ON ur.user_id = u.id
 LEFT JOIN roles r ON r.id = ur.role_id
 GROUP BY u.id, u.email, u.full_name, u.status
 ORDER BY u.id;
+
+-- Aucun patient ne doit etre inscrit deux fois dans la meme file.
+SELECT queue_id, patient_id, COUNT(*) AS total
+FROM queue_entries
+WHERE patient_id IS NOT NULL
+GROUP BY queue_id, patient_id
+HAVING COUNT(*) > 1;
+
+-- L'index de securite doit exister.
+SELECT index_name, non_unique, GROUP_CONCAT(column_name ORDER BY seq_in_index) AS columns_indexees
+FROM information_schema.statistics
+WHERE table_schema = DATABASE()
+  AND table_name = 'queue_entries'
+  AND index_name = 'ux_qe_queue_patient'
+GROUP BY index_name, non_unique;
