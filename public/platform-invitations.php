@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $public = require __DIR__ . '/../app/public_bootstrap.php';
 $config = $public['config'];
+markiEnforcePlatformIpAllowlist($config);
 
 require_once __DIR__ . '/../app/platform/StructureInvitationRepository.php';
 require_once __DIR__ . '/../app/platform/PlatformAuth.php';
@@ -23,15 +24,12 @@ function platformShortcutIcon(): string
 
 function platformAbsoluteBaseUrl(array $config): string
 {
-    $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-    $scheme = $isHttps ? 'https' : 'http';
-    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
     $basePath = rtrim(
         (string) ($config['app']['base_path'] ?? ''),
         '/'
     );
 
-    return $scheme . '://' . $host . $basePath;
+    return markiApplicationOrigin($config) . $basePath;
 }
 
 $platformLoginError = '';
@@ -455,7 +453,7 @@ $defaultExpiry = (int) (
         </section>
     </main>
 
-    <script>
+    <script nonce="<?= platformE($public['csp_nonce']) ?>">
         document.getElementById('copy-invitation-link')?.addEventListener('click', async () => {
             const input = document.getElementById('generated-invitation-link');
             if (!input) return;

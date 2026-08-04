@@ -6,6 +6,8 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 $config = require __DIR__ . '/../../app/config.php';
+require_once __DIR__ . '/../../app/security.php';
+$GLOBALS['marki_csp_nonce'] = markiSecurityBootstrap($config);
 require_once __DIR__ . '/../../app/db.php';
 
 try {

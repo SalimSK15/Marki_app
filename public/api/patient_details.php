@@ -50,6 +50,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de charger la fiche patient.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

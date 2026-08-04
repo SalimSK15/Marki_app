@@ -41,6 +41,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de charger les patients.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

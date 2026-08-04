@@ -57,6 +57,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de mettre à jour le patient.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

@@ -97,7 +97,7 @@ $allOk = !in_array(false, array_column($tests, 'ok'), true);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diagnostic MARKI</title>
-    <style>
+    <style nonce="<?= htmlspecialchars($context['csp_nonce'], ENT_QUOTES, 'UTF-8') ?>">
         body { margin: 0; padding: 32px; font-family: Arial, sans-serif; background: #f7f6fb; color: #19152e; }
         main { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #e7e2f2; border-radius: 20px; padding: 28px; }
         h1 { margin-top: 0; }

@@ -38,6 +38,9 @@ try {
             'redirect' => Auth::baseUrl($config) . '/login.php',
         ],
     ], JSON_UNESCAPED_UNICODE);
+} catch (AuthRateLimitException $exception) {
+    header('Retry-After: 900');
+    Auth::jsonError(429, $exception->getMessage(), 'RATE_LIMITED');
 } catch (AuthException $exception) {
     Auth::jsonError(422, $exception->getMessage());
 } catch (Throwable $exception) {

@@ -172,6 +172,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de modifier l’état de la liste.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

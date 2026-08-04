@@ -27,13 +27,13 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     <meta name="csrf-token" content="<?= e($context['csrf_token']) ?>">
     <meta name="marki-base-path" content="<?= e($basePath) ?>">
     <meta name="marki-timezone" content="<?= e($context['timezone']) ?>">
-    <script>
+    <script nonce="<?= e($context['csp_nonce']) ?>">
         window.MARKI_CONTEXT = <?= json_encode([
             'capabilities' => $capabilities,
             'role_label' => $context['role_label'],
             'user_id' => (int) $context['user_id'],
             'doctor_id' => (int) $context['doctor_id'],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     </script>
     <title>MARKI — Gestion des patients</title>
 

@@ -271,6 +271,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible d’ajouter le patient.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

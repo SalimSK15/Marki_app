@@ -3,18 +3,26 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../session.php';
+require_once __DIR__ . '/../security.php';
 require_once __DIR__ . '/AuthRepository.php';
+require_once __DIR__ . '/../security/SecurityRateLimiter.php';
 
-final class AuthException extends RuntimeException
+class AuthException extends RuntimeException
+{
+}
+
+final class AuthRateLimitException extends AuthException
 {
 }
 
 final class Auth
 {
     private const REMEMBER_COOKIE = 'marki_remember';
+    private const DUMMY_PASSWORD_HASH = '$2y$12$taYOGaBOlzZUE4bgzH8FLubMMFj2fv/kbumEcWcPyOEsDcbv3EgjC';
 
     public static function start(array $config): void
     {
+        $GLOBALS['marki_csp_nonce'] = markiSecurityBootstrap($config);
         startMarkiSession($config);
     }
 
@@ -55,6 +63,21 @@ final class Auth
         $clinicSlug = mb_strtolower(trim($clinicSlug), 'UTF-8');
         $identifier = trim($identifier);
 
+        self::throttlePublicAction(
+            $config,
+            'login_ip',
+            markiClientIp(),
+            30,
+            900
+        );
+        self::throttlePublicAction(
+            $config,
+            'login_identity',
+            markiClientIp() . '|' . $clinicSlug . '|' . $identifier,
+            8,
+            900
+        );
+
         if ($clinicSlug === '' || $identifier === '' || $password === '') {
             throw new AuthException('Identifiant ou mot de passe incorrect.');
         }
@@ -63,6 +86,7 @@ final class Auth
         $clinic = $repository->findClinicBySlug($clinicSlug);
 
         if (!$clinic || $clinic['status'] !== 'active') {
+            password_verify($password, self::DUMMY_PASSWORD_HASH);
             throw new AuthException('Identifiant ou mot de passe incorrect.');
         }
 
@@ -75,6 +99,7 @@ final class Auth
         $user = $repository->findUserForLogin((int) $clinic['id'], $identifier);
 
         if (!$user || $user['status'] !== 'active') {
+            password_verify($password, self::DUMMY_PASSWORD_HASH);
             throw new AuthException('Identifiant ou mot de passe incorrect.');
         }
 
@@ -318,6 +343,7 @@ final class Auth
             'today' => $now->format('Y-m-d'),
             'now' => $now->format('Y-m-d H:i:s'),
             'csrf_token' => self::csrfToken(),
+            'csp_nonce' => markiCspNonce(),
         ];
 
         if ((bool) $user['must_change_password']) {
@@ -496,6 +522,21 @@ final class Auth
         $clinicSlug = mb_strtolower(trim($clinicSlug), 'UTF-8');
         $email = mb_strtolower(trim($email), 'UTF-8');
 
+        self::throttlePublicAction(
+            $config,
+            'password_reset_ip',
+            markiClientIp(),
+            8,
+            3600
+        );
+        self::throttlePublicAction(
+            $config,
+            'password_reset_identity',
+            markiClientIp() . '|' . $clinicSlug . '|' . $email,
+            4,
+            3600
+        );
+
         if ($clinicSlug === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             return;
         }
@@ -521,7 +562,7 @@ final class Auth
             date('Y-m-d H:i:s', time() + 1800)
         );
 
-        $link = self::baseUrl($config)
+        $link = markiAbsoluteUrl($config, self::baseUrl($config))
             . '/reset-password.php?selector='
             . rawurlencode($selector)
             . '&token='
@@ -536,6 +577,13 @@ final class Auth
         string $token,
         string $newPassword
     ): void {
+        self::throttlePublicAction(
+            $config,
+            'password_reset_submit',
+            markiClientIp(),
+            10,
+            900
+        );
         self::assertPasswordStrength($config, $newPassword);
 
         $repository = new AuthRepository();
@@ -843,14 +891,15 @@ final class Auth
     ): void {
         $basePath = rtrim((string) ($config['app']['base_path'] ?? '/'), '/');
         $path = $basePath !== '' ? $basePath . '/' : '/';
-        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $secure = markiRequestIsHttps($config)
+            || (bool) ($config['security']['force_https'] ?? false);
 
         setcookie(self::REMEMBER_COOKIE, $value, [
             'expires' => $expires,
             'path' => $path,
             'secure' => $secure,
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => 'Strict',
         ]);
     }
 
@@ -935,5 +984,33 @@ final class Auth
             "Utilisez ce lien pendant 30 minutes :\n\n{$link}",
             "Content-Type: text/plain; charset=UTF-8\r\n"
         );
+    }
+
+    private static function throttlePublicAction(
+        array $config,
+        string $scope,
+        string $subject,
+        int $maximum,
+        int $windowSeconds
+    ): void {
+        try {
+            SecurityRateLimiter::consume(
+                $config,
+                $scope,
+                $subject,
+                $maximum,
+                $windowSeconds
+            );
+        } catch (SecurityRateLimitException $exception) {
+            throw new AuthRateLimitException($exception->getMessage());
+        } catch (PDOException $exception) {
+            if ((string) ($config['app']['env'] ?? 'local') === 'production') {
+                throw new RuntimeException(
+                    'La protection contre les attaques est indisponible.',
+                    0,
+                    $exception
+                );
+            }
+        }
     }
 }

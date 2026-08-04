@@ -14,9 +14,26 @@ return [
             'MARKI_APP_BASE_PATH',
             '/Marki_app/Partie_medecin/public'
         ),
+        'origin' => markiEnv('MARKI_APP_ORIGIN', ''),
         'app_key' => markiEnv(
             'MARKI_APP_KEY',
             ''
+        ),
+    ],
+
+    'security' => [
+        'force_https' => markiEnvBool('MARKI_FORCE_HTTPS', false),
+        'trust_proxy_headers' => markiEnvBool(
+            'MARKI_TRUST_PROXY_HEADERS',
+            false
+        ),
+        'allowed_hosts' => array_values(array_filter(array_map(
+            static fn(string $host): string => strtolower(trim($host)),
+            explode(',', markiEnv('MARKI_ALLOWED_HOSTS', '') ?? '')
+        ))),
+        'max_request_bytes' => markiEnvInt(
+            'MARKI_MAX_REQUEST_BYTES',
+            1048576
         ),
     ],
 
@@ -65,6 +82,10 @@ return [
     ],
 
     'platform' => [
+        'allowed_ips' => array_values(array_filter(array_map(
+            static fn(string $ip): string => trim($ip),
+            explode(',', markiEnv('MARKI_PLATFORM_ALLOWED_IPS', '') ?? '')
+        ))),
         'invitation_expiry_hours' => markiEnvInt(
             'MARKI_INVITATION_EXPIRY_HOURS',
             72

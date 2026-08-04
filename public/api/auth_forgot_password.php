@@ -27,6 +27,9 @@ try {
         'ok' => true,
         'message' => 'Si le compte existe, un lien de réinitialisation a été préparé.',
     ], JSON_UNESCAPED_UNICODE);
+} catch (AuthRateLimitException $exception) {
+    header('Retry-After: 3600');
+    Auth::jsonError(429, $exception->getMessage(), 'RATE_LIMITED');
 } catch (Throwable $exception) {
     Auth::jsonError(500, 'Impossible de traiter la demande.');
 }
