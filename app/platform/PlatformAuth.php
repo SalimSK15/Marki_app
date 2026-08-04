@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/PlatformAdminRepository.php';
+require_once __DIR__ . '/../security/SecurityRateLimiter.php';
 
 final class PlatformAuthException extends RuntimeException {}
 
 final class PlatformAuth
 {
     private const REMEMBER_COOKIE = 'marki_platform_remember';
+    private const DUMMY_PASSWORD_HASH = '$2y$12$taYOGaBOlzZUE4bgzH8FLubMMFj2fv/kbumEcWcPyOEsDcbv3EgjC';
 
     public static function attemptLogin(
         array $config,
@@ -19,6 +21,26 @@ final class PlatformAuth
         Auth::start($config);
 
         $email = mb_strtolower(trim($email), 'UTF-8');
+
+        try {
+            SecurityRateLimiter::consume(
+                $config,
+                'platform_login',
+                markiClientIp() . '|' . $email,
+                6,
+                900
+            );
+        } catch (SecurityRateLimitException $exception) {
+            throw new PlatformAuthException($exception->getMessage());
+        } catch (PDOException $exception) {
+            if ((string) ($config['app']['env'] ?? 'local') === 'production') {
+                throw new RuntimeException(
+                    'La protection contre les attaques est indisponible.',
+                    0,
+                    $exception
+                );
+            }
+        }
         if ($email === '' || $password === '') {
             throw new PlatformAuthException('Courriel ou mot de passe incorrect.');
         }
@@ -27,6 +49,7 @@ final class PlatformAuth
         $admin = $repository->findByEmail($email);
 
         if (!$admin || (string) $admin['status'] !== 'active') {
+            password_verify($password, self::DUMMY_PASSWORD_HASH);
             throw new PlatformAuthException('Courriel ou mot de passe incorrect.');
         }
 
@@ -314,14 +337,15 @@ final class PlatformAuth
     ): void {
         $basePath = rtrim((string) ($config['app']['base_path'] ?? ''), '/');
         $path = $basePath !== '' ? $basePath . '/' : '/';
-        $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $isHttps = markiRequestIsHttps($config)
+            || (bool) ($config['security']['force_https'] ?? false);
 
         setcookie(self::REMEMBER_COOKIE, $value, [
             'expires' => $expires,
             'path' => $path,
             'secure' => $isHttps,
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => 'Strict',
         ]);
 
         if ($expires > time()) {

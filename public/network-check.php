@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 $config = require __DIR__ . '/../app/config.php';
+require_once __DIR__ . '/../app/security.php';
+$GLOBALS['marki_csp_nonce'] = markiSecurityBootstrap($config);
 
 if ((string) ($config['app']['env'] ?? '') !== 'local') {
     http_response_code(404);
@@ -31,7 +33,7 @@ $host = htmlspecialchars(
     <meta name="color-scheme" content="light">
     <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
     <title>Test réseau — MARKI</title>
-    <style>
+    <style nonce="<?= htmlspecialchars(markiCspNonce(), ENT_QUOTES, 'UTF-8') ?>">
         body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f7f4fd; color: #211a31; font-family: system-ui, sans-serif; }
         main { width: min(100%, 520px); padding: 28px; border: 1px solid #ded6ed; border-radius: 22px; background: #fff; box-shadow: 0 18px 50px rgba(54, 35, 83, .1); }
         .mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: #6f42d9; color: #fff; font-weight: 900; }

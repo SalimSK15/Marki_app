@@ -50,6 +50,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de charger cette liste.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

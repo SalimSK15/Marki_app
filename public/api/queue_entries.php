@@ -54,6 +54,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de récupérer les entrées de la liste du jour.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

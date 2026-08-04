@@ -13,13 +13,13 @@ DROP USER IF EXISTS 'marki_app'@'127.0.0.1';
 DROP USER IF EXISTS 'marki_app'@'::1';
 
 CREATE USER 'marki_app'@'localhost'
-IDENTIFIED BY ">]a.6JK7Rk2^iG_<9";
+IDENTIFIED BY ">]a.6JK7Rk2^iG_<8";
 
 CREATE USER 'marki_app'@'127.0.0.1'
-IDENTIFIED BY ">]a.6JK7Rk2^iG_<9";
+IDENTIFIED BY ">]a.6JK7Rk2^iG_<8";
 
 CREATE USER 'marki_app'@'::1'
-IDENTIFIED BY ">]a.6JK7Rk2^iG_<9";
+IDENTIFIED BY ">]a.6JK7Rk2^iG_<8";
 
 GRANT SELECT, INSERT, UPDATE, DELETE
 ON `markii_db`.*

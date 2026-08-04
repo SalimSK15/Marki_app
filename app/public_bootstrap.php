@@ -23,4 +23,5 @@ Auth::start($config);
 return [
     'config' => $config,
     'csrf_token' => Auth::csrfToken(),
+    'csp_nonce' => markiCspNonce(),
 ];

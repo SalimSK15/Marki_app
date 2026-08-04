@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../security.php';
+
 final class PublicRegistrationSecurity
 {
     public static function generatePublicId(): string
@@ -86,22 +88,7 @@ final class PublicRegistrationSecurity
         string $publicId,
         string $token
     ): string {
-        $configuredOrigin = rtrim(
-            (string) ($config['qr']['public_origin'] ?? ''),
-            '/'
-        );
-
-        if ($configuredOrigin !== '') {
-            return $configuredOrigin
-                . self::publicPath($config, $publicId, $token);
-        }
-
-        $scheme = self::requestIsHttps() ? 'https' : 'http';
-        $host = trim((string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-
-        return $scheme
-            . '://'
-            . $host
+        return markiApplicationOrigin($config)
             . self::publicPath($config, $publicId, $token);
     }
 
@@ -169,19 +156,4 @@ final class PublicRegistrationSecurity
         return $secret;
     }
 
-    private static function requestIsHttps(): bool
-    {
-        $https = strtolower((string) ($_SERVER['HTTPS'] ?? ''));
-        $forwardedProto = strtolower(
-            trim(
-                explode(
-                    ',',
-                    (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')
-                )[0]
-            )
-        );
-
-        return in_array($https, ['on', '1'], true)
-            || $forwardedProto === 'https';
-    }
 }

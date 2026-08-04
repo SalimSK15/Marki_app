@@ -369,8 +369,6 @@ try {
 
     echo json_encode([
         'ok' => false,
-        'message' =>
-        'Impossible de modifier le patient.',
-        'error' => $exception->getMessage(),
+        'message' => 'Impossible de modifier le patient.',
     ], JSON_UNESCAPED_UNICODE);
 }

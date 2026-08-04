@@ -103,6 +103,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de récupérer la liste du jour.',
-        'error' => $e->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

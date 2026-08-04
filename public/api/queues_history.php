@@ -78,6 +78,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de charger l’historique des listes.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }

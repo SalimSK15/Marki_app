@@ -7,17 +7,9 @@ $config = $public['config'];
 
 function shortcutAbsoluteBaseUrl(array $config): string
 {
-    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-    $scheme = $https ? 'https' : 'http';
-    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-
-    if (!preg_match('/^[a-zA-Z0-9.\-:\[\]]+$/', $host)) {
-        $host = 'localhost';
-    }
-
     $basePath = rtrim((string) ($config['app']['base_path'] ?? ''), '/');
 
-    return $scheme . '://' . $host . $basePath;
+    return markiApplicationOrigin($config) . $basePath;
 }
 
 function shortcutSafeFilename(string $value): string
@@ -48,6 +40,12 @@ $shortcutName = 'MARKI';
 $description = 'Ouvrir MARKI';
 
 if ($type === 'platform') {
+    require_once __DIR__ . '/../app/platform/PlatformAuth.php';
+    if (PlatformAuth::current($config) === null) {
+        http_response_code(404);
+        exit;
+    }
+
     $targetUrl = $baseUrl . '/platform-invitations.php';
     $shortcutName = 'MARKI - Administration';
     $description = 'Ouvrir l administration interne MARKI';

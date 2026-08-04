@@ -75,6 +75,5 @@ try {
     echo json_encode([
         'ok' => false,
         'message' => 'Impossible de modifier l’état des inscriptions.',
-        'error' => $exception->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }
