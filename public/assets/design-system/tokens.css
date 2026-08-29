@@ -1,53 +1,172 @@
 /* =========================================================
-   DESIGN TOKENS — couleurs, typographie, espaces, rayons
-   Le collègue peut commencer par ce fichier pour changer
-   rapidement l'identité visuelle sans toucher à la logique.
+   MARKI — DESIGN TOKENS
+   Source de verite unique de l'identite visuelle.
+
+   Direction : « medical, net, futuriste »
+   - Violet profond  = la marque et les actions
+   - Cyan medical    = le signal de vie (temps reel, en cours)
+   - Neutres bleutees = les surfaces et le texte
+   - Ombres teintees violet = la profondeur
+
+   Pour changer l'identite de MARKI, ce fichier suffit.
+   Aucune autre feuille ne doit contenir de couleur ecrite en dur.
    ========================================================= */
 :root {
-  --mk-color-primary-50: #f6f0ff;
-  --mk-color-primary-100: #eee2ff;
-  --mk-color-primary-200: #dec7ff;
-  --mk-color-primary-300: #c59bff;
-  --mk-color-primary-400: #a967f5;
-  --mk-color-primary-500: #8a2be2;
-  --mk-color-primary-600: #7421c9;
-  --mk-color-primary-700: #601dad;
-  --mk-color-primary-800: #4f1b8a;
-  --mk-color-primary-900: #42196f;
+  color-scheme: light;
 
+  /* ---------------------------------------------------------
+     0. IDENTITÉ LOGO MARKI (logo.png)
+     - Vert Émeraude Menthe  : #10b981 (Branche gauche M & Item 1)
+     - Bleu Cyan / Azur      : #0ea5e9 (Centre M & Item 2)
+     - Violet / Indigo Vif   : #7c3aed (Branche droite M & Item 3)
+     - Bleu Nuit Profond     : #0b132b (Texte "Marki")
+     --------------------------------------------------------- */
+  --mk-brand-emerald: #10b981;
+  --mk-brand-cyan: #0ea5e9;
+  --mk-brand-blue: #0284c7;
+  --mk-brand-purple: #7c3aed;
+  --mk-brand-navy: #0b132b;
+
+  --mk-gradient-logo: linear-gradient(135deg, #10b981 0%, #0ea5e9 50%, #7c3aed 100%);
+  --mk-gradient-brand: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%);
+  --mk-gradient-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --mk-gradient-blue: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  --mk-gradient-purple: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+
+  /* ---------------------------------------------------------
+     1. MARQUE — violet profond & cyan
+     --------------------------------------------------------- */
+  --mk-color-primary-50: #f5f3ff;
+  --mk-color-primary-100: #ede9fe;
+  --mk-color-primary-200: #ddd6fe;
+  --mk-color-primary-300: #c4b5fd;
+  --mk-color-primary-400: #a78bfa;
+  --mk-color-primary-500: #8b5cf6;
+  --mk-color-primary-600: #7c3aed;
+  --mk-color-primary-700: #6d28d9;
+  --mk-color-primary-800: #5b21b6;
+  --mk-color-primary-900: #4c1d95;
+  --mk-color-primary-950: #2e1065;
+
+  /* Raccourci : la couleur de marque */
+  --mk-color-primary: var(--mk-color-primary-600);
+
+  /* ---------------------------------------------------------
+     2. ACCENT — cyan & bleu du logo
+     --------------------------------------------------------- */
+  --mk-color-accent-50: #f0f9ff;
+  --mk-color-accent-100: #e0f2fe;
+  --mk-color-accent-200: #bae6fd;
+  --mk-color-accent-300: #7dd3fc;
+  --mk-color-accent-400: #38bdf8;
+  --mk-color-accent-500: #0ea5e9;
+  --mk-color-accent-600: #0284c7;
+  --mk-color-accent-700: #0369a1;
+  --mk-color-accent-800: #075985;
+
+  --mk-color-accent: var(--mk-color-accent-500);
+
+  /* ---------------------------------------------------------
+     3. NEUTRES — base bleu nuit profond (#0b132b)
+     --------------------------------------------------------- */
   --mk-color-neutral-0: #ffffff;
-  --mk-color-neutral-25: #fcfcfd;
-  --mk-color-neutral-50: #f8f7fb;
-  --mk-color-neutral-100: #f2f0f6;
-  --mk-color-neutral-200: #e6e2ed;
-  --mk-color-neutral-300: #d5cfde;
-  --mk-color-neutral-500: #756e82;
-  --mk-color-neutral-700: #40394c;
-  --mk-color-neutral-900: #171320;
+  --mk-color-neutral-25: #fbfcfe;
+  --mk-color-neutral-50: #f8fafc;
+  --mk-color-neutral-100: #f1f5f9;
+  --mk-color-neutral-200: #e2e8f0;
+  --mk-color-neutral-300: #cbd5e1;
+  --mk-color-neutral-400: #94a3b8;
+  --mk-color-neutral-500: #64748b;
+  --mk-color-neutral-600: #475569;
+  --mk-color-neutral-700: #334155;
+  --mk-color-neutral-800: #1e293b;
+  --mk-color-neutral-900: #0b132b;
 
-  --mk-color-success: #10b981;
-  --mk-color-success-soft: #d1fae5;
-  --mk-color-danger: #ef4444;
+  /* ---------------------------------------------------------
+     4. STATUTS (Harmonisés avec le logo)
+     --------------------------------------------------------- */
+  --mk-color-success: #16a34a;
+  --mk-color-success-soft: #dcfce7;
+  --mk-color-success-text: #15803d;
+
+  --mk-color-danger: #dc2626;
   --mk-color-danger-soft: #fee2e2;
-  --mk-color-warning: #f59e0b;
-  --mk-color-warning-soft: #fef3c7;
-  --mk-color-info: #2563eb;
-  --mk-color-info-soft: #dbeafe;
+  --mk-color-danger-text: #b91c1c;
 
-  --mk-font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mk-color-warning: #ea580c;
+  --mk-color-warning-soft: #ffedd5;
+  --mk-color-warning-text: #c2410c;
+
+  --mk-color-info: #0284c7;
+  --mk-color-info-soft: #e0f2fe;
+  --mk-color-info-text: #0369a1;
+
+  /* Statut « neutre » : annule, inactif */
+  --mk-color-muted: var(--mk-color-neutral-500);
+  --mk-color-muted-soft: var(--mk-color-neutral-100);
+  --mk-color-muted-text: var(--mk-color-neutral-700);
+
+  /* Voile des fenetres modales */
+  --mk-overlay: rgba(11, 19, 43, 0.55);
+
+  /* Statut « en attente » : porte le bleu cyan du logo */
+  --mk-color-waiting: var(--mk-color-accent-600);
+  --mk-color-waiting-soft: var(--mk-color-accent-100);
+  --mk-color-waiting-text: var(--mk-color-accent-700);
+
+  /* ---------------------------------------------------------
+     5. VOILES — transparences derivees
+     --------------------------------------------------------- */
+  --mk-alpha-primary-08: color-mix(in srgb, var(--mk-color-primary) 8%, transparent);
+  --mk-alpha-primary-12: color-mix(in srgb, var(--mk-color-primary) 12%, transparent);
+  --mk-alpha-primary-16: color-mix(in srgb, var(--mk-color-primary) 16%, transparent);
+  --mk-alpha-primary-24: color-mix(in srgb, var(--mk-color-primary) 24%, transparent);
+  --mk-alpha-primary-40: color-mix(in srgb, var(--mk-color-primary) 40%, transparent);
+  --mk-alpha-accent-16: color-mix(in srgb, var(--mk-color-accent) 16%, transparent);
+  --mk-alpha-accent-40: color-mix(in srgb, var(--mk-color-accent) 40%, transparent);
+  --mk-alpha-danger-16: color-mix(in srgb, var(--mk-color-danger) 16%, transparent);
+  --mk-alpha-success-16: color-mix(in srgb, var(--mk-color-success) 16%, transparent);
+
+  --mk-alpha-white-08: rgba(255, 255, 255, 0.08);
+  --mk-alpha-white-14: rgba(255, 255, 255, 0.14);
+  --mk-alpha-white-20: rgba(255, 255, 255, 0.20);
+  --mk-alpha-white-28: rgba(255, 255, 255, 0.28);
+
+  /* ---------------------------------------------------------
+     6. TYPOGRAPHIE — Plus Jakarta Sans & Inter
+     --------------------------------------------------------- */
+  --mk-font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mk-font-family-numeric: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  --mk-font-size-2xs: 0.6875rem;
   --mk-font-size-xs: 0.75rem;
-  --mk-font-size-sm: 0.875rem;
+  --mk-font-size-sm: 0.8125rem;
+  --mk-font-size-base: 0.875rem;
   --mk-font-size-md: 1rem;
   --mk-font-size-lg: 1.125rem;
-  --mk-font-size-xl: 1.25rem;
-  --mk-font-size-2xl: 1.5rem;
-  --mk-font-size-3xl: 2rem;
+  --mk-font-size-xl: 1.375rem;
+  --mk-font-size-2xl: 1.75rem;
+  --mk-font-size-3xl: 2.25rem;
 
   --mk-font-weight-regular: 400;
   --mk-font-weight-medium: 500;
   --mk-font-weight-semibold: 600;
   --mk-font-weight-bold: 700;
 
+  --mk-line-tight: 1.2;
+  --mk-line-snug: 1.35;
+  --mk-line-normal: 1.55;
+
+  /* Interlettrage : resserre sur les grands titres,
+     ouvert sur les intitules en capitales. */
+  --mk-tracking-tight: -0.02em;
+  --mk-tracking-normal: 0;
+  --mk-tracking-wide: 0.06em;
+
+  /* ---------------------------------------------------------
+     7. ESPACES — echelle de 4 px
+     --------------------------------------------------------- */
+  --mk-space-0: 0;
   --mk-space-1: 0.25rem;
   --mk-space-2: 0.5rem;
   --mk-space-3: 0.75rem;
@@ -56,26 +175,116 @@
   --mk-space-6: 1.5rem;
   --mk-space-8: 2rem;
   --mk-space-10: 2.5rem;
+  --mk-space-12: 3rem;
 
+  /* ---------------------------------------------------------
+     8. RAYONS
+     Coherents : plus la surface est grande, plus le rayon l'est.
+     --------------------------------------------------------- */
+  --mk-radius-xs: 0.375rem;
   --mk-radius-sm: 0.5rem;
-  --mk-radius-md: 0.75rem;
-  --mk-radius-lg: 1rem;
-  --mk-radius-xl: 1.25rem;
+  --mk-radius-md: 0.625rem;
+  --mk-radius-lg: 0.875rem;
+  --mk-radius-xl: 1.125rem;
+  --mk-radius-2xl: 1.5rem;
   --mk-radius-pill: 999px;
 
-  --mk-shadow-sm: 0 1px 2px rgba(23, 19, 32, 0.05);
-  --mk-shadow-md: 0 8px 24px rgba(66, 25, 111, 0.08);
-  --mk-shadow-lg: 0 20px 48px rgba(39, 25, 61, 0.14);
+  /* ---------------------------------------------------------
+     9. OMBRES — teintees violet
+     Une ombre grise neutre « colle » l'element au fond.
+     Une ombre teintee de la marque cree une vraie profondeur.
+     --------------------------------------------------------- */
+  --mk-shadow-xs: 0 1px 2px rgba(76, 29, 149, 0.06);
+  --mk-shadow-sm: 0 1px 3px rgba(76, 29, 149, 0.08), 0 1px 2px rgba(76, 29, 149, 0.04);
+  --mk-shadow-md: 0 4px 12px rgba(76, 29, 149, 0.08), 0 2px 4px rgba(76, 29, 149, 0.04);
+  --mk-shadow-lg: 0 12px 32px rgba(76, 29, 149, 0.12), 0 4px 8px rgba(76, 29, 149, 0.06);
+  --mk-shadow-xl: 0 24px 56px rgba(76, 29, 149, 0.16);
+  --mk-shadow-primary: 0 4px 14px rgba(124, 58, 237, 0.28);
+  --mk-shadow-accent: 0 4px 14px rgba(6, 182, 212, 0.26);
+  --mk-shadow-danger: 0 4px 14px rgba(220, 38, 38, 0.22);
 
-  --mk-border-color: var(--mk-color-neutral-200);
-  --mk-surface-page: var(--mk-color-neutral-25);
+  /* Anneau de focus — visible au clavier, discret a la souris */
+  --mk-ring: 0 0 0 3px var(--mk-alpha-primary-24);
+  --mk-ring-danger: 0 0 0 3px var(--mk-alpha-danger-16);
+  --mk-ring-accent: 0 0 0 3px var(--mk-alpha-accent-40);
+
+  /* ---------------------------------------------------------
+     10. SURFACES ET TEXTE — roles semantiques
+     A utiliser de preference aux couleurs brutes.
+     --------------------------------------------------------- */
+  --mk-surface-page: var(--mk-color-neutral-50);
   --mk-surface-card: var(--mk-color-neutral-0);
-  --mk-text-main: var(--mk-color-neutral-900);
-  --mk-text-muted: var(--mk-color-neutral-500);
+  --mk-surface-sunken: var(--mk-color-neutral-100);
+  --mk-surface-hover: var(--mk-color-neutral-50);
+  --mk-surface-brand-soft: var(--mk-color-primary-50);
 
-  --mk-header-height: 7rem;
-  --mk-sidebar-width: 20rem;
-  --mk-control-height: 2.875rem;
-  --mk-transition-fast: 150ms ease;
-  --mk-transition-normal: 240ms ease;
+  /* Separateurs et contours de cartes : role decoratif. */
+  --mk-border-color: var(--mk-color-neutral-200);
+  --mk-border-color-strong: var(--mk-color-neutral-300);
+  --mk-border-color-brand: var(--mk-color-primary-200);
+
+  /* Contour des champs et boutons : c'est lui qui rend le controle
+     identifiable. WCAG 1.4.11 impose 3:1 avec le fond ; l'ancienne
+     valeur plafonnait a 1,45:1. */
+  --mk-border-control: #8994a7;
+
+  --mk-text-main: var(--mk-color-neutral-900);
+  --mk-text-body: var(--mk-color-neutral-700);
+  --mk-text-muted: var(--mk-color-neutral-500);
+  --mk-text-faint: var(--mk-color-neutral-400);
+  --mk-text-on-brand: var(--mk-color-neutral-0);
+  --mk-text-brand: var(--mk-color-primary-700);
+
+  /* ---------------------------------------------------------
+     11. STRUCTURE
+     Ces trois valeurs sont reellement appliquees par layout.css.
+     --------------------------------------------------------- */
+  --mk-header-height: 4.5rem;
+  --mk-sidebar-width: 16rem;
+  --mk-sidebar-collapsed-width: 4.5rem;
+  --mk-control-height: 2.5rem;
+  --mk-control-height-sm: 2rem;
+  --mk-control-height-lg: 2.875rem;
+
+  /* ---------------------------------------------------------
+     12. MOUVEMENT
+     Le mouvement porte de l'information, jamais de la decoration.
+     --------------------------------------------------------- */
+  --mk-duration-instant: 90ms;
+  --mk-duration-fast: 140ms;
+  --mk-duration-normal: 220ms;
+  --mk-duration-slow: 380ms;
+  --mk-duration-highlight: 900ms;
+
+  --mk-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mk-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --mk-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --mk-transition-fast: var(--mk-duration-fast) var(--mk-ease-out);
+  --mk-transition-normal: var(--mk-duration-normal) var(--mk-ease-out);
+
+  /* ---------------------------------------------------------
+     13. PLANS
+     --------------------------------------------------------- */
+  --mk-z-base: 1;
+  --mk-z-sticky: 100;
+  --mk-z-dropdown: 400;
+  --mk-z-modal: 900;
+  --mk-z-toast: 1200;
+}
+
+/* Anciens navigateurs sans color-mix() : voiles de repli opaques.
+   L'aspect reste correct, seule la transparence est perdue. */
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  :root {
+    --mk-alpha-primary-08: #f5f3ff;
+    --mk-alpha-primary-12: #ede9fe;
+    --mk-alpha-primary-16: #ede9fe;
+    --mk-alpha-primary-24: #ddd6fe;
+    --mk-alpha-primary-40: #c4b5fd;
+    --mk-alpha-accent-16: #cffafe;
+    --mk-alpha-accent-40: #a5f3fc;
+    --mk-alpha-danger-16: #fee2e2;
+    --mk-alpha-success-16: #d1fae5;
+  }
 }

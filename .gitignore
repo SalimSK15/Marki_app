@@ -23,3 +23,8 @@ desktop.ini
 *.bak
 *.tmp
 *.swp
+*.sqlite
+database/*.sqlite
+
+# Binaires locaux
+tools/bin/

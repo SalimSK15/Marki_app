@@ -6,20 +6,20 @@
 
 :root {
   color-scheme: light;
-  --public-bg: #f4f6fb;
-  --public-surface: #ffffff;
-  --public-text: #1c2333;
-  --public-muted: #667085;
-  --public-border: #e4e7ec;
-  --public-primary: #6d4aff;
-  --public-primary-dark: #5034d7;
-  --public-success: #12855b;
-  --public-success-bg: #ecfdf3;
-  --public-warning: #9a6700;
-  --public-warning-bg: #fff8e6;
-  --public-danger: #c53a47;
-  --public-danger-bg: #fff1f2;
-  --public-shadow: 0 24px 70px rgba(31, 39, 64, 0.12);
+  --public-bg: var(--mk-color-neutral-100);
+  --public-surface: var(--mk-color-neutral-0);
+  --public-text: var(--mk-color-neutral-900);
+  --public-muted: var(--mk-color-neutral-500);
+  --public-border: var(--mk-color-neutral-200);
+  --public-primary: var(--mk-color-primary-600);
+  --public-primary-dark: var(--mk-color-primary-700);
+  --public-success: var(--mk-color-success);
+  --public-success-bg: var(--mk-color-accent-50);
+  --public-warning: var(--mk-color-warning-text);
+  --public-warning-bg: var(--mk-color-neutral-0);
+  --public-danger: var(--mk-color-danger-text);
+  --public-danger-bg: var(--mk-color-neutral-50);
+  --public-shadow: 0 24px 70px var(--mk-alpha-primary-12);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -37,8 +37,8 @@ body {
   margin: 0;
   color: var(--public-text);
   background:
-    radial-gradient(circle at top left, rgba(109, 74, 255, 0.13), transparent 34rem),
-    linear-gradient(180deg, #fbfbff 0%, var(--public-bg) 100%);
+    radial-gradient(circle at top left, var(--mk-alpha-primary-12), transparent 34rem),
+    linear-gradient(180deg, var(--mk-color-neutral-25) 0%, var(--public-bg) 100%);
 }
 
 body.has-modal {
@@ -89,9 +89,9 @@ button:disabled {
   height: 38px;
   place-items: center;
   border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(145deg, #8268ff, var(--public-primary-dark));
-  box-shadow: 0 10px 24px rgba(109, 74, 255, 0.28);
+  color: var(--mk-color-neutral-0);
+  background: linear-gradient(145deg, var(--mk-color-primary-500), var(--public-primary-dark));
+  box-shadow: var(--mk-shadow-lg);
 }
 
 .public-registration-brand__secure {
@@ -102,9 +102,9 @@ button:disabled {
 
 .public-registration-card {
   overflow: hidden;
-  border: 1px solid rgba(228, 231, 236, 0.9);
+  border: 1px solid var(--mk-alpha-primary-40);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--mk-color-neutral-0);
   box-shadow: var(--public-shadow);
 }
 
@@ -113,10 +113,10 @@ button:disabled {
   gap: 18px;
   align-items: center;
   padding: 26px 28px;
-  color: #fff;
+  color: var(--mk-color-neutral-0);
   background:
-    linear-gradient(120deg, rgba(255,255,255,0.08), transparent 42%),
-    linear-gradient(135deg, #5132d7, #7658ff 66%, #8a73ff);
+    linear-gradient(120deg, var(--mk-alpha-white-08), transparent 42%),
+    linear-gradient(135deg, var(--mk-color-primary-700), var(--mk-color-primary-600) 66%, var(--mk-color-primary-500));
 }
 
 .public-registration-card__hero h1,
@@ -137,9 +137,9 @@ button:disabled {
   width: 58px;
   height: 58px;
   place-items: center;
-  border: 1px solid rgba(255,255,255,0.28);
+  border: 1px solid var(--mk-alpha-white-28);
   border-radius: 18px;
-  background: rgba(255,255,255,0.14);
+  background: var(--mk-alpha-white-14);
   font-size: 2rem;
   font-weight: 300;
 }
@@ -174,7 +174,7 @@ button:disabled {
 .public-registration-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #e7e2ff;
+  border: 3px solid var(--mk-color-primary-100);
   border-top-color: var(--public-primary);
   border-radius: 50%;
   animation: public-spin 0.8s linear infinite;
@@ -196,7 +196,7 @@ button:disabled {
   place-items: center;
   border-radius: 18px;
   color: var(--public-primary-dark);
-  background: #eeeaff;
+  background: var(--mk-color-primary-100);
   font-size: 1.5rem;
   font-weight: 800;
 }
@@ -218,8 +218,8 @@ button:disabled {
   margin: 18px auto 0;
   padding: 10px 14px;
   border-radius: 999px;
-  color: #344054;
-  background: #f2f4f7;
+  color: var(--mk-color-neutral-700);
+  background: var(--mk-color-neutral-100);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -231,7 +231,7 @@ button:disabled {
   padding: 16px;
   border: 1px solid var(--public-border);
   border-radius: 18px;
-  background: #fbfbfe;
+  background: var(--mk-color-neutral-25);
 }
 
 .public-registration-doctor__avatar {
@@ -242,7 +242,7 @@ button:disabled {
   place-items: center;
   border-radius: 15px;
   color: var(--public-primary-dark);
-  background: #ece8ff;
+  background: var(--mk-color-primary-100);
   font-weight: 850;
 }
 
@@ -267,31 +267,31 @@ button:disabled {
   padding: 14px 16px;
   border: 1px solid var(--public-border);
   border-radius: 15px;
-  color: #344054;
-  background: #f8fafc;
+  color: var(--mk-color-neutral-700);
+  background: var(--mk-color-neutral-50);
   line-height: 1.5;
 }
 
 .public-registration-notice--success,
 .public-registration-notice.is-waiting,
 .public-registration-notice.is-called {
-  border-color: #b7ebd0;
-  color: #08633f;
+  border-color: var(--mk-color-success-soft);
+  color: var(--mk-color-success-text);
   background: var(--public-success-bg);
 }
 
 .public-registration-notice--warning,
 .public-registration-notice.is-no_show {
-  border-color: #f3d38b;
+  border-color: var(--mk-color-warning-soft);
   color: var(--public-warning);
   background: var(--public-warning-bg);
 }
 
 .public-registration-notice.is-canceled,
 .public-registration-notice.is-done {
-  border-color: #e8e9ee;
-  color: #475467;
-  background: #f8f9fb;
+  border-color: var(--mk-color-neutral-200);
+  color: var(--mk-color-neutral-600);
+  background: var(--mk-color-neutral-50);
 }
 
 .public-registration-form {
@@ -305,7 +305,7 @@ button:disabled {
 }
 
 .public-registration-field label {
-  color: #344054;
+  color: var(--mk-color-neutral-700);
   font-size: 0.91rem;
   font-weight: 750;
 }
@@ -318,22 +318,22 @@ button:disabled {
   width: 100%;
   min-height: 50px;
   padding: 0 14px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--mk-color-neutral-300);
   border-radius: 13px;
   color: var(--public-text);
-  background: #fff;
+  background: var(--mk-color-neutral-0);
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .public-registration-field input:focus {
   border-color: var(--public-primary);
-  box-shadow: 0 0 0 4px rgba(109, 74, 255, 0.12);
+  box-shadow: var(--mk-shadow-sm);
 }
 
 .public-registration-field.is-invalid input {
   border-color: var(--public-danger);
-  box-shadow: 0 0 0 3px rgba(197, 58, 71, 0.1);
+  box-shadow: var(--mk-shadow-xs);
 }
 
 .public-registration-hint,
@@ -358,8 +358,8 @@ button:disabled {
   padding: 14px;
   border: 1px solid var(--public-border);
   border-radius: 15px;
-  color: #475467;
-  background: #fafafa;
+  color: var(--mk-color-neutral-600);
+  background: var(--mk-color-neutral-25);
   font-size: 0.89rem;
   line-height: 1.5;
 }
@@ -384,12 +384,12 @@ button:disabled {
 }
 
 .public-registration-message.is-error {
-  color: #9f2430;
+  color: var(--mk-color-danger-text);
   background: var(--public-danger-bg);
 }
 
 .public-registration-message.is-success {
-  color: #087047;
+  color: var(--mk-color-success-text);
   background: var(--public-success-bg);
 }
 
@@ -407,23 +407,23 @@ button:disabled {
 }
 
 .public-registration-button--primary {
-  color: #fff;
+  color: var(--mk-color-neutral-0);
   background: linear-gradient(135deg, var(--public-primary-dark), var(--public-primary));
-  box-shadow: 0 12px 26px rgba(109, 74, 255, 0.24);
+  box-shadow: var(--mk-shadow-lg);
 }
 
 .public-registration-button--secondary {
-  color: #344054;
-  background: #eef0f4;
+  color: var(--mk-color-neutral-700);
+  background: var(--mk-color-neutral-100);
 }
 
 .public-registration-button--warning {
-  color: #6f4b00;
-  background: #f8d87f;
+  color: var(--mk-color-warning-text);
+  background: var(--mk-color-warning-soft);
 }
 
 .public-registration-button--danger {
-  color: #fff;
+  color: var(--mk-color-neutral-0);
   background: var(--public-danger);
 }
 
@@ -437,7 +437,7 @@ button:disabled {
 
 .public-registration-footer {
   padding: 18px 0 0;
-  color: #98a2b3;
+  color: var(--mk-color-neutral-400);
   font-size: 0.78rem;
   text-align: center;
 }
@@ -467,11 +467,11 @@ button:disabled {
   place-items: center;
   padding: 24px;
   border-radius: 22px;
-  color: #fff;
+  color: var(--mk-color-neutral-0);
   text-align: center;
   background:
-    radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 15rem),
-    linear-gradient(135deg, #4f31d2, #7659ff);
+    radial-gradient(circle at top right, var(--mk-alpha-white-20), transparent 15rem),
+    linear-gradient(135deg, var(--mk-color-primary-700), var(--mk-color-primary-500));
 }
 
 .public-status-number-card span,
@@ -498,7 +498,7 @@ button:disabled {
   padding: 17px;
   border: 1px solid var(--public-border);
   border-radius: 17px;
-  background: #fff;
+  background: var(--mk-color-neutral-0);
 }
 
 .public-status-info span,
@@ -518,7 +518,7 @@ button:disabled {
   padding: 16px;
   border: 1px solid var(--public-border);
   border-radius: 17px;
-  background: #fafafa;
+  background: var(--mk-color-neutral-25);
 }
 
 .public-status-meta > div {
@@ -555,7 +555,7 @@ button:disabled {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(15, 23, 42, 0.58);
+  background: var(--mk-alpha-primary-40);
   backdrop-filter: blur(4px);
 }
 
@@ -565,8 +565,8 @@ button:disabled {
   width: min(100%, 440px);
   padding: 24px;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 26px 80px rgba(15, 23, 42, 0.28);
+  background: var(--mk-color-neutral-0);
+  box-shadow: var(--mk-shadow-xl);
 }
 
 .public-registration-modal__dialog h2 {
@@ -654,14 +654,14 @@ button:disabled {
 
 .public-status-number-card--arrival {
   background:
-    radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 15rem),
-    linear-gradient(135deg, #4f31d2, #7659ff);
+    radial-gradient(circle at top right, var(--mk-alpha-white-20), transparent 15rem),
+    linear-gradient(135deg, var(--mk-color-primary-700), var(--mk-color-primary-500));
 }
 
 .public-status-number-card--ahead {
   background:
-    radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 15rem),
-    linear-gradient(135deg, #087b58, #13a875);
+    radial-gradient(circle at top right, var(--mk-alpha-white-20), transparent 15rem),
+    linear-gradient(135deg, var(--mk-color-success), var(--mk-color-success));
 }
 
 .public-status-number-card strong {

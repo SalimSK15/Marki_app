@@ -27,7 +27,7 @@
 
   &__header {
     padding: 1.2rem 1.25rem;
-    border-bottom: 1px solid rgba($primary, 0.08);
+    border-bottom: 1px solid var(--mk-alpha-primary-08);
     display: flex;
     align-items: center;
     gap: $spacing-sm;
@@ -104,7 +104,7 @@
 
 .patient-details-card__identity {
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--mk-color-neutral-100);
 
   h3 {
     margin: 0 0 0.35rem;
@@ -143,7 +143,7 @@
 .patient-detail-item--notes,
 .patient-detail-item--history {
   padding-top: 0.25rem;
-  border-top: 1px solid #f4f4f4;
+  border-top: 1px solid var(--mk-color-neutral-100);
 }
 
 .visit-history {
@@ -156,7 +156,7 @@
 
   li {
     padding: 0.7rem 0.85rem;
-    border: 1px solid #f1f1f1;
+    border: 1px solid var(--mk-color-neutral-100);
     border-radius: $radius;
     background-color: $bg-secondary;
     display: flex;
@@ -190,7 +190,7 @@
   min-height: 46px;
   margin-top: 1rem;
   padding: 0.7rem 1rem;
-  border: 1px solid rgba($primary, 0.25);
+  border: 1px solid var(--mk-alpha-primary-24);
   border-radius: $radius;
   background-color: $primary-light;
   color: $primary;
@@ -205,14 +205,14 @@
   transition: $transition-all;
 
   &:hover:not(:disabled) {
-    background-color: rgba($primary, 0.16);
+    background-color: var(--mk-alpha-primary-16);
     transform: translateY(-1px);
   }
 
   &:disabled {
-    border-color: #e5e7eb;
-    background-color: #f3f4f6;
-    color: #9ca3af;
+    border-color: var(--mk-border-color);
+    background-color: var(--mk-color-neutral-100);
+    color: var(--mk-color-neutral-400);
     cursor: not-allowed;
     transform: none;
   }
@@ -232,5 +232,5 @@
   }
 }
 .visit-date-stack { display: inline-flex; flex-direction: column; gap: .1rem; }
-.visit-date-stack small { color: #7a6d86; font-size: .75rem; font-weight: 500; }
+.visit-date-stack small { color: var(--mk-color-neutral-500); font-size: .75rem; font-weight: 500; }
 .btn-patient-full-record[hidden] { display: none !important; }

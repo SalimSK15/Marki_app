@@ -1,10 +1,13 @@
 /* =========================================================
-   FOUNDATIONS — règles générales visuelles
+   FONDATIONS — texte, controles, accessibilite
+   Regles generales valables sur toute l'application.
    ========================================================= */
+
 html {
   font-family: var(--mk-font-family);
   color: var(--mk-text-main);
   background: var(--mk-surface-page);
+  -webkit-text-size-adjust: 100%;
 }
 
 body,
@@ -18,6 +21,12 @@ textarea {
 body {
   color: var(--mk-text-main);
   background: var(--mk-surface-page);
+  line-height: var(--mk-line-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Inter : ligatures contextuelles et espacement optique. */
+  font-feature-settings: "cv11", "ss01";
+  font-optical-sizing: auto;
 }
 
 ::selection {
@@ -25,19 +34,22 @@ body {
   background: var(--mk-color-primary-600);
 }
 
-:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--mk-color-primary-500) 35%, transparent);
-  outline-offset: 2px;
+/* ---------------------------------------------------------
+   HIERARCHIE DE TEXTE
+   Titres resserres, intitules ouverts : l'ecart entre les
+   deux est ce qui donne une impression de soin.
+   --------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  /* Pas de `color` impose ici : un titre place sur un fond colore
+     (bandeau d'inscription, carte de marque) doit heriter de la
+     couleur de son conteneur. La couleur de base vient de <body>. */
+  line-height: var(--mk-line-tight);
+  letter-spacing: var(--mk-tracking-tight);
+  text-wrap: balance;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--mk-text-main);
-  letter-spacing: -0.015em;
+p {
+  text-wrap: pretty;
 }
 
 small,
@@ -45,4 +57,151 @@ small,
 .v1-page__header p,
 .v1-card__header p {
   color: var(--mk-text-muted);
+}
+
+/* Intitules de colonnes et d'etiquettes : petites capitales
+   espacees, plus lisibles que du gras serre. */
+.v1-table th,
+.waiting-list table th,
+.team-table th,
+.patient-detail-item .label,
+.v1-page__eyebrow {
+  font-size: var(--mk-font-size-xs);
+  font-weight: var(--mk-font-weight-semibold);
+  letter-spacing: var(--mk-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------
+   CHIFFRES ALIGNES
+   Dans une file d'attente, les numeros, heures et compteurs
+   changent en permanence. Sans chasse fixe, les colonnes
+   « dansent » a chaque rafraichissement.
+   --------------------------------------------------------- */
+.waiting-list td,
+.v1-table td,
+.team-table td,
+.counter strong,
+.status-counters strong,
+.display-count strong,
+.pagination,
+.v1-pagination,
+.mk-count,
+time,
+[id^="counter-"],
+.patient-phone-cell,
+.header__datetime {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ---------------------------------------------------------
+   FOCUS CLAVIER
+   Avant : l'anneau de focus etait absent de la plupart des
+   composants — la navigation au clavier etait invisible.
+   Il est desormais uniforme et visible partout, sans genrer
+   l'usage a la souris (:focus-visible uniquement).
+   --------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--mk-color-primary-600);
+  outline-offset: 2px;
+  border-radius: var(--mk-radius-xs);
+}
+
+/* Sur les surfaces colorees, l'anneau passe en clair. */
+.v1-button--primary:focus-visible,
+.auth-button:focus-visible,
+.platform-button:focus-visible,
+.btn-primary:focus-visible {
+  outline-color: var(--mk-color-neutral-0);
+  box-shadow: var(--mk-ring);
+}
+
+/* Les champs signalent le focus par leur bordure et un halo :
+   l'outline ferait doublon. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* Lien d'evitement et textes reserves aux lecteurs d'ecran. */
+.sr-only,
+.v1-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------
+   CONTROLES DE SAISIE
+   --------------------------------------------------------- */
+input,
+select,
+textarea {
+  color: var(--mk-text-main);
+  background: var(--mk-surface-card);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--mk-text-faint);
+}
+
+/* Fleche de liste deroulante dessinee, identique sur tous
+   les systemes (le rendu natif variait de l'un a l'autre). */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7688' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem;
+}
+
+/* Un element desactive doit se voir sans ambiguite. */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Cible tactile minimale sur les commandes principales. */
+button,
+[role="button"],
+summary {
+  touch-action: manipulation;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--mk-border-color);
+}
+
+/* Barres de defilement discretes, dans la teinte de la marque. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mk-color-neutral-300) transparent;
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--mk-radius-pill);
+  background-clip: content-box;
+  background-color: var(--mk-color-neutral-300);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--mk-color-neutral-400);
 }

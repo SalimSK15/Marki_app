@@ -211,9 +211,8 @@ final class AuthRepository
             "UPDATE users
              SET failed_login_attempts = :attempts,
                  locked_until = :locked_until,
-                 updated_at = NOW()
-             WHERE id = :user_id
-             LIMIT 1"
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :user_id"
         );
         $stmt->execute([
             ':attempts' => $newAttempts,
@@ -233,10 +232,9 @@ final class AuthRepository
             "UPDATE users
              SET failed_login_attempts = 0,
                  locked_until = NULL,
-                 last_login_at = NOW(),
-                 updated_at = NOW()
-             WHERE id = :user_id
-             LIMIT 1"
+                 last_login_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :user_id"
         );
         $stmt->execute([':user_id' => $userId]);
     }
@@ -272,8 +270,8 @@ final class AuthRepository
                 :user_agent_hash,
                 :ip_hash,
                 :expires_at,
-                NOW(),
-                NOW()
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
              )"
         );
         $stmt->execute([
@@ -295,7 +293,7 @@ final class AuthRepository
              FROM user_sessions
              WHERE selector = :selector
                AND revoked_at IS NULL
-               AND expires_at > NOW()
+               AND expires_at > CURRENT_TIMESTAMP
              LIMIT 1"
         );
         $stmt->execute([':selector' => $selector]);
@@ -313,9 +311,8 @@ final class AuthRepository
             "UPDATE user_sessions
              SET validator_hash = :validator_hash,
                  selected_doctor_id = :doctor_id,
-                 last_used_at = NOW()
-             WHERE id = :session_id
-             LIMIT 1"
+                 last_used_at = CURRENT_TIMESTAMP
+             WHERE id = :session_id"
         );
         $stmt->execute([
             ':validator_hash' => $validatorHash,
@@ -331,7 +328,7 @@ final class AuthRepository
         $stmt = $this->pdo->prepare(
             "UPDATE user_sessions
              SET selected_doctor_id = :doctor_id,
-                 last_used_at = NOW()
+                 last_used_at = CURRENT_TIMESTAMP
              WHERE selector = :selector
                AND revoked_at IS NULL"
         );
@@ -345,7 +342,7 @@ final class AuthRepository
     {
         $stmt = $this->pdo->prepare(
             "UPDATE user_sessions
-             SET revoked_at = NOW()
+             SET revoked_at = CURRENT_TIMESTAMP
              WHERE selector = :selector
                AND revoked_at IS NULL"
         );
@@ -356,7 +353,7 @@ final class AuthRepository
     {
         $stmt = $this->pdo->prepare(
             "UPDATE user_sessions
-             SET revoked_at = NOW()
+             SET revoked_at = CURRENT_TIMESTAMP
              WHERE user_id = :user_id
                AND revoked_at IS NULL"
         );

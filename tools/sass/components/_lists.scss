@@ -1,10 +1,10 @@
 // Variables
-$primary-color: #8e44ad; // Couleur principale
-$light-gray: #f5f5f5;
-$medium-gray: #e0e0e0;
-$dark-gray: #757575;
-$text-color: #333;
-$border-radius: 8px;
+$primary-color: var(--mk-color-primary-600); // Couleur principale
+$light-gray: var(--mk-color-neutral-100);
+$medium-gray: var(--mk-color-neutral-200);
+$dark-gray: var(--mk-color-neutral-500);
+$text-color: var(--mk-text-main);
+$border-radius: var(--mk-radius-sm);
 $spacing-md: 16px;
 $spacing-lg: 24px;
 
@@ -53,7 +53,7 @@ $spacing-lg: 24px;
             margin: 0 $spacing-md;
 
             &:hover {
-                color: darken($primary-color, 10%);
+                color: var(--mk-color-primary-800);
             }
         }
 
@@ -65,7 +65,7 @@ $spacing-lg: 24px;
     }
     .today-button {
         padding: $spacing-sm $spacing-lg;
-        background-color: darken($bg-secondary, 3%);
+        background-color: var(--mk-surface-hover);
         border-radius: $border-radius;
         color: $text-secondary;
         cursor: pointer;
@@ -108,7 +108,7 @@ $spacing-lg: 24px;
             width: 100%;
             border-radius: $radius;
             border-collapse: collapse;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--mk-shadow-sm);
             margin-bottom: $spacing-lg;
 
             th, td {
@@ -145,7 +145,7 @@ $spacing-lg: 24px;
             }
             .empty-row {
                 td {
-                    padding: $spacing-lg * 2;
+                    padding: var(--mk-space-12);
                     text-align: center;
                     color: $dark-gray;
                     font-size: $font-size-small;

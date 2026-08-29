@@ -1,0 +1,238 @@
+/* =========================================================
+   MOUVEMENT
+   Regle unique : le mouvement porte une information.
+   Il signale qu'une donnee arrive, change ou est en cours.
+   Aucune animation n'est decorative.
+
+   Tout est desactive si le systeme demande moins d'animations
+   (voir le bloc prefers-reduced-motion en fin de fichier).
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. SQUELETTES DE CHARGEMENT
+   Remplacent les textes « Chargement... » : la page montre
+   la forme de ce qui arrive au lieu d'un mot.
+   --------------------------------------------------------- */
+@keyframes mk-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.mk-skeleton {
+  --mk-skeleton-base: var(--mk-color-neutral-100);
+  --mk-skeleton-shine: var(--mk-color-neutral-200);
+
+  border-radius: var(--mk-radius-xs);
+  background-image: linear-gradient(
+    90deg,
+    var(--mk-skeleton-base) 25%,
+    var(--mk-skeleton-shine) 37%,
+    var(--mk-skeleton-base) 63%
+  );
+  background-size: 200% 100%;
+  animation: mk-shimmer 1.4s ease-in-out infinite;
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mk-skeleton--text { height: 0.75rem; width: 100%; }
+.mk-skeleton--title { height: 1rem; width: 45%; }
+.mk-skeleton--pill { height: 1.5rem; width: 5rem; border-radius: var(--mk-radius-pill); }
+.mk-skeleton--circle { border-radius: 50%; }
+
+/* Ligne de tableau en cours de chargement */
+.mk-skeleton-row > td { padding-block: var(--mk-space-3); }
+.mk-skeleton-row .mk-skeleton { display: block; }
+
+/* ---------------------------------------------------------
+   2. ARRIVEE DES CONTENUS
+   Les lignes d'une liste apparaissent en cascade tres courte.
+   L'oeil comprend qu'il s'agit d'une nouvelle donnee.
+   --------------------------------------------------------- */
+@keyframes mk-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes mk-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mk-enter {
+  animation: mk-fade-up var(--mk-duration-normal) var(--mk-ease-out) both;
+}
+
+/* Cascade : chaque ligne demarre 22 ms apres la precedente,
+   plafonnee pour que les longues listes restent instantanees. */
+.mk-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+.mk-stagger > *:nth-child(2)  { animation-delay: 22ms; }
+.mk-stagger > *:nth-child(3)  { animation-delay: 44ms; }
+.mk-stagger > *:nth-child(4)  { animation-delay: 66ms; }
+.mk-stagger > *:nth-child(5)  { animation-delay: 88ms; }
+.mk-stagger > *:nth-child(6)  { animation-delay: 110ms; }
+.mk-stagger > *:nth-child(7)  { animation-delay: 132ms; }
+.mk-stagger > *:nth-child(8)  { animation-delay: 154ms; }
+.mk-stagger > *:nth-child(n+9) { animation-delay: 176ms; }
+
+/* ---------------------------------------------------------
+   3. SURLIGNAGE D'UNE DONNEE QUI VIENT DE CHANGER
+   Une inscription qui arrive, un statut qui bascule :
+   la ligne s'eclaire brievement en cyan puis redevient normale.
+   --------------------------------------------------------- */
+@keyframes mk-highlight {
+  0%   { background-color: var(--mk-alpha-accent-40); }
+  100% { background-color: transparent; }
+}
+
+.mk-just-changed,
+tr.mk-just-changed > td {
+  animation: mk-highlight var(--mk-duration-highlight) var(--mk-ease-out) both;
+}
+
+/* ---------------------------------------------------------
+   4. SIGNAL DE VIE
+   Le point qui bat sur « Liste active » : discret, lent,
+   il indique que la file est reellement en cours.
+   --------------------------------------------------------- */
+@keyframes mk-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--mk-alpha-accent-40); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.mk-live-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: mk-pulse-ring 2.2s var(--mk-ease-out) infinite;
+}
+
+/* ---------------------------------------------------------
+   5. CHIFFRES QUI CHANGENT
+   Le compteur ne saute pas d'une valeur a l'autre :
+   il defile brievement vers le haut.
+   --------------------------------------------------------- */
+@keyframes mk-count-up {
+  from { opacity: 0; transform: translateY(45%); }
+  to   { opacity: 1; transform: none; }
+}
+
+.mk-count {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-count.is-changing {
+  animation: mk-count-up var(--mk-duration-normal) var(--mk-ease-spring) both;
+}
+
+/* ---------------------------------------------------------
+   6. ATTENTE D'UNE ACTION
+   Un bouton qui travaille montre un anneau qui tourne,
+   sans changer de largeur (evite le saut de mise en page).
+   --------------------------------------------------------- */
+@keyframes mk-spin { to { transform: rotate(360deg); } }
+
+.mk-is-busy {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.mk-is-busy::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: -0.525rem 0 0 -0.525rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--mk-color-neutral-0);
+  animation: mk-spin 620ms linear infinite;
+}
+
+/* ---------------------------------------------------------
+   7. FENETRES ET MESSAGES
+   --------------------------------------------------------- */
+@keyframes mk-dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes mk-toast-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.marki-modal[aria-hidden="false"] .marki-modal__backdrop,
+.team-modal.is-open .team-modal__backdrop {
+  animation: mk-fade-in var(--mk-duration-fast) var(--mk-ease-out) both;
+}
+
+.marki-modal[aria-hidden="false"] .marki-modal__dialog,
+.team-modal.is-open .team-modal__dialog {
+  animation: mk-dialog-in var(--mk-duration-normal) var(--mk-ease-out) both;
+}
+
+.marki-toast {
+  animation: mk-toast-in var(--mk-duration-normal) var(--mk-ease-spring) both;
+}
+
+/* ---------------------------------------------------------
+   8. REACTIONS AU POINTEUR
+   Court, net, jamais elastique sur les elements frequents.
+   --------------------------------------------------------- */
+.v1-button,
+.auth-button,
+.platform-button,
+.btn-primary,
+.btn-action-icon,
+.sidebar__item,
+.counter,
+.display-option {
+  transition:
+    background-color var(--mk-transition-fast),
+    border-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    box-shadow var(--mk-transition-fast),
+    transform var(--mk-transition-fast);
+}
+
+.v1-button:active:not(:disabled),
+.auth-button:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-action-icon:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ---------------------------------------------------------
+   9. RESPECT DU REGLAGE SYSTEME
+   Si l'utilisateur demande moins d'animations, tout s'arrete.
+   Les etats reste lisibles : seul le mouvement disparait.
+   --------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Le squelette reste visible, simplement immobile. */
+  .mk-skeleton {
+    background-image: none;
+    background-color: var(--mk-color-neutral-100);
+  }
+
+  /* Le point « en direct » reste present, sans battement. */
+  .mk-live-dot { animation: none; }
+}

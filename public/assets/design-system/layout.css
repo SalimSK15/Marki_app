@@ -1,38 +1,401 @@
 /* =========================================================
-   LAYOUT — structure visuelle générale
-   Ne contient aucune règle métier.
+   MISE EN PAGE — structure generale
+   Aucune regle metier ici.
    ========================================================= */
-.header {
-  background: var(--mk-surface-card);
-  border-color: var(--mk-border-color);
-}
 
-.sidebar {
-  background: var(--mk-surface-card);
-  border-color: var(--mk-border-color);
-}
-
-.main-content {
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: var(--mk-surface-page);
 }
 
+.header {
+  position: relative;
+  z-index: var(--mk-z-sticky);
+  background: var(--mk-surface-card);
+  border-color: var(--mk-border-color);
+}
+
+/* Filet de marque sous l'en-tete : dégradé signature du logo */
+.header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2.5px;
+  background: var(--mk-gradient-logo);
+  opacity: 0.95;
+}
+
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: var(--mk-sidebar-width);
+  flex: none;
+  background: var(--mk-surface-card);
+  border-right: 1px solid var(--mk-border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--mk-duration-normal) var(--mk-ease-out);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+  padding: var(--mk-space-4) var(--mk-space-3);
+  box-sizing: border-box;
+}
+
+.sidebar__menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .sidebar__item {
-  border-radius: var(--mk-radius-lg);
-  transition: background-color var(--mk-transition-fast), color var(--mk-transition-fast);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  padding: 0.65rem 0.85rem;
+  min-height: 2.75rem;
+  color: var(--mk-text-body);
+  font-size: var(--mk-font-size-base);
+  font-weight: var(--mk-font-weight-medium);
+  border-radius: var(--mk-radius-md);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    padding var(--mk-transition-fast);
+}
+
+.sidebar__item .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  color: var(--mk-color-neutral-500);
+  transition: color var(--mk-transition-fast), transform var(--mk-transition-fast);
+}
+
+.sidebar__item span {
+  transition: opacity var(--mk-transition-fast), transform var(--mk-transition-fast);
+}
+
+.sidebar__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3.5px;
+  height: 0;
+  border-radius: 0 var(--mk-radius-pill) var(--mk-radius-pill) 0;
+  background: var(--mk-gradient-brand);
+  transform: translateY(-50%);
+  transition: height var(--mk-duration-normal) var(--mk-ease-out);
 }
 
 .sidebar__item:hover {
-  background: var(--mk-color-primary-50);
+  color: var(--mk-color-neutral-900);
+  background-color: var(--mk-color-neutral-100);
+}
+
+.sidebar__item:hover .icon {
+  color: var(--mk-brand-purple);
+  transform: scale(1.08);
 }
 
 .sidebar__item.active {
-  color: var(--mk-color-primary-600);
-  background: var(--mk-color-primary-100);
+  color: var(--mk-color-neutral-900);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(124, 58, 237, 0.12) 100%);
+  font-weight: 700;
 }
 
-.account-menu summary,
-.header-doctor-switcher select {
-  border-color: var(--mk-border-color);
+.sidebar__item.active .icon {
+  color: var(--mk-brand-purple);
+}
+
+.sidebar__item.active::before {
+  height: 1.5rem;
+}
+
+/* ---------------------------------------------------------
+   Bouton rétractable de la barre latérale
+   --------------------------------------------------------- */
+.sidebar__footer {
+  margin-top: auto;
+  padding-top: var(--mk-space-3);
+  border-top: 1px solid var(--mk-border-color);
+}
+
+.sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  color: var(--mk-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-md);
+  font-size: var(--mk-font-size-sm);
+  font-weight: var(--mk-font-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    border-color var(--mk-transition-fast);
+}
+
+.sidebar__toggle:hover {
+  color: var(--mk-color-primary-700);
+  background: var(--mk-color-primary-50);
+  border-color: var(--mk-color-primary-200);
+}
+
+.sidebar__toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  transition: transform var(--mk-duration-normal) var(--mk-ease-out);
+}
+
+/* ---------------------------------------------------------
+   État réduit (collapsé) de la barre latérale
+   --------------------------------------------------------- */
+body.is-sidebar-collapsed .sidebar,
+.sidebar.is-collapsed {
+  width: var(--mk-sidebar-collapsed-width);
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__inner,
+.sidebar.is-collapsed .sidebar__inner {
+  padding-inline: var(--mk-space-2);
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__item,
+.sidebar.is-collapsed .sidebar__item {
+  justify-content: center;
+  padding-inline: 0;
+  gap: 0;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__item span,
+.sidebar.is-collapsed .sidebar__item span {
+  opacity: 0;
+  width: 0;
+  display: none;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle,
+.sidebar.is-collapsed .sidebar__toggle {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle-text,
+.sidebar.is-collapsed .sidebar__toggle-text {
+  opacity: 0;
+  width: 0;
+  display: none;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle-icon,
+.sidebar.is-collapsed .sidebar__toggle-icon {
+  transform: rotate(180deg);
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--mk-space-5) var(--mk-space-6);
+  background: var(--mk-surface-page);
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------
+   En-tete de page : meme structure sur tous les ecrans.
+   --------------------------------------------------------- */
+.day-list-page__top,
+.v1-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mk-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--mk-space-5);
+}
+
+.day-list-page__heading h2,
+.v1-page__header h2 {
+  font-size: var(--mk-font-size-xl);
+  font-weight: var(--mk-font-weight-bold);
+  margin-bottom: var(--mk-space-1);
+}
+
+.day-list-page__heading p,
+.v1-page__header p {
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-base);
+  margin: 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  flex-wrap: wrap;
+}
+
+.day-list-page__top-actions,
+.v1-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------
+   Corps de la liste du jour : fiche a gauche, liste a droite.
+   --------------------------------------------------------- */
+.day-list-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: var(--mk-space-5);
+  align-items: start;
+}
+
+.day-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-4);
+  min-width: 0;
+}
+
+.day-list-toolbar,
+.v1-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  flex-wrap: wrap;
+}
+
+.day-list-toolbar .search-box,
+.v1-toolbar .v1-search {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.day-list-footer,
+.v1-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-4);
+  flex-wrap: wrap;
+}
+
+.display-count {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-sm);
+}
+
+.display-count__options {
+  display: flex;
+  gap: var(--mk-space-1);
+}
+
+/* Le tableau defile a l'interieur de sa carte : la page
+   elle-meme ne defile jamais horizontalement. */
+.waiting-list,
+.v1-table-wrap {
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------
+   Menus de l'en-tete
+   --------------------------------------------------------- */
+.account-menu {
+  position: relative;
+}
+
+.account-menu summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--mk-space-2) var(--mk-space-3);
+  border: 1px solid var(--mk-border-color);
   border-radius: var(--mk-radius-md);
   background: var(--mk-surface-card);
+  cursor: pointer;
+  list-style: none;
+  transition: border-color var(--mk-transition-fast), box-shadow var(--mk-transition-fast);
+}
+
+.account-menu summary::-webkit-details-marker { display: none; }
+
+.account-menu summary:hover {
+  border-color: var(--mk-border-color-brand);
+  box-shadow: var(--mk-shadow-xs);
+}
+
+.account-menu__name {
+  font-size: var(--mk-font-size-sm);
+  font-weight: var(--mk-font-weight-semibold);
+  color: var(--mk-text-main);
+}
+
+.account-menu__role {
+  font-size: var(--mk-font-size-xs);
+  color: var(--mk-text-muted);
+}
+
+.account-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--mk-space-2));
+  z-index: var(--mk-z-dropdown);
+  min-width: 14rem;
+}
+
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.header-doctor-switcher select {
+  min-height: var(--mk-control-height-sm);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-xs);
+  background: var(--mk-surface-card);
+  font-size: var(--mk-font-size-sm);
 }

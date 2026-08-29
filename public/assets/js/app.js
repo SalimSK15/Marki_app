@@ -1,9 +1,13 @@
-const ADD_PATIENT_API_URL = '/Marki_app/Partie_medecin/public/api/queue_add_patient.php';
-const UPDATE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_update_status.php';
-const UPDATE_PATIENT_API_URL = '/Marki_app/Partie_medecin/public/api/queue_update_patient.php';
-const TOGGLE_QUEUE_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_toggle_status.php';
-const CHANGE_QUEUE_DAY_STATUS_API_URL = '/Marki_app/Partie_medecin/public/api/queue_change_day_status.php';
-const QUEUE_ENTRIES_API_URL = '/Marki_app/Partie_medecin/public/api/queue_entries.php';
+function getCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content || (window.markiAuth?.csrfToken?.() || '');
+}
+
+const ADD_PATIENT_API_URL = 'api/queue_add_patient.php';
+const UPDATE_QUEUE_STATUS_API_URL = 'api/queue_update_status.php';
+const UPDATE_PATIENT_API_URL = 'api/queue_update_patient.php';
+const TOGGLE_QUEUE_STATUS_API_URL = 'api/queue_toggle_status.php';
+const CHANGE_QUEUE_DAY_STATUS_API_URL = 'api/queue_change_day_status.php';
+const QUEUE_ENTRIES_API_URL = 'api/queue_entries.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -957,11 +961,13 @@ async function updateQueueEntryStatus(
   status,
   extraPayload = {}
 ) {
+  const headers = { 'Content-Type': 'application/json' };
+  const csrf = getCsrfToken();
+  if (csrf) headers['X-CSRF-Token'] = csrf;
+
   const response = await fetch(UPDATE_QUEUE_STATUS_API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify({
       entry_id: entryId,
       status,
@@ -989,11 +995,13 @@ async function updateQueueEntryStatus(
 |--------------------------------------------------------------------------
 */
 async function toggleTodayQueueStatus() {
+  const headers = { 'Content-Type': 'application/json' };
+  const csrf = getCsrfToken();
+  if (csrf) headers['X-CSRF-Token'] = csrf;
+
   const response = await fetch(TOGGLE_QUEUE_STATUS_API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify({})
   });
 
@@ -1023,11 +1031,13 @@ async function changeTodayQueueDayStatus(
     payload.cancellation_reason = cancellationReason;
   }
 
+  const headers = { 'Content-Type': 'application/json' };
+  const csrf = getCsrfToken();
+  if (csrf) headers['X-CSRF-Token'] = csrf;
+
   const response = await fetch(CHANGE_QUEUE_DAY_STATUS_API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify(payload)
   });
 
@@ -2067,6 +2077,12 @@ function initDashboardPage() {
   startDashboardAutoRefresh();
 }
 
+let dashboardLastRenderSnapshot = null;
+
+function invalidateDashboardSnapshot() {
+  dashboardLastRenderSnapshot = null;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Charger les données du dashboard
@@ -2098,6 +2114,22 @@ async function loadDashboardData({ focusCurrent = false, silent = false } = {}) 
       );
     }
 
+    const currentSnapshot = JSON.stringify({
+      queue: result.data.queue,
+      entries: result.data.entries,
+      counts: result.data.counts,
+      selectedId: dashboardState.selectedEntryId,
+      page: dashboardState.currentPage,
+      search: dashboardState.searchQuery,
+      filter: dashboardState.statusFilter,
+      pageSize: dashboardState.pageSize
+    });
+
+    if (silent && dashboardLastRenderSnapshot === currentSnapshot) {
+      return;
+    }
+
+    dashboardLastRenderSnapshot = currentSnapshot;
     dashboardState.queue =
       result.data.queue;
 
@@ -2185,11 +2217,17 @@ async function loadDashboardData({ focusCurrent = false, silent = false } = {}) 
       if (tableBody) {
         tableBody.innerHTML = `
           <tr>
-            <td
-              colspan="6"
-              class="table-empty-state"
-            >
-              Impossible de charger les données.
+            <td colspan="6" class="table-empty-state-cell">
+              <div class="table-empty-illustration">
+                <div class="table-empty-icon-wrap">
+                  <span class="empty-sparkle empty-sparkle--top-right">✦</span>
+                  <span class="empty-sparkle empty-sparkle--bottom-left">✦</span>
+                  <div class="table-empty-circle">
+                    <svg class="mk-icon" aria-hidden="true"><use href="#mk-document-user"></use></svg>
+                  </div>
+                </div>
+                <strong>Impossible de charger les données.</strong>
+              </div>
             </td>
           </tr>
         `;
@@ -2225,7 +2263,7 @@ function updateAddPatientButtonState(queue) {
     } else if (queue?.registration_status === 'closed') {
       buttonLabel.textContent = 'Inscriptions fermées';
     } else {
-      buttonLabel.textContent = 'Nouveau patient';
+      buttonLabel.textContent = '+ Nouveau patient';
     }
   }
 
@@ -2280,9 +2318,10 @@ function updateQueueStatusBadge(queue) {
   }
 
   if (registrationBadge) {
-    registrationBadge.textContent = registrationsOpen
-      ? 'Inscriptions ouvertes'
-      : 'Inscriptions fermées';
+    registrationBadge.innerHTML = `
+      <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#${registrationsOpen ? 'mk-shield-check' : 'mk-lock'}"></use></svg>
+      <span>${registrationsOpen ? 'Inscriptions ouvertes' : 'Inscriptions fermées'}</span>
+    `;
 
     registrationBadge.classList.toggle(
       'registration-status-badge--open',
@@ -2295,9 +2334,10 @@ function updateQueueStatusBadge(queue) {
   }
 
   if (toggleButton) {
-    toggleButton.textContent = registrationsOpen
-      ? 'Fermer les inscriptions'
-      : 'Rouvrir les inscriptions';
+    toggleButton.innerHTML = `
+      <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#${registrationsOpen ? 'mk-lock' : 'mk-shield-check'}"></use></svg>
+      <span>${registrationsOpen ? 'Fermer les inscriptions' : 'Rouvrir les inscriptions'}</span>
+    `;
 
     toggleButton.disabled = isCompleted || isPaused;
     toggleButton.classList.toggle(
@@ -2365,7 +2405,18 @@ function renderDashboardTable(entries) {
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="table-empty-state">${message}</td>
+        <td colspan="6" class="table-empty-state-cell">
+          <div class="table-empty-illustration">
+            <div class="table-empty-icon-wrap">
+              <span class="empty-sparkle empty-sparkle--top-right">✦</span>
+              <span class="empty-sparkle empty-sparkle--bottom-left">✦</span>
+              <div class="table-empty-circle">
+                <svg class="mk-icon" aria-hidden="true"><use href="#mk-document-user"></use></svg>
+              </div>
+            </div>
+            <strong>${escapeHtml(message)}</strong>
+          </div>
+        </td>
       </tr>
     `;
     return;
@@ -2398,41 +2449,45 @@ function renderDashboardTable(entries) {
     if (isWaiting) {
       statusActions = `
         <button
-          class="btn-action-icon btn-action-icon--absent"
+          class="btn-action-icon btn-action-icon--done mk-tooltip"
           type="button"
-          title="Marquer absent"
+          data-tooltip="Marquer comme terminé"
+          aria-label="Terminer"
           ${canChangeWaitingStatus ? '' : 'disabled'}
         >
-          <span aria-hidden="true">✕</span>
+          <svg class="mk-icon" aria-hidden="true"><use href="#mk-check"></use></svg>
         </button>
 
         <button
-          class="btn-action-icon btn-action-icon--done"
+          class="btn-action-icon btn-action-icon--absent mk-tooltip"
           type="button"
-          title="Terminer"
+          data-tooltip="Marquer comme absent"
+          aria-label="Absent"
           ${canChangeWaitingStatus ? '' : 'disabled'}
         >
-          <span aria-hidden="true">✓</span>
+          <svg class="mk-icon" aria-hidden="true"><use href="#mk-user-x"></use></svg>
         </button>
 
         <button
-          class="btn-action-icon btn-action-icon--cancel"
+          class="btn-action-icon btn-action-icon--cancel mk-tooltip"
           type="button"
-          title="Annuler l’inscription"
+          data-tooltip="Annuler l’inscription"
+          aria-label="Annuler"
           ${canChangeWaitingStatus ? '' : 'disabled'}
         >
-          <span aria-hidden="true">⊘</span>
+          <svg class="mk-icon" aria-hidden="true"><use href="#mk-slash-circle"></use></svg>
         </button>
       `;
     } else if (entry.status === 'no_show') {
       statusActions = `
         <button
-          class="btn-action-icon btn-action-icon--return"
+          class="btn-action-icon btn-action-icon--return mk-tooltip"
           type="button"
-          title="Remettre en attente à la fin de la file"
+          data-tooltip="Remettre en attente"
+          aria-label="Remettre en attente"
           ${canReturnToWaiting ? '' : 'disabled'}
         >
-          <span aria-hidden="true">↩</span>
+          <svg class="mk-icon" aria-hidden="true"><use href="#mk-undo"></use></svg>
         </button>
       `;
     }
@@ -2451,21 +2506,13 @@ function renderDashboardTable(entries) {
         <td>
           <div class="table-actions">
             <button
-              class="btn-action-icon btn-action-icon--view"
+              class="btn-action-icon btn-action-icon--edit mk-tooltip"
               type="button"
-              title="Voir les détails"
-              aria-label="Voir les détails de ${escapeHtml(entry.display_name ?? '')}"
-            >
-              <span aria-hidden="true">👁</span>
-            </button>
-
-            <button
-              class="btn-action-icon btn-action-icon--edit"
-              type="button"
-              title="Modifier"
+              data-tooltip="Modifier les informations"
+              aria-label="Modifier"
               ${canEdit ? '' : 'disabled'}
             >
-              <span aria-hidden="true">✎</span>
+              <svg class="mk-icon" aria-hidden="true"><use href="#mk-pencil"></use></svg>
             </button>
 
             ${statusActions}
@@ -2769,6 +2816,20 @@ function updatePatientDetails(entry) {
   emptyState.hidden = true;
   detailsContent.hidden = false;
 
+  const avatarEl = document.getElementById('patient-details-avatar');
+  if (avatarEl) {
+    const name = (entry.display_name || '').trim();
+    if (name) {
+      const parts = name.split(/\s+/);
+      const initials = parts.length > 1
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : parts[0].substring(0, 2).toUpperCase();
+      avatarEl.innerHTML = `<span>${escapeHtml(initials)}</span>`;
+    } else {
+      avatarEl.innerHTML = `<span>P</span>`;
+    }
+  }
+
   nameEl.textContent = entry.display_name || '-';
   phoneEl.textContent = window.MarkiPhone ? window.MarkiPhone.formatMobile(entry.phone || '') : (entry.phone || '-');
   birthDateEl.textContent = formatBirthDate(entry.birth_date);
@@ -2864,15 +2925,6 @@ function bindPatientRowEvents(entries) {
       if (event.target.closest('.btn-action-icon')) return;
       selectDashboardEntry(entry.id);
     });
-
-    row.querySelector('.btn-action-icon--view')?.addEventListener(
-      'click',
-      event => {
-        event.preventDefault();
-        event.stopPropagation();
-        selectDashboardEntry(entry.id);
-      }
-    );
 
     const editButton = row.querySelector('.btn-action-icon--edit');
     editButton?.addEventListener('click', event => {
@@ -3125,11 +3177,17 @@ async function submitPatientModalPayload(mode, payload) {
     ? UPDATE_PATIENT_API_URL
     : ADD_PATIENT_API_URL;
 
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  const csrf = getCsrfToken();
+  if (csrf) {
+    headers['X-CSRF-Token'] = csrf;
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify(payload)
   });
 

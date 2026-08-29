@@ -1,11 +1,12 @@
 /* =========================================================
-   PAGES — ajustements purement visuels par écran
+   ECRANS — ajustements propres a une page
    ========================================================= */
+
 .v1-page__eyebrow {
   color: var(--mk-color-primary-600);
-  font-size: var(--mk-font-size-sm);
+  font-size: var(--mk-font-size-xs);
   font-weight: var(--mk-font-weight-bold);
-  letter-spacing: 0.055em;
+  margin-bottom: var(--mk-space-1);
 }
 
 .dashboard__header h2,
@@ -14,30 +15,80 @@
 }
 
 .status-card,
-.dashboard__status-card {
-  border-color: var(--mk-border-color);
-  border-radius: var(--mk-radius-lg);
-  background: var(--mk-surface-card);
-}
-
-.patient-details,
-.patient-details-card {
-  border-color: var(--mk-border-color);
-  border-radius: var(--mk-radius-xl);
-  background: var(--mk-surface-card);
-}
-
+.dashboard__status-card,
 .qr-admin-preview,
 .qr-admin-panel {
-  border-color: var(--mk-border-color);
+  border: 1px solid var(--mk-border-color);
   border-radius: var(--mk-radius-lg);
-  background: var(--mk-color-neutral-0);
+  background: var(--mk-surface-card);
 }
 
+.patient-details .panel {
+  position: sticky;
+  top: 0;
+}
+
+.panel__content {
+  padding: var(--mk-space-4);
+}
+
+.panel__header {
+  padding: var(--mk-space-4);
+  border-bottom: 1px solid var(--mk-border-color);
+}
+
+.panel__header .mk-icon {
+  color: var(--mk-color-primary-600);
+}
+
+/* ---------------------------------------------------------
+   PAGES D'ACCES (connexion, activation, inscription publique)
+   Le fond n'est plus un aplat : deux halos tres doux, l'un
+   violet, l'autre cyan, donnent de la profondeur a la carte
+   sans distraire du formulaire.
+   --------------------------------------------------------- */
 .auth-page,
 .platform-page,
 .registration-page {
   background:
     radial-gradient(circle at 12% 8%, var(--mk-color-primary-100), transparent 26rem),
+    radial-gradient(circle at 88% 92%, var(--mk-color-accent-100), transparent 24rem),
     var(--mk-surface-page);
+}
+
+.auth-card {
+  border-radius: var(--mk-radius-2xl);
+  box-shadow: var(--mk-shadow-xl);
+}
+
+.auth-brand__mark {
+  background: linear-gradient(
+    135deg,
+    var(--mk-color-primary-500),
+    var(--mk-color-primary-700)
+  );
+  box-shadow: var(--mk-shadow-primary);
+}
+
+/* ---------------------------------------------------------
+   HISTORIQUE DES VISITES
+   --------------------------------------------------------- */
+.visit-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.visit-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-3);
+  padding: var(--mk-space-2) var(--mk-space-3);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-xs);
+  background: var(--mk-surface-page);
+  font-size: var(--mk-font-size-sm);
 }
