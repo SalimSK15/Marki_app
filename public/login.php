@@ -35,33 +35,33 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icons/marki-app-192.png" type="image/png">
     <title>Connexion — MARKI</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20260802-login2">
-    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260802-login1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20260829-brand1">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260829-brand1">
     <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final2">
     <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
 </head>
-<body
-    class="auth-page"
-    data-clinic-requested="<?= $hasRequestedClinic ? '1' : '0' ?>"
-    data-clinic-valid="<?= $hasValidClinic ? '1' : '0' ?>"
->
+
+<body class="auth-page" data-clinic-requested="<?= $hasRequestedClinic ? '1' : '0' ?>"
+    data-clinic-valid="<?= $hasValidClinic ? '1' : '0' ?>">
+    <?php require __DIR__ . '/../app/partials/icons_sprite.php'; ?>
+
     <main class="auth-card">
         <?php if ($hasValidClinic): ?>
-            <a
-                class="auth-shortcut-button"
+            <a class="auth-shortcut-button"
                 href="download-shortcut.php?type=clinic&amp;clinic=<?= rawurlencode($clinicSlug) ?>"
                 aria-label="Installer le raccourci MARKI de cette structure"
-                title="Installer le raccourci MARKI sur le Bureau"
-                download
-            >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v11m0 0 4-4m-4 4-4-4"></path>
-                    <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path>
+                title="Installer le raccourci MARKI sur le Bureau" download>
+                <svg class="mk-icon" aria-hidden="true">
+                    <use href="#mk-download"></use>
                 </svg>
             </a>
         <?php endif; ?>
@@ -91,36 +91,19 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             <?php endif; ?>
 
             <form id="login-form" class="auth-form" novalidate>
-                <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="<?= htmlspecialchars($public['csrf_token'], ENT_QUOTES, 'UTF-8') ?>"
-                >
+                <input type="hidden" name="csrf_token"
+                    value="<?= htmlspecialchars($public['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                <input
-                    type="hidden"
-                    name="clinic_slug"
-                    value="<?= htmlspecialchars($clinicSlug, ENT_QUOTES, 'UTF-8') ?>"
-                >
+                <input type="hidden" name="clinic_slug" value="<?= htmlspecialchars($clinicSlug, ENT_QUOTES, 'UTF-8') ?>">
 
                 <label>
                     <span>Courriel ou téléphone</span>
-                    <input
-                        type="text"
-                        name="identifier"
-                        autocomplete="username"
-                        required
-                    >
+                    <input type="text" name="identifier" autocomplete="username" required>
                 </label>
 
                 <label>
                     <span>Mot de passe</span>
-                    <input
-                        type="password"
-                        name="password"
-                        autocomplete="current-password"
-                        required
-                    >
+                    <input type="password" name="password" autocomplete="current-password" required>
                 </label>
 
                 <label class="auth-checkbox">
@@ -156,16 +139,9 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             <form id="clinic-lookup-form" class="auth-form" novalidate>
                 <label>
                     <span>Code de la structure</span>
-                    <input
-                        type="text"
-                        name="clinic_code"
-                        value="<?= htmlspecialchars($clinicSlug, ENT_QUOTES, 'UTF-8') ?>"
-                        placeholder="Ex. clinique-el-amal"
-                        autocomplete="organization"
-                        autocapitalize="none"
-                        spellcheck="false"
-                        required
-                    >
+                    <input type="text" name="clinic_code" value="<?= htmlspecialchars($clinicSlug, ENT_QUOTES, 'UTF-8') ?>"
+                        placeholder="Ex. clinique-el-amal" autocomplete="organization" autocapitalize="none"
+                        spellcheck="false" required>
                     <small>
                         Ce code figure dans le lien de connexion transmis par votre structure.
                     </small>
@@ -181,4 +157,5 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     <script src="assets/js/login.js?v=20260802-login2" defer></script>
     <script src="assets/js/password-toggle.js?v=20260802-login1" defer></script>
 </body>
+
 </html>

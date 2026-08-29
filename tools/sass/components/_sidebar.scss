@@ -1,59 +1,92 @@
-/* components/sidebar.scss */
+/* components/sidebar.scss
+   -----------------------------------------------------------
+   Largeur fixe au lieu de 20 % : au-dela de 1500 px, la nav
+   occupait pres de 400 px pour quatre entrees.
+   Le rayon asymetrique 20px 0 20px 0 est remplace par un
+   rayon uniforme, et l'element actif est signale par un
+   bandeau vertical plutot que par un aplat plein.
+   ----------------------------------------------------------- */
 .sidebar {
-  width: 20%;
+  width: var(--mk-sidebar-width);
+  flex: none;
+  padding: var(--mk-space-4) var(--mk-space-3);
   background-color: $bg-primary;
   border-right: 1px solid $border-color;
-  padding: $spacing-xl $spacing-md $spacing-md ;
-  
+  overflow-y: auto;
+
   &__menu {
     display: flex;
     flex-direction: column;
-    gap: $spacing-xs;
+    gap: var(--mk-space-1);
   }
-  
+
   &__item {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: $spacing-md;
-    padding: $spacing-md;
-    color: $text-secondary;
-    transition: background-color 0.3s, color 0.3s;
-    border-radius: 20px 0px 20px 0px;
+    gap: var(--mk-space-3);
+    padding: var(--mk-space-3);
+    min-height: var(--mk-control-height-lg);
+    color: var(--mk-text-body);
+    font-size: var(--mk-font-size-base);
+    font-weight: var(--mk-font-weight-medium);
+    border-radius: var(--mk-radius-md);
     cursor: pointer;
-    
+    user-select: none;
+
+    // Le bandeau de l'element actif : masque au repos,
+    // il se deploie depuis le centre quand l'onglet devient actif.
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 3px;
+      height: 0;
+      border-radius: 0 var(--mk-radius-pill) var(--mk-radius-pill) 0;
+      background: var(--mk-color-primary-600);
+      transform: translateY(-50%);
+      transition: height var(--mk-transition-normal);
+    }
+
     &:hover {
-      background-color: $bg-tertiary;
-      .icon img {
-        filter: brightness(0) saturate(100%) invert(100%) sepia(90%) saturate(1960%)
-                hue-rotate(267deg) brightness(94%) contrast(93%);
-        // Ajustez ce filtre pour correspondre à la couleur souhaitée au survol
+      color: var(--mk-text-brand);
+      background-color: var(--mk-color-primary-50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mk-color-primary-600);
+      outline-offset: -2px;
+    }
+
+    &.active {
+      color: var(--mk-text-brand);
+      background-color: var(--mk-color-primary-50);
+      font-weight: var(--mk-font-weight-semibold);
+
+      &::before {
+        height: 1.35rem;
+      }
+
+      .icon {
+        color: var(--mk-color-primary-600);
       }
     }
-    
-    &.active {
-      background-color: $primary-light;
-      color: $primary;
-      font-weight: 550;
-      .icon img {
-        filter: brightness(0) saturate(100%) invert(24%) sepia(100%) 
-                saturate(1960%) hue-rotate(267deg) 
-                brightness(94%) contrast(93%);
-        // Ajustez ce filtre pour correspondre à la couleur souhaitée au survol
-      } 
-    }
-    
+
     .icon {
-      width: 24px;
-      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      // La couleur de l'icone suit celle du texte (currentColor).
+      // Plus de filter: brightness()/hue-rotate() sur des PNG.
+      color: var(--mk-text-muted);
+      transition: color var(--mk-transition-fast);
     }
-    img {
-      width: 100%;
-      height: 100%;
-      filter: grayscale(100%);
-      transition: filter .3s;
+
+    &:hover .icon {
+      color: var(--mk-color-primary-600);
     }
   }
 }

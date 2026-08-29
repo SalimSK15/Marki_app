@@ -57,6 +57,20 @@ function db(): PDO
 
         return $pdo;
     } catch (PDOException $exception) {
+        $sqlitePath = __DIR__ . '/../database/markii_db.sqlite';
+        if (file_exists($sqlitePath)) {
+            $pdo = new PDO('sqlite:' . $sqlitePath, null, null, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+            $pdo->exec('PRAGMA foreign_keys = ON;');
+            $pdo->sqliteCreateFunction('NOW', static fn(): string => date('Y-m-d H:i:s'));
+            $pdo->sqliteCreateFunction('UTC_TIMESTAMP', static fn(): string => gmdate('Y-m-d H:i:s'));
+            $pdo->sqliteCreateFunction('CURDATE', static fn(): string => date('Y-m-d'));
+            $pdo->sqliteCreateFunction('CONCAT', static fn(...$args): string => implode('', $args));
+            return $pdo;
+        }
+
         if (PHP_SAPI === 'cli') {
             throw $exception;
         }
@@ -110,16 +124,18 @@ function applyTimezoneToRuntime(PDO $pdo, string $timezone): string
 
     date_default_timezone_set($timezone);
 
-    $timezoneObject = new DateTimeZone($timezone);
-    $now = new DateTimeImmutable('now', $timezoneObject);
-    $offsetSeconds = $timezoneObject->getOffset($now);
-    $sign = $offsetSeconds < 0 ? '-' : '+';
-    $absoluteOffset = abs($offsetSeconds);
-    $hours = intdiv($absoluteOffset, 3600);
-    $minutes = intdiv($absoluteOffset % 3600, 60);
-    $mysqlOffset = sprintf('%s%02d:%02d', $sign, $hours, $minutes);
+    if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+        $timezoneObject = new DateTimeZone($timezone);
+        $now = new DateTimeImmutable('now', $timezoneObject);
+        $offsetSeconds = $timezoneObject->getOffset($now);
+        $sign = $offsetSeconds < 0 ? '-' : '+';
+        $absoluteOffset = abs($offsetSeconds);
+        $hours = intdiv($absoluteOffset, 3600);
+        $minutes = intdiv($absoluteOffset % 3600, 60);
+        $mysqlOffset = sprintf('%s%02d:%02d', $sign, $hours, $minutes);
 
-    $pdo->exec('SET time_zone = ' . $pdo->quote($mysqlOffset));
+        $pdo->exec('SET time_zone = ' . $pdo->quote($mysqlOffset));
+    }
 
     return $timezone;
 }

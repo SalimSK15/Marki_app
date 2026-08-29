@@ -1,47 +1,148 @@
 /* =========================================================
-   RESPONSIVE — adaptation visuelle par taille d'écran
+   ADAPTATION AUX ECRANS
+   Les jetons de structure changent de valeur ; les regles
+   de composants, elles, ne sont pas reecrites.
    ========================================================= */
+
+/* Tres grand ecran : on laisse la liste respirer sans
+   etirer la nav ni les colonnes de texte. */
+@media (min-width: 1800px) {
+  :root {
+    --mk-sidebar-width: 17rem;
+  }
+
+  .main-content {
+    padding-inline: var(--mk-space-8);
+  }
+}
+
+/* Ordinateur portable */
 @media (max-width: 1440px) {
   :root {
-    --mk-header-height: 6.25rem;
-    --mk-sidebar-width: 17.5rem;
-    --mk-control-height: 2.75rem;
+    --mk-header-height: 4.25rem;
+    --mk-sidebar-width: 15rem;
+  }
+
+  .day-list-layout {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
   }
 }
 
 @media (max-width: 1180px) {
   :root {
-    --mk-sidebar-width: 15.5rem;
+    --mk-sidebar-width: 13.5rem;
   }
 
-  .v1-page__header h2 {
-    font-size: clamp(1.65rem, 2vw, 2rem);
+  .main-content {
+    padding: var(--mk-space-4);
   }
 
-  .v1-button {
-    padding-inline: 0.9rem;
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tablette : la fiche patient passe sous la liste, qui est
+   le contenu principal. */
+@media (max-width: 1024px) {
+  .day-list-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .patient-details .panel {
+    position: static;
+  }
+
+  .v1-split-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 900px) {
   .v1-card,
   .team-card,
-  .qr-admin-card {
-    border-radius: var(--mk-radius-lg);
+  .qr-admin-card,
+  .panel {
+    border-radius: var(--mk-radius-md);
   }
 
   .v1-collapsible-section__actions {
     align-items: stretch;
   }
-}
 
-@media (max-width: 640px) {
-  :root {
-    --mk-control-height: 2.75rem;
+  /* La nav devient une barre horizontale defilante. */
+  .layout {
+    flex-direction: column;
   }
 
-  .v1-page__header h2 {
-    font-size: 1.5rem;
+  .sidebar {
+    width: 100%;
+    padding: var(--mk-space-2);
+    border-right: 0;
+    border-bottom: 1px solid var(--mk-border-color);
+    overflow-x: auto;
+  }
+
+  .sidebar__menu {
+    flex-direction: row;
+    gap: var(--mk-space-1);
+  }
+
+  .sidebar__item {
+    white-space: nowrap;
+  }
+
+  /* Le bandeau vertical devient un souligne. */
+  .sidebar__item::before {
+    top: auto;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    border-radius: var(--mk-radius-pill) var(--mk-radius-pill) 0 0;
+    transform: translateX(-50%);
+    transition: width var(--mk-transition-normal);
+  }
+
+  .sidebar__item.active::before {
+    width: 1.5rem;
+    height: 3px;
+  }
+}
+
+/* Telephone */
+@media (max-width: 640px) {
+  :root {
+    /* Cible tactile plus genereuse au doigt. */
+    --mk-control-height: 2.75rem;
+    --mk-control-height-sm: 2.25rem;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    padding: var(--mk-space-3) var(--mk-space-4);
+  }
+
+  .header__datetime {
+    padding: var(--mk-space-1) var(--mk-space-2);
+  }
+
+  .v1-page__header h2,
+  .day-list-page__heading h2 {
+    font-size: var(--mk-font-size-lg);
+  }
+
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .day-list-page__top-actions {
+    width: 100%;
+  }
+
+  .day-list-page__top-actions .btn-primary,
+  .day-list-page__top-actions .btn-toggle-list {
+    flex: 1 1 auto;
   }
 
   .v1-button,
@@ -55,5 +156,41 @@
     width: calc(100vw - 1rem);
     max-height: calc(100dvh - 1rem);
     border-radius: var(--mk-radius-lg);
+  }
+
+  .day-list-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .status-counters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Impression : la liste du jour doit tenir sur le papier
+   sans les commandes d'interface. */
+@media print {
+  .sidebar,
+  .header__right,
+  .day-list-toolbar,
+  .day-list-footer,
+  .table-actions,
+  .marki-toast-container {
+    display: none !important;
+  }
+
+  .app,
+  .main-content {
+    height: auto;
+    overflow: visible;
+  }
+
+  .waiting-list,
+  .v1-card {
+    border: 0;
+    box-shadow: none;
   }
 }

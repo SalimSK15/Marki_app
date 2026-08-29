@@ -1,0 +1,91 @@
+/* =========================================================
+   ICONES — un seul jeu, une seule regle
+   Voir public/assets/icons/marki-sprite.svg
+
+   Principe : l'icone herite de la couleur du texte
+   (currentColor). Plus aucun filtre CSS de recoloration,
+   plus aucun caractere typographique en guise de picto.
+   ========================================================= */
+
+.mk-icon {
+  display: inline-block;
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.2em;
+  color: inherit;
+  fill: none;
+  stroke: currentColor;
+  pointer-events: none;
+}
+
+/* Tailles */
+.mk-icon--xs { width: 0.875em; height: 0.875em; }
+.mk-icon--sm { width: 1em;     height: 1em; }
+.mk-icon--md { width: 1.25em;  height: 1.25em; }
+.mk-icon--lg { width: 1.5em;   height: 1.5em; }
+.mk-icon--xl { width: 2rem;    height: 2rem; }
+.mk-icon--2xl { width: 2.75rem; height: 2.75rem; }
+
+/* Teintes semantiques */
+.mk-icon--brand   { color: var(--mk-color-primary-600); }
+.mk-icon--accent  { color: var(--mk-color-accent-600); }
+.mk-icon--success { color: var(--mk-color-success); }
+.mk-icon--danger  { color: var(--mk-color-danger); }
+.mk-icon--warning { color: var(--mk-color-warning); }
+.mk-icon--muted   { color: var(--mk-text-muted); }
+
+/* Pastille d'icone : fond doux + icone centree.
+   Sert aux compteurs, aux en-tetes de panneau et aux etats vides. */
+.mk-icon-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-sunken);
+  color: var(--mk-text-muted);
+}
+
+.mk-icon-badge--lg { width: 3rem; height: 3rem; border-radius: var(--mk-radius-lg); }
+
+.mk-icon-badge--brand {
+  background: var(--mk-color-primary-100);
+  color: var(--mk-color-primary-700);
+}
+.mk-icon-badge--accent {
+  background: var(--mk-color-accent-100);
+  color: var(--mk-color-accent-700);
+}
+.mk-icon-badge--success {
+  background: var(--mk-color-success-soft);
+  color: var(--mk-color-success-text);
+}
+.mk-icon-badge--danger {
+  background: var(--mk-color-danger-soft);
+  color: var(--mk-color-danger-text);
+}
+.mk-icon-badge--warning {
+  background: var(--mk-color-warning-soft);
+  color: var(--mk-color-warning-text);
+}
+
+/* Le sprite lui-meme ne doit jamais occuper de place. */
+.mk-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* -----------------------------------------------------------
+   Neutralisation des anciens filtres de recoloration.
+   Les <img> PNG restants (le cas echeant) ne doivent plus
+   etre repeints : la teinte est desormais portee par l'icone.
+   ----------------------------------------------------------- */
+.sidebar__item .icon img,
+.sidebar__item:hover .icon img,
+.sidebar__item.active .icon img {
+  filter: none;
+}

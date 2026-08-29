@@ -307,7 +307,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
           <p class="v1-page__eyebrow">Sécurité</p>
           <h4 id="qr-confirm-title">Confirmer l’action</h4>
         </div>
-        <button type="button" class="v1-icon-button" data-close-qr-confirm aria-label="Fermer">×</button>
+        <button type="button" class="v1-icon-button" data-close-qr-confirm aria-label="Fermer"><svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-close"></use></svg></button>
       </div>
       <p id="qr-confirm-message"></p>
       <div class="v1-form__actions">
@@ -386,7 +386,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
             <p class="v1-page__eyebrow">Compte</p>
             <h4 id="team-form-title">Nouveau compte</h4>
           </div>
-          <button type="button" class="v1-icon-button" id="team-form-close-button" aria-label="Fermer">×</button>
+          <button type="button" class="v1-icon-button" id="team-form-close-button" aria-label="Fermer"><svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-close"></use></svg></button>
         </div>
 
         <input type="hidden" id="team-user-id" name="user_id">
@@ -497,7 +497,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
           <p class="v1-page__eyebrow">Confirmation</p>
           <h4 id="team-confirm-title">Modifier ce compte ?</h4>
         </div>
-        <button type="button" class="v1-icon-button" id="team-confirm-close-button" aria-label="Fermer">×</button>
+        <button type="button" class="v1-icon-button" id="team-confirm-close-button" aria-label="Fermer"><svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-close"></use></svg></button>
       </div>
 
       <p id="team-confirm-message"></p>

@@ -113,7 +113,7 @@
                 justify-content: center;
                 vertical-align: auto;
                 align-items: center;
-                padding: $spacing-lg * 2;
+                padding: var(--mk-space-12);
                 color: $text-secondary;
                 font-size: 16px;
                 p{
@@ -128,7 +128,7 @@
             background: white;
             border-radius: $radius;
             border: 1px solid $primary-light;
-            padding: $spacing-lg * 3;
+            padding: var(--mk-space-12);
             display: flex;
             flex-direction: column;
             align-items: center;

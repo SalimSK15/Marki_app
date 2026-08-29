@@ -33,7 +33,7 @@
                     aria-label="Annuler la clôture et restaurer la liste"
                     hidden
                 >
-                    <span aria-hidden="true">↩</span>
+                    <svg class="mk-icon" aria-hidden="true"><use href="#mk-undo"></use></svg>
                 </button>
 
                 <!-- Actions sensibles, éloignées des actions fréquentes -->
@@ -46,7 +46,7 @@
                         aria-haspopup="menu"
                         aria-expanded="false"
                     >
-                        ⋮
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-more-vertical"></use></svg>
                     </button>
 
                     <div
@@ -61,7 +61,8 @@
                             id="pause-day-btn"
                             role="menuitem"
                         >
-                            Mettre la liste en pause
+                            <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-pause"></use></svg>
+                            <span>Mettre la liste en pause</span>
                         </button>
 
                         <button
@@ -71,7 +72,8 @@
                             role="menuitem"
                             hidden
                         >
-                            Reprendre la liste
+                            <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-play"></use></svg>
+                            <span>Reprendre la liste</span>
                         </button>
 
                         <button
@@ -80,7 +82,8 @@
                             id="complete-day-btn"
                             role="menuitem"
                         >
-                            Clôturer la journée
+                            <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-lock-check"></use></svg>
+                            <span>Clôturer la journée</span>
                         </button>
                     </div>
                 </div>
@@ -95,7 +98,8 @@
                 class="registration-status-badge registration-status-badge--open"
                 id="registration-status-badge"
             >
-                Inscriptions ouvertes
+                <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-shield-check"></use></svg>
+                <span>Inscriptions ouvertes</span>
             </span>
 
             <!-- Le nom de l'id est gardé pour limiter les changements existants -->
@@ -104,7 +108,8 @@
                 id="toggle-list-btn"
                 type="button"
             >
-                Fermer les inscriptions
+                <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-lock"></use></svg>
+                <span>Fermer les inscriptions</span>
             </button>
 
             <button
@@ -112,12 +117,8 @@
                 id="openAddPatientModalBtn"
                 type="button"
             >
-                <img
-                    src="assets/icons/main_content/ajoutrerPatient.png"
-                    alt=""
-                    aria-hidden="true"
-                >
-                <span>Nouveau patient</span>
+                <svg class="mk-icon" aria-hidden="true"><use href="#mk-user-plus"></use></svg>
+                <span>+ Nouveau patient</span>
             </button>
         </div>
     </div>
@@ -130,11 +131,9 @@
         <aside class="patient-details">
             <div class="panel">
                 <div class="panel__header">
-                    <img
-                        src="assets/icons/icons_detail_patient/detailsPatient.svg"
-                        alt=""
-                        aria-hidden="true"
-                    >
+                    <div class="panel__header-icon-wrap">
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-user"></use></svg>
+                    </div>
                     <h2>Détails du patient</h2>
                 </div>
 
@@ -142,49 +141,84 @@
                     <div class="patient-details-card" id="patient-details-card">
                         <!-- État affiché lorsqu’aucun patient n’est sélectionné -->
                         <div class="patient-details-empty" id="patient-details-empty">
-                            <img
-                                src="assets/icons/icons_detail_patient/detailsPatient.svg"
-                                alt=""
-                                aria-hidden="true"
-                            >
+                            <div class="patient-empty-avatar-wrap">
+                                <div class="patient-empty-avatar-circle">
+                                    <svg class="mk-icon" aria-hidden="true"><use href="#mk-user"></use></svg>
+                                </div>
+                            </div>
 
                             <strong>Aucun patient sélectionné</strong>
-                            <span>Sélectionnez un patient dans la liste pour afficher ses informations.</span>
+                            <p class="empty-state-subtext">Sélectionnez un patient dans la liste pour afficher ses informations.</p>
                         </div>
 
                         <!-- Informations conservées pour le patient sélectionné -->
                         <div class="patient-details-content" id="patient-details-content" hidden>
                             <div class="patient-details-card__identity">
-                                <h3 id="patient-details-name">-</h3>
-                                <p id="patient-details-phone">-</p>
+                                <div class="patient-details-avatar" id="patient-details-avatar">
+                                    <span>P</span>
+                                </div>
+                                <div class="patient-details-identity-text">
+                                    <h3 id="patient-details-name">-</h3>
+                                    <div class="patient-details-phone-badge">
+                                        <svg class="mk-icon mk-icon--xs" aria-hidden="true"><use href="#mk-phone"></use></svg>
+                                        <span id="patient-details-phone">-</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="patient-detail-item">
-                                <span class="label">Date de naissance</span>
-                                <span class="value" id="patient-details-birth-date">-</span>
+                            <div class="patient-details-rows">
+                                <div class="patient-detail-row">
+                                    <div class="patient-detail-row__header">
+                                        <div class="patient-detail-card__icon-box patient-detail-card__icon-box--blue">
+                                            <svg class="mk-icon" aria-hidden="true"><use href="#mk-calendar"></use></svg>
+                                        </div>
+                                        <span class="label">Date de naissance</span>
+                                    </div>
+                                    <span class="value" id="patient-details-birth-date">-</span>
+                                </div>
+
+                                <div class="patient-detail-row">
+                                    <div class="patient-detail-row__header">
+                                        <div class="patient-detail-card__icon-box patient-detail-card__icon-box--teal">
+                                            <svg class="mk-icon" aria-hidden="true"><use href="#mk-qr"></use></svg>
+                                        </div>
+                                        <span class="label">Source d’inscription</span>
+                                    </div>
+                                    <span class="value" id="patient-details-source">-</span>
+                                </div>
+
+                                <div class="patient-detail-row">
+                                    <div class="patient-detail-row__header">
+                                        <div class="patient-detail-card__icon-box patient-detail-card__icon-box--indigo">
+                                            <svg class="mk-icon" aria-hidden="true"><use href="#mk-activity"></use></svg>
+                                        </div>
+                                        <span class="label">Statut actuel</span>
+                                    </div>
+                                    <div class="value" id="patient-details-status">
+                                        <span class="status-pill">-</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="patient-detail-item">
-                                <span class="label">Source d’inscription</span>
-                                <span class="value" id="patient-details-source">-</span>
-                            </div>
-
-                            <div class="patient-detail-item">
-                                <span class="label">Statut actuel</span>
-                                <span class="value" id="patient-details-status">
-                                    <span class="status-pill">-</span>
-                                </span>
-                            </div>
-
-                            <div class="patient-detail-item patient-detail-item--notes">
-                                <span class="label">Notes cabinet</span>
-                                <p class="value" id="patient-details-notes">
+                            <div class="patient-detail-card patient-detail-card--notes">
+                                <div class="patient-detail-card__header">
+                                    <div class="patient-detail-card__icon-box patient-detail-card__icon-box--amber">
+                                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-pencil"></use></svg>
+                                    </div>
+                                    <span class="label">Notes cabinet</span>
+                                </div>
+                                <p class="value patient-notes-text" id="patient-details-notes">
                                     Aucune note disponible.
                                 </p>
                             </div>
 
-                            <div class="patient-detail-item patient-detail-item--history">
-                                <span class="label">Dernières visites</span>
+                            <div class="patient-detail-card patient-detail-card--history">
+                                <div class="patient-detail-card__header">
+                                    <div class="patient-detail-card__icon-box patient-detail-card__icon-box--emerald">
+                                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-clock"></use></svg>
+                                    </div>
+                                    <span class="label">Dernières visites</span>
+                                </div>
                                 <ul class="visit-history" id="patient-details-history">
                                     <li>
                                         <span>Aucune visite récente</span>
@@ -201,7 +235,7 @@
                                 disabled
                             >
                                 <span>Voir la fiche complète</span>
-                                <span aria-hidden="true">→</span>
+                                <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-arrow-right"></use></svg>
                             </button>
                         </div>
                     </div>
@@ -213,11 +247,7 @@
         <div class="day-list-main">
             <div class="day-list-toolbar">
                 <div class="search-box">
-                    <img
-                        src="assets/icons/patients/search.svg"
-                        alt=""
-                        aria-hidden="true"
-                    >
+                    <svg class="mk-icon" aria-hidden="true"><use href="#mk-search"></use></svg>
 
                     <input
                         type="search"
@@ -246,7 +276,7 @@
                     class="btn-current-patient"
                     id="focus-current-patient-btn"
                 >
-                    <span class="btn-current-patient__icon" aria-hidden="true">◎</span>
+                    <span class="btn-current-patient__icon"><svg class="mk-icon" aria-hidden="true"><use href="#mk-target"></use></svg></span>
                     <span id="focus-current-patient-label">Voir le patient actuel</span>
                 </button>
             </div>
@@ -275,8 +305,17 @@
 
                     <tbody id="day-list-table-body">
                         <tr>
-                            <td colspan="6" class="table-empty-state">
-                                Chargement de la liste...
+                            <td colspan="6" class="table-empty-state-cell">
+                                <div class="table-empty-illustration">
+                                    <div class="table-empty-icon-wrap">
+                                        <span class="empty-sparkle empty-sparkle--top-right">✦</span>
+                                        <span class="empty-sparkle empty-sparkle--bottom-left">✦</span>
+                                        <div class="table-empty-circle">
+                                            <svg class="mk-icon" aria-hidden="true"><use href="#mk-document-user"></use></svg>
+                                        </div>
+                                    </div>
+                                    <strong>Chargement de la liste...</strong>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -285,91 +324,150 @@
 
             <div class="day-list-footer">
                 <div class="display-count">
+                    <svg class="mk-icon mk-icon--md" aria-hidden="true"><use href="#mk-users"></use></svg>
                     <strong id="day-list-results-count">0 patient</strong>
-                    <span>Affichage :</span>
-
-                    <div
-                        class="display-count__options"
-                        aria-label="Nombre de patients par page"
-                    >
-                        <button
-                            class="display-option is-active"
-                            type="button"
-                            data-page-size="12"
-                        >
-                            12
-                        </button>
-
-                        <button
-                            class="display-option"
-                            type="button"
-                            data-page-size="24"
-                        >
-                            24
-                        </button>
-
-                        <button
-                            class="display-option"
-                            type="button"
-                            data-page-size="48"
-                        >
-                            48
-                        </button>
-                    </div>
                 </div>
 
-                <nav
-                    class="pagination"
-                    id="day-list-pagination"
-                    aria-label="Pagination de la liste du jour"
-                ></nav>
+                <div class="display-pagination-cluster">
+                    <div class="display-size-selector">
+                        <span class="display-label">Affichage :</span>
+
+                        <div
+                            class="display-count__options"
+                            aria-label="Nombre de patients par page"
+                        >
+                            <button
+                                class="display-option is-active"
+                                type="button"
+                                data-page-size="12"
+                            >
+                                12
+                            </button>
+
+                            <button
+                                class="display-option"
+                                type="button"
+                                data-page-size="24"
+                            >
+                                24
+                            </button>
+
+                            <button
+                                class="display-option"
+                                type="button"
+                                data-page-size="48"
+                            >
+                                48
+                            </button>
+                        </div>
+                    </div>
+
+                    <nav
+                        class="pagination"
+                        id="day-list-pagination"
+                        aria-label="Pagination de la liste du jour"
+                    ></nav>
+                </div>
             </div>
 
             <div class="status-counters">
-                <div class="counter waiting">
-                    <img
-                        class="icon-clock"
-                        src="assets/icons/main_content/enAttente.png"
-                        alt=""
-                        aria-hidden="true"
-                    >
-                    <div class="counter__info">
-                        <span>En attente</span>
-                        <strong id="counter-waiting">0</strong>
+                <div class="counter counter--waiting waiting">
+                    <div class="counter__icon-box">
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-clock"></use></svg>
+                    </div>
+                    <div class="counter__body counter__info">
+                        <div class="counter__top-row">
+                            <span class="counter__label">EN ATTENTE</span>
+                            <button type="button" class="counter__dots" aria-label="Options"><svg class="mk-icon mk-icon--xs" aria-hidden="true"><use href="#mk-more-vertical"></use></svg></button>
+                        </div>
+                        <strong class="counter__value" id="counter-waiting">0</strong>
+                    </div>
+                    <div class="counter__sparkline counter__sparkline--waiting" aria-hidden="true">
+                        <svg viewBox="0 0 100 28" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="spark-grad-waiting" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,22 C20,24 35,16 55,20 C75,24 85,10 100,8 L100,28 L0,28 Z" fill="url(#spark-grad-waiting)"/>
+                            <path d="M0,22 C20,24 35,16 55,20 C75,24 85,10 100,8" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
                     </div>
                 </div>
 
-                <div class="counter absent">
-                    <img
-                        class="icon-user-x"
-                        src="assets/icons/main_content/absent.svg"
-                        alt=""
-                        aria-hidden="true"
-                    >
-                    <div class="counter__info">
-                        <span>Absent</span>
-                        <strong id="counter-absent">0</strong>
+                <div class="counter counter--absent absent">
+                    <div class="counter__icon-box">
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-user-x"></use></svg>
+                    </div>
+                    <div class="counter__body counter__info">
+                        <div class="counter__top-row">
+                            <span class="counter__label">ABSENT</span>
+                            <button type="button" class="counter__dots" aria-label="Options"><svg class="mk-icon mk-icon--xs" aria-hidden="true"><use href="#mk-more-vertical"></use></svg></button>
+                        </div>
+                        <strong class="counter__value" id="counter-absent">0</strong>
+                    </div>
+                    <div class="counter__sparkline counter__sparkline--absent" aria-hidden="true">
+                        <svg viewBox="0 0 100 28" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="spark-grad-absent" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,24 C20,24 35,22 55,14 C75,8 85,18 100,10 L100,28 L0,28 Z" fill="url(#spark-grad-absent)"/>
+                            <path d="M0,24 C20,24 35,22 55,14 C75,8 85,18 100,10" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
                     </div>
                 </div>
 
-                <div class="counter done">
-                    <img
-                        class="icon-check"
-                        src="assets/icons/main_content/terminer.svg"
-                        alt=""
-                        aria-hidden="true"
-                    >
-                    <div class="counter__info">
-                        <span>Terminé</span>
-                        <strong id="counter-done">0</strong>
+                <div class="counter counter--done done">
+                    <div class="counter__icon-box">
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-check-circle"></use></svg>
+                    </div>
+                    <div class="counter__body counter__info">
+                        <div class="counter__top-row">
+                            <span class="counter__label">TERMINÉ</span>
+                            <button type="button" class="counter__dots" aria-label="Options"><svg class="mk-icon mk-icon--xs" aria-hidden="true"><use href="#mk-more-vertical"></use></svg></button>
+                        </div>
+                        <strong class="counter__value" id="counter-done">0</strong>
+                    </div>
+                    <div class="counter__sparkline counter__sparkline--done" aria-hidden="true">
+                        <svg viewBox="0 0 100 28" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="spark-grad-done" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,24 C25,24 40,16 60,18 C75,20 85,8 100,12 L100,28 L0,28 Z" fill="url(#spark-grad-done)"/>
+                            <path d="M0,24 C25,24 40,16 60,18 C75,20 85,8 100,12" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
                     </div>
                 </div>
 
-                <div class="counter canceled">
-                    <span class="counter__fallback-icon" aria-hidden="true">⊘</span>
-                    <div class="counter__info">
-                        <span>Annulé</span>
-                        <strong id="counter-canceled">0</strong>
+                <div class="counter counter--canceled canceled">
+                    <div class="counter__icon-box">
+                        <svg class="mk-icon" aria-hidden="true"><use href="#mk-slash-circle"></use></svg>
+                    </div>
+                    <div class="counter__body counter__info">
+                        <div class="counter__top-row">
+                            <span class="counter__label">ANNULÉ</span>
+                            <button type="button" class="counter__dots" aria-label="Options"><svg class="mk-icon mk-icon--xs" aria-hidden="true"><use href="#mk-more-vertical"></use></svg></button>
+                        </div>
+                        <strong class="counter__value" id="counter-canceled">0</strong>
+                    </div>
+                    <div class="counter__sparkline counter__sparkline--canceled" aria-hidden="true">
+                        <svg viewBox="0 0 100 28" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="spark-grad-canceled" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,22 C20,24 35,26 55,16 C75,10 85,22 100,12 L100,28 L0,28 Z" fill="url(#spark-grad-canceled)"/>
+                            <path d="M0,22 C20,24 35,26 55,16 C75,10 85,22 100,12" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
                     </div>
                 </div>
             </div>
@@ -397,7 +495,7 @@
                     id="closeAddPatientModalBtn"
                     aria-label="Fermer la fenêtre"
                 >
-                    ×
+                    <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-close"></use></svg>
                 </button>
             </div>
 
@@ -528,7 +626,7 @@
                     id="closeQueueActionModalBtn"
                     aria-label="Fermer la fenêtre"
                 >
-                    ×
+                    <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-close"></use></svg>
                 </button>
             </div>
 

@@ -144,7 +144,7 @@
     color: white;
 
     &:hover {
-      background-color: darken($primary, 5%);
+      background-color: var(--mk-color-primary-700);
     }
 
     &:active {

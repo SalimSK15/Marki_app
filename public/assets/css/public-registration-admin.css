@@ -17,7 +17,7 @@
 .qr-admin-card__header p,
 .qr-admin-panel__header p {
   margin: .35rem 0 0;
-  color: var(--color-text-muted, #6f6a80);
+  color: var(--color-text-muted, var(--mk-color-neutral-500));
 }
 
 .qr-admin-status {
@@ -29,8 +29,8 @@
   font-weight: 750;
   font-size: .85rem;
   white-space: nowrap;
-  background: #f0eef6;
-  color: #615b72;
+  background: var(--mk-color-primary-50);
+  color: var(--mk-color-neutral-600);
 }
 
 .qr-admin-status::before {
@@ -42,13 +42,13 @@
 }
 
 .qr-admin-status.is-active {
-  color: #167148;
-  background: #e9f8f0;
+  color: var(--mk-color-success-text);
+  background: var(--mk-color-accent-50);
 }
 
 .qr-admin-status.is-inactive {
-  color: #a33f4b;
-  background: #fff0f2;
+  color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-soft);
 }
 
 .qr-admin-layout {
@@ -60,9 +60,9 @@
 
 .qr-admin-preview,
 .qr-admin-panel {
-  border: 1px solid #e8e4f1;
+  border: 1px solid var(--mk-color-neutral-200);
   border-radius: 1.2rem;
-  background: #fff;
+  background: var(--mk-color-neutral-0);
 }
 
 .qr-admin-preview {
@@ -72,8 +72,8 @@
   padding: 1.25rem;
   text-align: center;
   background:
-    radial-gradient(circle at 100% 0, rgba(109, 74, 255, .09), transparent 32%),
-    #fff;
+    radial-gradient(circle at 100% 0, var(--mk-alpha-primary-08), transparent 32%),
+    var(--mk-color-neutral-0);
 }
 
 .qr-admin-preview__top {
@@ -87,10 +87,10 @@
   padding: 19px;
   display: grid;
   place-items: center;
-  border: 1px solid #ece8f7;
+  border: 1px solid var(--mk-color-primary-100);
   border-radius: 1.3rem;
-  background: #fff;
-  box-shadow: 0 16px 42px rgba(52, 39, 112, .1);
+  background: var(--mk-color-neutral-0);
+  box-shadow: var(--mk-shadow-xs);
 }
 
 .qr-code-canvas canvas,
@@ -104,12 +104,12 @@
 .qr-code-canvas__error {
   display: grid;
   gap: .45rem;
-  color: #8d3d47;
+  color: var(--mk-color-danger-text);
   line-height: 1.45;
 }
 
 .qr-code-canvas__error span {
-  color: #6f6a80;
+  color: var(--mk-color-neutral-500);
   font-size: .87rem;
 }
 
@@ -117,13 +117,13 @@
   margin: .75rem 0 .15rem;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #201a3e;
+  color: var(--mk-color-neutral-900);
 }
 
 .qr-admin-clinic,
 .qr-admin-scan-hint {
   margin: .15rem 0;
-  color: #6f6a80;
+  color: var(--mk-color-neutral-500);
 }
 
 .qr-admin-scan-hint {
@@ -153,8 +153,8 @@
   margin: 1rem 0 0;
   padding: .8rem;
   border-radius: .8rem;
-  background: #fff7df;
-  color: #745b14;
+  background: var(--mk-color-warning-soft);
+  color: var(--mk-color-warning-text);
   font-size: .82rem;
   line-height: 1.45;
   text-align: left;
@@ -173,7 +173,7 @@
 .qr-admin-preview h4,
 .qr-admin-messages summary {
   margin: 0;
-  color: #211b3e;
+  color: var(--mk-color-neutral-900);
 }
 
 .qr-admin-metrics {
@@ -190,16 +190,16 @@
   flex-direction: column;
   justify-content: space-between;
   border-radius: .9rem;
-  background: #f8f7fc;
+  background: var(--mk-color-neutral-50);
 }
 
 .qr-admin-metrics span {
-  color: #716b82;
+  color: var(--mk-color-neutral-500);
   font-size: .82rem;
 }
 
 .qr-admin-metrics strong {
-  color: #251e48;
+  color: var(--mk-color-neutral-800);
   font-size: 1.25rem;
 }
 
@@ -208,7 +208,7 @@
   align-items: center;
   gap: .65rem;
   padding: .9rem;
-  border: 1px solid #e9e5f2;
+  border: 1px solid var(--mk-color-neutral-200);
   border-radius: .85rem;
   cursor: pointer;
 }
@@ -216,12 +216,12 @@
 .qr-admin-check input {
   width: 1.1rem;
   height: 1.1rem;
-  accent-color: #6d4aff;
+  accent-color: var(--mk-color-primary-600);
 }
 
 .qr-admin-messages {
   margin-top: 1rem;
-  border-top: 1px solid #ece9f5;
+  border-top: 1px solid var(--mk-color-neutral-200);
   padding-top: 1rem;
 }
 
@@ -248,19 +248,19 @@
 }
 
 .v1-button--danger-outline {
-  border: 1px solid #d96370;
-  color: #a43241;
+  border: 1px solid var(--mk-color-danger-text);
+  color: var(--mk-color-danger-text);
   background: transparent;
 }
 
 .v1-button--danger-outline:hover {
-  background: #fff0f2;
+  background: var(--mk-color-danger-soft);
 }
 
 .v1-button--danger {
-  border-color: #b83b4a;
-  background: #b83b4a;
-  color: #fff;
+  border-color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-text);
+  color: var(--mk-color-neutral-0);
 }
 
 #qr-confirm-modal[hidden] {
@@ -299,7 +299,7 @@
 .qr-admin-scope-note {
   max-width: 760px;
   margin: 0.45rem 0 0;
-  color: #5f5870;
+  color: var(--mk-color-neutral-600);
   font-size: 0.86rem;
   line-height: 1.5;
 }

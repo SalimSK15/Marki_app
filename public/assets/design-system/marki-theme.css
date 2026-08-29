@@ -1,11 +1,3250 @@
-/*
- * MARKI Design System
- * Point d'entrée unique du design. Les fichiers sont chargés dans cet ordre.
- * La logique PHP et JavaScript ne dépend pas de ces imports.
- */
-@import url('./tokens.css');
-@import url('./foundations.css');
-@import url('./layout.css');
-@import url('./components.css');
-@import url('./pages.css');
-@import url('./responsive.css');
+/* =========================================================
+   MARKI — DESIGN SYSTEM (fichier genere)
+   NE PAS MODIFIER DIRECTEMENT.
+
+   Ce fichier est l'assemblage des sources situees dans
+   public/assets/design-system/. Pour changer l'apparence,
+   modifier la source concernee — en general tokens.css —
+   puis relancer :
+
+       tools/bin/php tools/scripts/build_design_system.php
+
+   Genere le 29/08/2026 à 01:30
+   ========================================================= */
+
+
+/* ----- source : inter.css ----- */
+/* =========================================================
+   Inter — hebergee localement
+   La politique de securite (CSP) de MARKI n'autorise que les
+   ressources du domaine lui-meme ('self'). L'ancien @import vers
+   fonts.googleapis.com etait donc bloque : l'application
+   s'affichait en realite avec la police du systeme.
+
+   Inter est une fonte variable : un seul fichier couvre tous
+   les graisses de 100 a 900. Deux fichiers suffisent donc pour
+   toute l'application (latin et latin etendu), soit ~95 Ko.
+   ========================================================= */
+
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(../fonts/inter-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(../fonts/inter-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+
+
+/* ----- source : tokens.css ----- */
+/* =========================================================
+   MARKI — DESIGN TOKENS
+   Source de verite unique de l'identite visuelle.
+
+   Direction : « medical, net, futuriste »
+   - Violet profond  = la marque et les actions
+   - Cyan medical    = le signal de vie (temps reel, en cours)
+   - Neutres bleutees = les surfaces et le texte
+   - Ombres teintees violet = la profondeur
+
+   Pour changer l'identite de MARKI, ce fichier suffit.
+   Aucune autre feuille ne doit contenir de couleur ecrite en dur.
+   ========================================================= */
+:root {
+  color-scheme: light;
+
+  /* ---------------------------------------------------------
+     0. IDENTITÉ LOGO MARKI (logo.png)
+     - Vert Émeraude Menthe  : #10b981 (Branche gauche M & Item 1)
+     - Bleu Cyan / Azur      : #0ea5e9 (Centre M & Item 2)
+     - Violet / Indigo Vif   : #7c3aed (Branche droite M & Item 3)
+     - Bleu Nuit Profond     : #0b132b (Texte "Marki")
+     --------------------------------------------------------- */
+  --mk-brand-emerald: #10b981;
+  --mk-brand-cyan: #0ea5e9;
+  --mk-brand-blue: #0284c7;
+  --mk-brand-purple: #7c3aed;
+  --mk-brand-navy: #0b132b;
+
+  --mk-gradient-logo: linear-gradient(135deg, #10b981 0%, #0ea5e9 50%, #7c3aed 100%);
+  --mk-gradient-brand: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%);
+  --mk-gradient-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --mk-gradient-blue: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  --mk-gradient-purple: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+
+  /* ---------------------------------------------------------
+     1. MARQUE — violet profond & cyan
+     --------------------------------------------------------- */
+  --mk-color-primary-50: #f5f3ff;
+  --mk-color-primary-100: #ede9fe;
+  --mk-color-primary-200: #ddd6fe;
+  --mk-color-primary-300: #c4b5fd;
+  --mk-color-primary-400: #a78bfa;
+  --mk-color-primary-500: #8b5cf6;
+  --mk-color-primary-600: #7c3aed;
+  --mk-color-primary-700: #6d28d9;
+  --mk-color-primary-800: #5b21b6;
+  --mk-color-primary-900: #4c1d95;
+  --mk-color-primary-950: #2e1065;
+
+  /* Raccourci : la couleur de marque */
+  --mk-color-primary: var(--mk-color-primary-600);
+
+  /* ---------------------------------------------------------
+     2. ACCENT — cyan & bleu du logo
+     --------------------------------------------------------- */
+  --mk-color-accent-50: #f0f9ff;
+  --mk-color-accent-100: #e0f2fe;
+  --mk-color-accent-200: #bae6fd;
+  --mk-color-accent-300: #7dd3fc;
+  --mk-color-accent-400: #38bdf8;
+  --mk-color-accent-500: #0ea5e9;
+  --mk-color-accent-600: #0284c7;
+  --mk-color-accent-700: #0369a1;
+  --mk-color-accent-800: #075985;
+
+  --mk-color-accent: var(--mk-color-accent-500);
+
+  /* ---------------------------------------------------------
+     3. NEUTRES — base bleu nuit profond (#0b132b)
+     --------------------------------------------------------- */
+  --mk-color-neutral-0: #ffffff;
+  --mk-color-neutral-25: #fbfcfe;
+  --mk-color-neutral-50: #f8fafc;
+  --mk-color-neutral-100: #f1f5f9;
+  --mk-color-neutral-200: #e2e8f0;
+  --mk-color-neutral-300: #cbd5e1;
+  --mk-color-neutral-400: #94a3b8;
+  --mk-color-neutral-500: #64748b;
+  --mk-color-neutral-600: #475569;
+  --mk-color-neutral-700: #334155;
+  --mk-color-neutral-800: #1e293b;
+  --mk-color-neutral-900: #0b132b;
+
+  /* ---------------------------------------------------------
+     4. STATUTS (Harmonisés avec le logo)
+     --------------------------------------------------------- */
+  --mk-color-success: #16a34a;
+  --mk-color-success-soft: #dcfce7;
+  --mk-color-success-text: #15803d;
+
+  --mk-color-danger: #dc2626;
+  --mk-color-danger-soft: #fee2e2;
+  --mk-color-danger-text: #b91c1c;
+
+  --mk-color-warning: #ea580c;
+  --mk-color-warning-soft: #ffedd5;
+  --mk-color-warning-text: #c2410c;
+
+  --mk-color-info: #0284c7;
+  --mk-color-info-soft: #e0f2fe;
+  --mk-color-info-text: #0369a1;
+
+  /* Statut « neutre » : annule, inactif */
+  --mk-color-muted: var(--mk-color-neutral-500);
+  --mk-color-muted-soft: var(--mk-color-neutral-100);
+  --mk-color-muted-text: var(--mk-color-neutral-700);
+
+  /* Voile des fenetres modales */
+  --mk-overlay: rgba(11, 19, 43, 0.55);
+
+  /* Statut « en attente » : porte le bleu cyan du logo */
+  --mk-color-waiting: var(--mk-color-accent-600);
+  --mk-color-waiting-soft: var(--mk-color-accent-100);
+  --mk-color-waiting-text: var(--mk-color-accent-700);
+
+  /* ---------------------------------------------------------
+     5. VOILES — transparences derivees
+     --------------------------------------------------------- */
+  --mk-alpha-primary-08: color-mix(in srgb, var(--mk-color-primary) 8%, transparent);
+  --mk-alpha-primary-12: color-mix(in srgb, var(--mk-color-primary) 12%, transparent);
+  --mk-alpha-primary-16: color-mix(in srgb, var(--mk-color-primary) 16%, transparent);
+  --mk-alpha-primary-24: color-mix(in srgb, var(--mk-color-primary) 24%, transparent);
+  --mk-alpha-primary-40: color-mix(in srgb, var(--mk-color-primary) 40%, transparent);
+  --mk-alpha-accent-16: color-mix(in srgb, var(--mk-color-accent) 16%, transparent);
+  --mk-alpha-accent-40: color-mix(in srgb, var(--mk-color-accent) 40%, transparent);
+  --mk-alpha-danger-16: color-mix(in srgb, var(--mk-color-danger) 16%, transparent);
+  --mk-alpha-success-16: color-mix(in srgb, var(--mk-color-success) 16%, transparent);
+
+  --mk-alpha-white-08: rgba(255, 255, 255, 0.08);
+  --mk-alpha-white-14: rgba(255, 255, 255, 0.14);
+  --mk-alpha-white-20: rgba(255, 255, 255, 0.20);
+  --mk-alpha-white-28: rgba(255, 255, 255, 0.28);
+
+  /* ---------------------------------------------------------
+     6. TYPOGRAPHIE — Plus Jakarta Sans & Inter
+     --------------------------------------------------------- */
+  --mk-font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mk-font-family-numeric: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  --mk-font-size-2xs: 0.6875rem;
+  --mk-font-size-xs: 0.75rem;
+  --mk-font-size-sm: 0.8125rem;
+  --mk-font-size-base: 0.875rem;
+  --mk-font-size-md: 1rem;
+  --mk-font-size-lg: 1.125rem;
+  --mk-font-size-xl: 1.375rem;
+  --mk-font-size-2xl: 1.75rem;
+  --mk-font-size-3xl: 2.25rem;
+
+  --mk-font-weight-regular: 400;
+  --mk-font-weight-medium: 500;
+  --mk-font-weight-semibold: 600;
+  --mk-font-weight-bold: 700;
+
+  --mk-line-tight: 1.2;
+  --mk-line-snug: 1.35;
+  --mk-line-normal: 1.55;
+
+  /* Interlettrage : resserre sur les grands titres,
+     ouvert sur les intitules en capitales. */
+  --mk-tracking-tight: -0.02em;
+  --mk-tracking-normal: 0;
+  --mk-tracking-wide: 0.06em;
+
+  /* ---------------------------------------------------------
+     7. ESPACES — echelle de 4 px
+     --------------------------------------------------------- */
+  --mk-space-0: 0;
+  --mk-space-1: 0.25rem;
+  --mk-space-2: 0.5rem;
+  --mk-space-3: 0.75rem;
+  --mk-space-4: 1rem;
+  --mk-space-5: 1.25rem;
+  --mk-space-6: 1.5rem;
+  --mk-space-8: 2rem;
+  --mk-space-10: 2.5rem;
+  --mk-space-12: 3rem;
+
+  /* ---------------------------------------------------------
+     8. RAYONS
+     Coherents : plus la surface est grande, plus le rayon l'est.
+     --------------------------------------------------------- */
+  --mk-radius-xs: 0.375rem;
+  --mk-radius-sm: 0.5rem;
+  --mk-radius-md: 0.625rem;
+  --mk-radius-lg: 0.875rem;
+  --mk-radius-xl: 1.125rem;
+  --mk-radius-2xl: 1.5rem;
+  --mk-radius-pill: 999px;
+
+  /* ---------------------------------------------------------
+     9. OMBRES — teintees violet
+     Une ombre grise neutre « colle » l'element au fond.
+     Une ombre teintee de la marque cree une vraie profondeur.
+     --------------------------------------------------------- */
+  --mk-shadow-xs: 0 1px 2px rgba(76, 29, 149, 0.06);
+  --mk-shadow-sm: 0 1px 3px rgba(76, 29, 149, 0.08), 0 1px 2px rgba(76, 29, 149, 0.04);
+  --mk-shadow-md: 0 4px 12px rgba(76, 29, 149, 0.08), 0 2px 4px rgba(76, 29, 149, 0.04);
+  --mk-shadow-lg: 0 12px 32px rgba(76, 29, 149, 0.12), 0 4px 8px rgba(76, 29, 149, 0.06);
+  --mk-shadow-xl: 0 24px 56px rgba(76, 29, 149, 0.16);
+  --mk-shadow-primary: 0 4px 14px rgba(124, 58, 237, 0.28);
+  --mk-shadow-accent: 0 4px 14px rgba(6, 182, 212, 0.26);
+  --mk-shadow-danger: 0 4px 14px rgba(220, 38, 38, 0.22);
+
+  /* Anneau de focus — visible au clavier, discret a la souris */
+  --mk-ring: 0 0 0 3px var(--mk-alpha-primary-24);
+  --mk-ring-danger: 0 0 0 3px var(--mk-alpha-danger-16);
+  --mk-ring-accent: 0 0 0 3px var(--mk-alpha-accent-40);
+
+  /* ---------------------------------------------------------
+     10. SURFACES ET TEXTE — roles semantiques
+     A utiliser de preference aux couleurs brutes.
+     --------------------------------------------------------- */
+  --mk-surface-page: var(--mk-color-neutral-50);
+  --mk-surface-card: var(--mk-color-neutral-0);
+  --mk-surface-sunken: var(--mk-color-neutral-100);
+  --mk-surface-hover: var(--mk-color-neutral-50);
+  --mk-surface-brand-soft: var(--mk-color-primary-50);
+
+  /* Separateurs et contours de cartes : role decoratif. */
+  --mk-border-color: var(--mk-color-neutral-200);
+  --mk-border-color-strong: var(--mk-color-neutral-300);
+  --mk-border-color-brand: var(--mk-color-primary-200);
+
+  /* Contour des champs et boutons : c'est lui qui rend le controle
+     identifiable. WCAG 1.4.11 impose 3:1 avec le fond ; l'ancienne
+     valeur plafonnait a 1,45:1. */
+  --mk-border-control: #8994a7;
+
+  --mk-text-main: var(--mk-color-neutral-900);
+  --mk-text-body: var(--mk-color-neutral-700);
+  --mk-text-muted: var(--mk-color-neutral-500);
+  --mk-text-faint: var(--mk-color-neutral-400);
+  --mk-text-on-brand: var(--mk-color-neutral-0);
+  --mk-text-brand: var(--mk-color-primary-700);
+
+  /* ---------------------------------------------------------
+     11. STRUCTURE
+     Ces trois valeurs sont reellement appliquees par layout.css.
+     --------------------------------------------------------- */
+  --mk-header-height: 4.5rem;
+  --mk-sidebar-width: 16rem;
+  --mk-sidebar-collapsed-width: 4.5rem;
+  --mk-control-height: 2.5rem;
+  --mk-control-height-sm: 2rem;
+  --mk-control-height-lg: 2.875rem;
+
+  /* ---------------------------------------------------------
+     12. MOUVEMENT
+     Le mouvement porte de l'information, jamais de la decoration.
+     --------------------------------------------------------- */
+  --mk-duration-instant: 90ms;
+  --mk-duration-fast: 140ms;
+  --mk-duration-normal: 220ms;
+  --mk-duration-slow: 380ms;
+  --mk-duration-highlight: 900ms;
+
+  --mk-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mk-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --mk-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --mk-transition-fast: var(--mk-duration-fast) var(--mk-ease-out);
+  --mk-transition-normal: var(--mk-duration-normal) var(--mk-ease-out);
+
+  /* ---------------------------------------------------------
+     13. PLANS
+     --------------------------------------------------------- */
+  --mk-z-base: 1;
+  --mk-z-sticky: 100;
+  --mk-z-dropdown: 400;
+  --mk-z-modal: 900;
+  --mk-z-toast: 1200;
+}
+
+/* Anciens navigateurs sans color-mix() : voiles de repli opaques.
+   L'aspect reste correct, seule la transparence est perdue. */
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  :root {
+    --mk-alpha-primary-08: #f5f3ff;
+    --mk-alpha-primary-12: #ede9fe;
+    --mk-alpha-primary-16: #ede9fe;
+    --mk-alpha-primary-24: #ddd6fe;
+    --mk-alpha-primary-40: #c4b5fd;
+    --mk-alpha-accent-16: #cffafe;
+    --mk-alpha-accent-40: #a5f3fc;
+    --mk-alpha-danger-16: #fee2e2;
+    --mk-alpha-success-16: #d1fae5;
+  }
+}
+
+
+/* ----- source : foundations.css ----- */
+/* =========================================================
+   FONDATIONS — texte, controles, accessibilite
+   Regles generales valables sur toute l'application.
+   ========================================================= */
+
+html {
+  font-family: var(--mk-font-family);
+  color: var(--mk-text-main);
+  background: var(--mk-surface-page);
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+input,
+button,
+select,
+textarea {
+  font-family: var(--mk-font-family);
+}
+
+body {
+  color: var(--mk-text-main);
+  background: var(--mk-surface-page);
+  line-height: var(--mk-line-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Inter : ligatures contextuelles et espacement optique. */
+  font-feature-settings: "cv11", "ss01";
+  font-optical-sizing: auto;
+}
+
+::selection {
+  color: var(--mk-color-neutral-0);
+  background: var(--mk-color-primary-600);
+}
+
+/* ---------------------------------------------------------
+   HIERARCHIE DE TEXTE
+   Titres resserres, intitules ouverts : l'ecart entre les
+   deux est ce qui donne une impression de soin.
+   --------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  /* Pas de `color` impose ici : un titre place sur un fond colore
+     (bandeau d'inscription, carte de marque) doit heriter de la
+     couleur de son conteneur. La couleur de base vient de <body>. */
+  line-height: var(--mk-line-tight);
+  letter-spacing: var(--mk-tracking-tight);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+small,
+.text-secondary,
+.v1-page__header p,
+.v1-card__header p {
+  color: var(--mk-text-muted);
+}
+
+/* Intitules de colonnes et d'etiquettes : petites capitales
+   espacees, plus lisibles que du gras serre. */
+.v1-table th,
+.waiting-list table th,
+.team-table th,
+.patient-detail-item .label,
+.v1-page__eyebrow {
+  font-size: var(--mk-font-size-xs);
+  font-weight: var(--mk-font-weight-semibold);
+  letter-spacing: var(--mk-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------
+   CHIFFRES ALIGNES
+   Dans une file d'attente, les numeros, heures et compteurs
+   changent en permanence. Sans chasse fixe, les colonnes
+   « dansent » a chaque rafraichissement.
+   --------------------------------------------------------- */
+.waiting-list td,
+.v1-table td,
+.team-table td,
+.counter strong,
+.status-counters strong,
+.display-count strong,
+.pagination,
+.v1-pagination,
+.mk-count,
+time,
+[id^="counter-"],
+.patient-phone-cell,
+.header__datetime {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ---------------------------------------------------------
+   FOCUS CLAVIER
+   Avant : l'anneau de focus etait absent de la plupart des
+   composants — la navigation au clavier etait invisible.
+   Il est desormais uniforme et visible partout, sans genrer
+   l'usage a la souris (:focus-visible uniquement).
+   --------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--mk-color-primary-600);
+  outline-offset: 2px;
+  border-radius: var(--mk-radius-xs);
+}
+
+/* Sur les surfaces colorees, l'anneau passe en clair. */
+.v1-button--primary:focus-visible,
+.auth-button:focus-visible,
+.platform-button:focus-visible,
+.btn-primary:focus-visible {
+  outline-color: var(--mk-color-neutral-0);
+  box-shadow: var(--mk-ring);
+}
+
+/* Les champs signalent le focus par leur bordure et un halo :
+   l'outline ferait doublon. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* Lien d'evitement et textes reserves aux lecteurs d'ecran. */
+.sr-only,
+.v1-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------
+   CONTROLES DE SAISIE
+   --------------------------------------------------------- */
+input,
+select,
+textarea {
+  color: var(--mk-text-main);
+  background: var(--mk-surface-card);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--mk-text-faint);
+}
+
+/* Fleche de liste deroulante dessinee, identique sur tous
+   les systemes (le rendu natif variait de l'un a l'autre). */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7688' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9.5 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem;
+}
+
+/* Un element desactive doit se voir sans ambiguite. */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Cible tactile minimale sur les commandes principales. */
+button,
+[role="button"],
+summary {
+  touch-action: manipulation;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--mk-border-color);
+}
+
+/* Barres de defilement discretes, dans la teinte de la marque. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mk-color-neutral-300) transparent;
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--mk-radius-pill);
+  background-clip: content-box;
+  background-color: var(--mk-color-neutral-300);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--mk-color-neutral-400);
+}
+
+
+/* ----- source : layout.css ----- */
+/* =========================================================
+   MISE EN PAGE — structure generale
+   Aucune regle metier ici.
+   ========================================================= */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--mk-surface-page);
+}
+
+.header {
+  position: relative;
+  z-index: var(--mk-z-sticky);
+  background: var(--mk-surface-card);
+  border-color: var(--mk-border-color);
+}
+
+/* Filet de marque sous l'en-tete : dégradé signature du logo */
+.header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2.5px;
+  background: var(--mk-gradient-logo);
+  opacity: 0.95;
+}
+
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: var(--mk-sidebar-width);
+  flex: none;
+  background: var(--mk-surface-card);
+  border-right: 1px solid var(--mk-border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--mk-duration-normal) var(--mk-ease-out);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+  padding: var(--mk-space-4) var(--mk-space-3);
+  box-sizing: border-box;
+}
+
+.sidebar__menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  padding: 0.65rem 0.85rem;
+  min-height: 2.75rem;
+  color: var(--mk-text-body);
+  font-size: var(--mk-font-size-base);
+  font-weight: var(--mk-font-weight-medium);
+  border-radius: var(--mk-radius-md);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    padding var(--mk-transition-fast);
+}
+
+.sidebar__item .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  color: var(--mk-color-neutral-500);
+  transition: color var(--mk-transition-fast), transform var(--mk-transition-fast);
+}
+
+.sidebar__item span {
+  transition: opacity var(--mk-transition-fast), transform var(--mk-transition-fast);
+}
+
+.sidebar__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3.5px;
+  height: 0;
+  border-radius: 0 var(--mk-radius-pill) var(--mk-radius-pill) 0;
+  background: var(--mk-gradient-brand);
+  transform: translateY(-50%);
+  transition: height var(--mk-duration-normal) var(--mk-ease-out);
+}
+
+.sidebar__item:hover {
+  color: var(--mk-color-neutral-900);
+  background-color: var(--mk-color-neutral-100);
+}
+
+.sidebar__item:hover .icon {
+  color: var(--mk-brand-purple);
+  transform: scale(1.08);
+}
+
+.sidebar__item.active {
+  color: var(--mk-color-neutral-900);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(124, 58, 237, 0.12) 100%);
+  font-weight: 700;
+}
+
+.sidebar__item.active .icon {
+  color: var(--mk-brand-purple);
+}
+
+.sidebar__item.active::before {
+  height: 1.5rem;
+}
+
+/* ---------------------------------------------------------
+   Bouton rétractable de la barre latérale
+   --------------------------------------------------------- */
+.sidebar__footer {
+  margin-top: auto;
+  padding-top: var(--mk-space-3);
+  border-top: 1px solid var(--mk-border-color);
+}
+
+.sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  color: var(--mk-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-md);
+  font-size: var(--mk-font-size-sm);
+  font-weight: var(--mk-font-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    border-color var(--mk-transition-fast);
+}
+
+.sidebar__toggle:hover {
+  color: var(--mk-color-primary-700);
+  background: var(--mk-color-primary-50);
+  border-color: var(--mk-color-primary-200);
+}
+
+.sidebar__toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  transition: transform var(--mk-duration-normal) var(--mk-ease-out);
+}
+
+/* ---------------------------------------------------------
+   État réduit (collapsé) de la barre latérale
+   --------------------------------------------------------- */
+body.is-sidebar-collapsed .sidebar,
+.sidebar.is-collapsed {
+  width: var(--mk-sidebar-collapsed-width);
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__inner,
+.sidebar.is-collapsed .sidebar__inner {
+  padding-inline: var(--mk-space-2);
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__item,
+.sidebar.is-collapsed .sidebar__item {
+  justify-content: center;
+  padding-inline: 0;
+  gap: 0;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__item span,
+.sidebar.is-collapsed .sidebar__item span {
+  opacity: 0;
+  width: 0;
+  display: none;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle,
+.sidebar.is-collapsed .sidebar__toggle {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle-text,
+.sidebar.is-collapsed .sidebar__toggle-text {
+  opacity: 0;
+  width: 0;
+  display: none;
+}
+
+body.is-sidebar-collapsed .sidebar .sidebar__toggle-icon,
+.sidebar.is-collapsed .sidebar__toggle-icon {
+  transform: rotate(180deg);
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--mk-space-5) var(--mk-space-6);
+  background: var(--mk-surface-page);
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------
+   En-tete de page : meme structure sur tous les ecrans.
+   --------------------------------------------------------- */
+.day-list-page__top,
+.v1-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mk-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--mk-space-5);
+}
+
+.day-list-page__heading h2,
+.v1-page__header h2 {
+  font-size: var(--mk-font-size-xl);
+  font-weight: var(--mk-font-weight-bold);
+  margin-bottom: var(--mk-space-1);
+}
+
+.day-list-page__heading p,
+.v1-page__header p {
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-base);
+  margin: 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  flex-wrap: wrap;
+}
+
+.day-list-page__top-actions,
+.v1-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------
+   Corps de la liste du jour : fiche a gauche, liste a droite.
+   --------------------------------------------------------- */
+.day-list-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: var(--mk-space-5);
+  align-items: start;
+}
+
+.day-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-4);
+  min-width: 0;
+}
+
+.day-list-toolbar,
+.v1-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  flex-wrap: wrap;
+}
+
+.day-list-toolbar .search-box,
+.v1-toolbar .v1-search {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.day-list-footer,
+.v1-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-4);
+  flex-wrap: wrap;
+}
+
+.display-count {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-sm);
+}
+
+.display-count__options {
+  display: flex;
+  gap: var(--mk-space-1);
+}
+
+/* Le tableau defile a l'interieur de sa carte : la page
+   elle-meme ne defile jamais horizontalement. */
+.waiting-list,
+.v1-table-wrap {
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------
+   Menus de l'en-tete
+   --------------------------------------------------------- */
+.account-menu {
+  position: relative;
+}
+
+.account-menu summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--mk-space-2) var(--mk-space-3);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-card);
+  cursor: pointer;
+  list-style: none;
+  transition: border-color var(--mk-transition-fast), box-shadow var(--mk-transition-fast);
+}
+
+.account-menu summary::-webkit-details-marker { display: none; }
+
+.account-menu summary:hover {
+  border-color: var(--mk-border-color-brand);
+  box-shadow: var(--mk-shadow-xs);
+}
+
+.account-menu__name {
+  font-size: var(--mk-font-size-sm);
+  font-weight: var(--mk-font-weight-semibold);
+  color: var(--mk-text-main);
+}
+
+.account-menu__role {
+  font-size: var(--mk-font-size-xs);
+  color: var(--mk-text-muted);
+}
+
+.account-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--mk-space-2));
+  z-index: var(--mk-z-dropdown);
+  min-width: 14rem;
+}
+
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.header-doctor-switcher select {
+  min-height: var(--mk-control-height-sm);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-xs);
+  background: var(--mk-surface-card);
+  font-size: var(--mk-font-size-sm);
+}
+
+
+/* ----- source : icons.css ----- */
+/* =========================================================
+   ICONES — un seul jeu, une seule regle
+   Voir public/assets/icons/marki-sprite.svg
+
+   Principe : l'icone herite de la couleur du texte
+   (currentColor). Plus aucun filtre CSS de recoloration,
+   plus aucun caractere typographique en guise de picto.
+   ========================================================= */
+
+.mk-icon {
+  display: inline-block;
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.2em;
+  color: inherit;
+  fill: none;
+  stroke: currentColor;
+  pointer-events: none;
+}
+
+/* Tailles */
+.mk-icon--xs { width: 0.875em; height: 0.875em; }
+.mk-icon--sm { width: 1em;     height: 1em; }
+.mk-icon--md { width: 1.25em;  height: 1.25em; }
+.mk-icon--lg { width: 1.5em;   height: 1.5em; }
+.mk-icon--xl { width: 2rem;    height: 2rem; }
+.mk-icon--2xl { width: 2.75rem; height: 2.75rem; }
+
+/* Teintes semantiques */
+.mk-icon--brand   { color: var(--mk-color-primary-600); }
+.mk-icon--accent  { color: var(--mk-color-accent-600); }
+.mk-icon--success { color: var(--mk-color-success); }
+.mk-icon--danger  { color: var(--mk-color-danger); }
+.mk-icon--warning { color: var(--mk-color-warning); }
+.mk-icon--muted   { color: var(--mk-text-muted); }
+
+/* Pastille d'icone : fond doux + icone centree.
+   Sert aux compteurs, aux en-tetes de panneau et aux etats vides. */
+.mk-icon-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-sunken);
+  color: var(--mk-text-muted);
+}
+
+.mk-icon-badge--lg { width: 3rem; height: 3rem; border-radius: var(--mk-radius-lg); }
+
+.mk-icon-badge--brand {
+  background: var(--mk-color-primary-100);
+  color: var(--mk-color-primary-700);
+}
+.mk-icon-badge--accent {
+  background: var(--mk-color-accent-100);
+  color: var(--mk-color-accent-700);
+}
+.mk-icon-badge--success {
+  background: var(--mk-color-success-soft);
+  color: var(--mk-color-success-text);
+}
+.mk-icon-badge--danger {
+  background: var(--mk-color-danger-soft);
+  color: var(--mk-color-danger-text);
+}
+.mk-icon-badge--warning {
+  background: var(--mk-color-warning-soft);
+  color: var(--mk-color-warning-text);
+}
+
+/* Le sprite lui-meme ne doit jamais occuper de place. */
+.mk-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* -----------------------------------------------------------
+   Neutralisation des anciens filtres de recoloration.
+   Les <img> PNG restants (le cas echeant) ne doivent plus
+   etre repeints : la teinte est desormais portee par l'icone.
+   ----------------------------------------------------------- */
+.sidebar__item .icon img,
+.sidebar__item:hover .icon img,
+.sidebar__item.active .icon img {
+  filter: none;
+}
+
+
+/* ----- source : components.css ----- */
+/* =========================================================
+   COMPOSANTS
+   Une seule grammaire visuelle pour toute l'application.
+
+   L'ecran « Liste du jour » utilise des noms de classes
+   historiques (.counter, .panel, .status-pill, .btn-primary)
+   tandis que les autres ecrans utilisent le langage .v1-*.
+   Ce fichier donne aux deux familles la meme apparence, sans
+   renommer aucune classe : le JavaScript qui cible ces noms
+   continue de fonctionner a l'identique.
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. SURFACES
+   --------------------------------------------------------- */
+.v1-card,
+.team-card,
+.qr-admin-card,
+.auth-card,
+.platform-card,
+.panel,
+.waiting-list,
+.counter {
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-lg);
+  background: var(--mk-surface-card);
+  box-shadow: var(--mk-shadow-sm);
+}
+
+.v1-card__header,
+.panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  color: var(--mk-text-main);
+}
+
+.panel__header h2 {
+  font-size: var(--mk-font-size-md);
+  font-weight: var(--mk-font-weight-semibold);
+  margin: 0;
+}
+
+/* ---------------------------------------------------------
+   2. BOUTONS
+   Trois niveaux seulement : principal, secondaire, discret.
+   --------------------------------------------------------- */
+.v1-button,
+.auth-button,
+.platform-button,
+.btn-primary,
+.btn-toggle-list,
+.btn-current-patient,
+.btn-patient-full-record {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mk-space-2);
+  min-height: var(--mk-control-height);
+  padding-inline: var(--mk-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-md);
+  font-size: var(--mk-font-size-base);
+  font-weight: var(--mk-font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Principal : le dégradé signature Cyan -> Violet du logo */
+.v1-button--primary,
+.auth-button,
+.platform-button,
+.btn-primary {
+  color: #ffffff;
+  background: var(--mk-gradient-brand);
+  border: none;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
+  border-radius: var(--mk-radius-pill);
+  padding: 0.55rem 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v1-button--primary:hover:not(:disabled),
+.auth-button:hover:not(:disabled),
+.platform-button:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284c7 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.38);
+}
+
+/* Secondaire : la marque en creux. */
+.v1-button--secondary,
+.btn-current-patient,
+.btn-patient-full-record {
+  color: var(--mk-color-primary-700);
+  background: var(--mk-color-primary-50);
+  border: 1px solid var(--mk-color-primary-200);
+  border-radius: var(--mk-radius-pill);
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+}
+
+.v1-button--secondary:hover:not(:disabled),
+.btn-current-patient:hover:not(:disabled),
+.btn-patient-full-record:hover:not(:disabled) {
+  background: var(--mk-color-primary-100);
+  border-color: var(--mk-color-primary-300);
+}
+
+.btn-current-patient .mk-icon {
+  color: var(--mk-color-primary-600);
+}
+
+/* Discret : sans fond, pour les actions de second plan. */
+.v1-button--ghost {
+  color: var(--mk-text-body);
+  background: transparent;
+  border-color: var(--mk-border-control);
+}
+
+.v1-button--ghost:hover:not(:disabled) {
+  color: var(--mk-text-brand);
+  background: var(--mk-surface-hover);
+  border-color: var(--mk-border-color-brand);
+}
+
+/* Action destructrice : jamais la couleur de marque. */
+.v1-button--danger,
+.queue-day-menu__item--danger {
+  color: var(--mk-color-danger-text);
+}
+
+.v1-button--danger {
+  background: var(--mk-color-danger-soft);
+  border-color: color-mix(in srgb, var(--mk-color-danger) 26%, transparent);
+}
+
+.v1-button--danger:hover:not(:disabled) {
+  color: var(--mk-text-on-brand);
+  background: var(--mk-color-danger);
+  border-color: var(--mk-color-danger);
+}
+
+/* Ouverture / fermeture des inscriptions : boutons épurés et clairs */
+.btn-toggle-list {
+  border-radius: var(--mk-radius-pill);
+  padding: 0.45rem 1.1rem;
+  font-weight: 500;
+  font-size: var(--mk-font-size-base);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.btn-toggle-list--close {
+  color: var(--mk-color-neutral-700);
+  background: var(--mk-color-neutral-0);
+  border: 1px solid var(--mk-color-neutral-300);
+}
+
+.btn-toggle-list--close:hover:not(:disabled) {
+  background: var(--mk-color-neutral-50);
+  border-color: var(--mk-color-neutral-400);
+  color: var(--mk-color-neutral-900);
+}
+
+.btn-toggle-list--open {
+  color: var(--mk-color-success-text);
+  background: var(--mk-color-success-soft);
+  border: 1px solid color-mix(in srgb, var(--mk-color-success) 30%, transparent);
+}
+
+/* ---------------------------------------------------------
+   3. BOUTONS D'ACTION EN LIGNE (colonne « Actions »)
+   --------------------------------------------------------- */
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.btn-action-icon .mk-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Couleurs au repos et au survol (matching avec les compteurs du bas) */
+.btn-action-icon--edit {
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+.btn-action-icon--edit:hover:not(:disabled) {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
+}
+
+.btn-action-icon--done {
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+.btn-action-icon--done:hover:not(:disabled) {
+  color: #15803d;
+  background: #dcfce7;
+  border-color: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.22);
+}
+
+.btn-action-icon--absent {
+  color: #ea580c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+.btn-action-icon--absent:hover:not(:disabled) {
+  color: #c2410c;
+  background: #ffedd5;
+  border-color: #fdba74;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.22);
+}
+
+.btn-action-icon--cancel {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+.btn-action-icon--cancel:hover:not(:disabled) {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.22);
+}
+
+.btn-action-icon--return {
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+}
+.btn-action-icon--return:hover:not(:disabled) {
+  color: #4338ca;
+  background: #e0e7ff;
+  border-color: #c7d2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.22);
+}
+
+.btn-action-icon:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-action-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------
+   INFOBULLES FLOTTANTES HAUT DE GAMME (Floating Tooltips)
+   --------------------------------------------------------- */
+.mk-floating-tooltip {
+  position: fixed;
+  z-index: 999999;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.785rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  padding: 0.38rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.3), 0 2px 6px -1px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px) scale(0.96);
+  transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.mk-floating-tooltip.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.mk-floating-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+}
+
+.mk-floating-tooltip.is-top::after {
+  bottom: -5px;
+  border-top-color: rgba(15, 23, 42, 0.94);
+  border-bottom: 0;
+}
+
+.mk-floating-tooltip.is-bottom::after {
+  top: -5px;
+  border-bottom-color: rgba(15, 23, 42, 0.94);
+  border-top: 0;
+}
+
+/* ---------------------------------------------------------
+   4. CHAMPS
+   --------------------------------------------------------- */
+.v1-field input,
+.v1-field select,
+.v1-field textarea,
+.auth-field input,
+.auth-field select,
+.auth-field textarea,
+.auth-form input,
+.marki-modal__form input,
+.marki-modal__form select,
+.marki-modal__form textarea {
+  min-height: var(--mk-control-height);
+  padding-inline: var(--mk-space-3);
+  color: var(--mk-text-main);
+  background: var(--mk-surface-card);
+  border: 1px solid var(--mk-border-control);
+  border-radius: var(--mk-radius-md);
+  transition:
+    border-color var(--mk-transition-fast),
+    box-shadow var(--mk-transition-fast);
+}
+
+.v1-field input:hover:not(:disabled),
+.auth-form input:hover:not(:disabled),
+.marki-modal__form input:hover:not(:disabled) {
+  border-color: var(--mk-border-color-strong);
+}
+
+.v1-field input:focus,
+.v1-field select:focus,
+.v1-field textarea:focus,
+.auth-field input:focus,
+.auth-form input:focus,
+.marki-modal__form input:focus,
+.marki-modal__form select:focus,
+.marki-modal__form textarea:focus {
+  border-color: var(--mk-color-primary-600);
+  box-shadow: var(--mk-ring);
+  outline: none;
+}
+
+/* Champ en erreur : signale par la couleur ET par le halo. */
+.v1-field input[aria-invalid="true"],
+.auth-form input[aria-invalid="true"],
+.marki-modal__form input[aria-invalid="true"],
+.is-invalid input,
+input.is-invalid {
+  border-color: var(--mk-color-danger);
+  box-shadow: var(--mk-ring-danger);
+}
+
+/* Barre de recherche moderne */
+.search-box,
+.v1-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.search-box .mk-icon,
+.v1-search .mk-icon {
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color var(--mk-transition-fast), transform var(--mk-transition-fast);
+  z-index: 2;
+}
+
+.search-box input,
+.v1-search input {
+  width: 100%;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem 0 2.85rem;
+  color: #1e293b;
+  font-size: 0.925rem;
+  font-weight: 500;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all var(--mk-transition-fast);
+}
+
+.search-box input::placeholder,
+.v1-search input::placeholder {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.search-box input:hover,
+.v1-search input:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.search-box input:focus,
+.v1-search input:focus {
+  border-color: #6366f1;
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(99, 102, 241, 0.14), 0 1px 2px rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+.search-box:focus-within .mk-icon,
+.v1-search:focus-within .mk-icon {
+  color: #4f46e5;
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Filtre déroulant moderne */
+.filter-box,
+.v1-select-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-box select,
+.v1-select-field select {
+  width: 100%;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 2.4rem 0 1.15rem;
+  color: #334155;
+  font-size: 0.925rem;
+  font-weight: 500;
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") no-repeat right 0.9rem center / 1.05rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: all var(--mk-transition-fast);
+}
+
+.filter-box select:hover,
+.v1-select-field select:hover {
+  border-color: #cbd5e1;
+}
+
+.filter-box select:focus,
+.v1-select-field select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3.5px rgba(99, 102, 241, 0.14), 0 1px 2px rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+/* Bouton Voir le patient actuel */
+.btn-current-patient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+  border-radius: 0.85rem;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.04);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--mk-transition-fast);
+}
+
+.btn-current-patient:hover:not(:disabled) {
+  background: #ede9fe;
+  border-color: #ddd6fe;
+  color: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.1);
+}
+
+.btn-current-patient:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-current-patient:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-current-patient__icon {
+  display: inline-flex;
+  align-items: center;
+  color: #6366f1;
+}
+
+/* ---------------------------------------------------------
+   5. TABLEAUX
+   L'en-tete ne « pese » plus : fond neutre, texte discret.
+   La lisibilite vient de l'alignement, pas du gras.
+   --------------------------------------------------------- */
+.v1-table,
+.waiting-list table,
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.v1-table thead th,
+.waiting-list table thead th,
+.team-table thead th {
+  padding: var(--mk-space-3) var(--mk-space-4);
+  color: var(--mk-text-muted);
+  background: var(--mk-surface-page);
+  border-bottom: 1px solid var(--mk-border-color);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.v1-table td,
+.waiting-list table td,
+.team-table td {
+  padding: var(--mk-space-3) var(--mk-space-4);
+  border-bottom: 1px solid var(--mk-border-color);
+  color: var(--mk-text-body);
+  vertical-align: middle;
+}
+
+.v1-table tbody tr:last-child td,
+.waiting-list table tbody tr:last-child td,
+.team-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.v1-table tbody tr:hover,
+.waiting-list tbody tr.patient-row:hover {
+  background: var(--mk-surface-hover);
+  cursor: pointer;
+}
+
+/* Le patient selectionne. */
+.waiting-list tbody tr.is-selected {
+  background: var(--mk-color-primary-50);
+  box-shadow: inset 3px 0 0 var(--mk-color-primary-600);
+}
+
+/* Le patient en cours de consultation : c'est l'information
+   la plus importante de l'ecran, elle porte donc l'accent
+   cyan reserve a ce qui se passe maintenant. */
+.waiting-list tbody tr.is-current {
+  background: var(--mk-color-accent-50);
+  box-shadow: inset 3px 0 0 var(--mk-color-accent-500);
+}
+
+.waiting-list tbody tr.is-current td:first-child {
+  font-weight: var(--mk-font-weight-bold);
+  color: var(--mk-color-accent-800);
+}
+
+.patient-name-cell {
+  font-weight: var(--mk-font-weight-medium);
+  color: var(--mk-text-main);
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  /* Alignement a gauche : le nombre de boutons varie d'une ligne
+     a l'autre, un alignement a droite faisait « sauter » les icones
+     d'une ligne a la suivante. */
+  justify-content: flex-start;
+  gap: var(--mk-space-1);
+}
+
+/* ---------------------------------------------------------
+   6. PASTILLES DE STATUT
+   --------------------------------------------------------- */
+.status-pill,
+.v1-soft-badge,
+.qr-admin-status,
+.status-badge,
+.list-status-badge,
+.registration-status-badge,
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  padding: 0.35rem var(--mk-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-pill);
+  font-size: var(--mk-font-size-xs);
+  font-weight: var(--mk-font-weight-semibold);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.status-pill::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.status-pill--waiting {
+  color: var(--mk-color-waiting-text);
+  background: var(--mk-color-waiting-soft);
+  border-color: color-mix(in srgb, var(--mk-color-waiting) 24%, transparent);
+}
+
+.status-pill--done,
+.history-status--done {
+  color: var(--mk-color-success-text);
+  background: var(--mk-color-success-soft);
+  border-color: color-mix(in srgb, var(--mk-color-success) 26%, transparent);
+}
+
+.status-pill--absent,
+.history-status--no_show,
+.list-status-badge--closed,
+.registration-status-badge--closed {
+  color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-soft);
+  border-color: color-mix(in srgb, var(--mk-color-danger) 26%, transparent);
+}
+
+.status-pill--canceled,
+.history-status--canceled {
+  color: var(--mk-color-muted-text);
+  background: var(--mk-color-muted-soft);
+  border-color: var(--mk-border-color-strong);
+}
+
+.list-status-badge--paused {
+  color: var(--mk-color-warning-text);
+  background: var(--mk-color-warning-soft);
+  border-color: color-mix(in srgb, var(--mk-color-warning) 30%, transparent);
+}
+
+/* Liste active : vert avec point pulsant */
+.list-status-badge--open {
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+}
+
+.list-status-badge--open::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  flex: none;
+}
+
+.registration-status-badge--open {
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+}
+
+.registration-status-badge--open .mk-icon {
+  color: #16a34a;
+}
+
+/* ---------------------------------------------------------
+   7. COMPTEURS DE STATUT (KPI Cards Modernes avec Sparklines)
+   --------------------------------------------------------- */
+.status-counters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.counter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(15, 23, 42, 0.02);
+  overflow: hidden;
+  transition: transform var(--mk-transition-fast), box-shadow var(--mk-transition-fast), border-color var(--mk-transition-fast);
+}
+
+.counter:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  border-color: #cbd5e1;
+}
+
+.counter__icon-box {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.counter__icon-box .mk-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.counter--waiting .counter__icon-box,
+.counter.waiting .counter__icon-box {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.counter--absent .counter__icon-box,
+.counter.absent .counter__icon-box {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.counter--done .counter__icon-box,
+.counter.done .counter__icon-box {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.counter--canceled .counter__icon-box,
+.counter.canceled .counter__icon-box {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.counter__body,
+.counter__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  z-index: 2;
+}
+
+.counter__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.counter__label,
+.counter__info span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.counter__dots {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.counter__dots:hover {
+  color: #475569;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.counter__value,
+.counter__info strong {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  margin-top: 0.2rem;
+}
+
+.counter__sparkline {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.35rem;
+  width: 42%;
+  height: 28px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.counter__sparkline svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---------------------------------------------------------
+   8. FENETRES MODALES
+   --------------------------------------------------------- */
+.team-modal__dialog,
+.marki-modal__dialog {
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-xl);
+  background: var(--mk-surface-card);
+  box-shadow: var(--mk-shadow-xl);
+}
+
+.marki-modal__backdrop,
+.team-modal__backdrop {
+  background: var(--mk-overlay);
+  /* Le flou du fond concentre l'attention sur la fenetre. */
+  backdrop-filter: blur(3px);
+}
+
+.marki-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-4);
+  padding-bottom: var(--mk-space-3);
+  border-bottom: 1px solid var(--mk-border-color);
+}
+
+.marki-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--mk-control-height-sm);
+  height: var(--mk-control-height-sm);
+  color: var(--mk-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-xs);
+}
+
+.marki-modal__close:hover {
+  color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-soft);
+}
+
+/* ---------------------------------------------------------
+   9. MENUS DEROULANTS
+   --------------------------------------------------------- */
+.queue-day-menu,
+.account-menu__panel {
+  padding: var(--mk-space-1);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-card);
+  box-shadow: var(--mk-shadow-lg);
+}
+
+.queue-day-menu__item,
+.account-menu__panel a,
+.account-menu__panel button {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  width: 100%;
+  padding: var(--mk-space-2) var(--mk-space-3);
+  color: var(--mk-text-body);
+  font-size: var(--mk-font-size-base);
+  text-align: left;
+  border-radius: var(--mk-radius-xs);
+  transition: background-color var(--mk-transition-fast), color var(--mk-transition-fast);
+}
+
+.queue-day-menu__item:hover,
+.account-menu__panel a:hover,
+.account-menu__panel button:hover {
+  background: var(--mk-surface-hover);
+  color: var(--mk-text-brand);
+}
+
+.queue-day-menu__item--danger:hover {
+  color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-soft);
+}
+
+.queue-day-menu-button,
+.queue-day-restore-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--mk-control-height-sm);
+  height: var(--mk-control-height-sm);
+  color: var(--mk-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--mk-radius-xs);
+}
+
+.queue-day-menu-button:hover,
+.queue-day-restore-button:hover {
+  color: var(--mk-text-brand);
+  background: var(--mk-color-primary-50);
+  border-color: var(--mk-color-primary-200);
+}
+
+/* ---------------------------------------------------------
+   10. PAGINATION ET AFFICHAGE
+   --------------------------------------------------------- */
+.pagination,
+.v1-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-1);
+}
+
+.pagination__item,
+.v1-pagination button,
+.display-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding-inline: 0.65rem;
+  color: var(--mk-color-neutral-700);
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all var(--mk-transition-fast);
+}
+
+.pagination__item:hover:not(:disabled),
+.v1-pagination button:hover:not(:disabled),
+.display-option:hover:not(.is-active) {
+  color: var(--mk-color-neutral-900);
+  background: var(--mk-color-neutral-50);
+  border-color: var(--mk-color-neutral-400);
+}
+
+.pagination__item.is-active,
+.v1-pagination button.is-active,
+.display-option.is-active {
+  color: #ffffff;
+  background: #4f46e5;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+}
+
+.pagination__ellipsis {
+  padding-inline: var(--mk-space-1);
+  color: var(--mk-text-faint);
+}
+
+.display-pagination-cluster,
+.display-pagination-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-4);
+  flex-wrap: wrap;
+}
+
+.display-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.display-label {
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-sm);
+  font-weight: 500;
+}
+
+.display-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--mk-text-body);
+  font-size: var(--mk-font-size-base);
+  font-weight: 500;
+}
+
+.display-count strong {
+  font-weight: 600;
+  color: var(--mk-text-main);
+}
+
+/* ---------------------------------------------------------
+   11. MESSAGES ET NOTIFICATIONS
+   --------------------------------------------------------- */
+.marki-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  padding: var(--mk-space-3) var(--mk-space-4);
+  border: 1px solid var(--mk-border-color);
+  border-left: 3px solid var(--mk-color-primary-600);
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-surface-card);
+  box-shadow: var(--mk-shadow-lg);
+  color: var(--mk-text-main);
+}
+
+.marki-toast--success { border-left-color: var(--mk-color-success); }
+.marki-toast--error   { border-left-color: var(--mk-color-danger); }
+.marki-toast--warning { border-left-color: var(--mk-color-warning); }
+
+.v1-message:not(:empty),
+.auth-message--visible {
+  padding: var(--mk-space-3) var(--mk-space-4);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-md);
+  font-size: var(--mk-font-size-base);
+}
+
+.v1-message.is-error:not(:empty),
+.auth-message--visible.is-error {
+  color: var(--mk-color-danger-text);
+  background: var(--mk-color-danger-soft);
+  border-color: color-mix(in srgb, var(--mk-color-danger) 26%, transparent);
+}
+
+.v1-message.is-success:not(:empty),
+.auth-message--visible.is-success {
+  color: var(--mk-color-success-text);
+  background: var(--mk-color-success-soft);
+  border-color: color-mix(in srgb, var(--mk-color-success) 26%, transparent);
+}
+
+/* ---------------------------------------------------------
+   12. ETATS VIDES (Centrage parfait et illustrations)
+   --------------------------------------------------------- */
+.waiting-list {
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.waiting-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patient-row {
+  height: 3.5rem;
+  transition: background-color var(--mk-transition-fast);
+}
+
+.patient-row td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.925rem;
+}
+
+.patient-row:hover {
+  background-color: #f8fafc;
+}
+
+.patient-row.is-current {
+  background-color: #f5f3ff;
+}
+
+.table-empty-state-cell,
+.table-empty-state {
+  text-align: center;
+  vertical-align: middle;
+  padding: 4rem 1.5rem;
+  height: 18rem;
+}
+
+.table-empty-illustration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.table-empty-icon-wrap,
+.patient-empty-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.table-empty-circle,
+.patient-empty-avatar-circle {
+  width: 5.75rem;
+  height: 5.75rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12);
+}
+
+.table-empty-circle .mk-icon,
+.table-empty-circle svg,
+.patient-empty-avatar-circle .mk-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.empty-sparkle {
+  position: absolute;
+  color: #a78bfa;
+  font-size: 1.15rem;
+  user-select: none;
+  line-height: 1;
+}
+
+.empty-sparkle--top-right,
+.empty-sparkle--1 {
+  top: -0.25rem;
+  right: -0.65rem;
+}
+
+.empty-sparkle--bottom-left,
+.empty-sparkle--2 {
+  bottom: 0.15rem;
+  left: -0.75rem;
+  font-size: 0.95rem;
+  color: #c4b5fd;
+}
+
+.table-empty-illustration strong,
+.patient-details-empty strong,
+.v1-empty-panel strong {
+  color: #1e293b;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.4;
+  max-width: 16rem;
+  margin: 0 auto;
+  display: block;
+}
+
+.patient-details-empty,
+.v1-empty-panel,
+.v1-empty-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mk-space-2);
+  padding: 3rem 1.5rem;
+  color: var(--mk-text-muted);
+  font-size: var(--mk-font-size-base);
+  text-align: center;
+}
+
+.patient-details-empty span,
+.patient-details-empty p,
+.patient-empty-desc,
+.empty-state-subtext {
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  max-width: 14rem;
+  margin: 0.35rem auto 0;
+}
+
+/* ---------------------------------------------------------
+   13. FICHE PATIENT (Design sobre et soigné)
+   --------------------------------------------------------- */
+.panel__header-icon-wrap {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.panel__header-icon-wrap .mk-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.patient-details-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.patient-empty-avatar-circle {
+  width: 4.75rem;
+  height: 4.75rem;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.patient-empty-avatar-circle .mk-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.patient-details-card__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  margin-bottom: 0.25rem;
+}
+
+.patient-details-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.patient-details-identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.patient-details-identity-text h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.patient-details-phone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 0.2rem 0.65rem;
+  width: fit-content;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.patient-details-phone-badge .mk-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #64748b;
+}
+
+.patient-details-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.patient-detail-row {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.patient-detail-row:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.patient-detail-row__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patient-detail-row__header .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.patient-detail-row .value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+  margin: 0;
+}
+
+.patient-detail-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.15s ease;
+}
+
+.patient-detail-card:hover {
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+}
+
+.patient-detail-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.patient-detail-card__header .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.patient-detail-card .value {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.patient-detail-card__icon-box {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.patient-detail-card__icon-box .mk-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.patient-detail-card__icon-box--blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.patient-detail-card__icon-box--teal {
+  background: #f0fdfa;
+  color: #0d9488;
+  border: 1px solid #ccfbf1;
+}
+
+.patient-detail-card__icon-box--indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
+}
+
+.patient-detail-card__icon-box--amber {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.patient-detail-card__icon-box--emerald {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.patient-detail-card--status {
+  background: #ffffff;
+}
+
+.patient-detail-card--notes {
+  background: #fffdfa;
+  border: 1px solid #fef3c7;
+  border-left: 3.5px solid #f59e0b;
+}
+
+.patient-notes-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #78350f;
+  font-weight: 450;
+  line-height: 1.45;
+}
+
+.patient-detail-card--history {
+  background: #ffffff;
+}
+
+.visit-history {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.visit-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.65rem;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.visit-history li:hover {
+  background: #f1f5f9;
+}
+
+.visit-date-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.visit-date-stack span {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.visit-date-stack small {
+  color: #64748b;
+  font-size: 0.725rem;
+}
+
+.history-status {
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.history-status--done {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.history-status--in_progress {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.history-status--canceled,
+.history-status--absent {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.btn-patient-full-record {
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-patient-full-record:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.38);
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+}
+
+.btn-patient-full-record:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-patient-full-record:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+
+/* ---------------------------------------------------------
+   14. UN ETAT N'EST PAS UNE ACTION
+   Le badge « Inscriptions ouvertes » voisinait un bouton de
+   forme identique : on ne savait plus lequel etait cliquable.
+   Le badge devient plat et sans ombre, le bouton garde son relief.
+   --------------------------------------------------------- */
+.registration-status-badge,
+.list-status-badge {
+  min-height: auto;
+  font-weight: var(--mk-font-weight-medium);
+  box-shadow: none;
+}
+
+.registration-status-badge--open {
+  color: var(--mk-color-success-text);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--mk-color-success) 40%, transparent);
+}
+
+.registration-status-badge--closed {
+  color: var(--mk-color-danger-text);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--mk-color-danger) 40%, transparent);
+}
+
+/* Les textes d'aide sous un champ ne sont pas des etiquettes :
+   ils heritaient du gras applique aux <label>. */
+.auth-form small,
+.v1-field small,
+.marki-modal__form small {
+  font-weight: var(--mk-font-weight-regular);
+  color: var(--mk-text-muted);
+  line-height: var(--mk-line-snug);
+}
+
+/* ---------------------------------------------------------
+   15. TABLEAUX ETROITS
+   .v1-table imposait une largeur minimale de 760 px. Sur un
+   ecran 14 pouces, la colonne de gauche mesure environ 730 px :
+   le tableau debordait donc en permanence et la colonne
+   « Actions » etait coupee sans que rien ne l'indique.
+
+   La largeur minimale est ramenee a une valeur tenable, et
+   lorsqu'un defilement reste necessaire, un degrade sur le
+   bord droit le signale au lieu de trancher le contenu.
+   --------------------------------------------------------- */
+.v1-table {
+  min-width: 40rem;
+}
+
+/* Le tableau defile dans son conteneur ; la page, elle, ne
+   defile jamais horizontalement. */
+.v1-table-wrap,
+.waiting-list {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/* Les cellules se resserrent legerement quand la place manque. */
+@media (max-width: 1400px) {
+  .v1-table th,
+  .v1-table td,
+  .waiting-list table th,
+  .waiting-list table td {
+    padding-inline: var(--mk-space-3);
+  }
+}
+
+/* Le panneau lateral cede la place au tableau avant de
+   passer sous lui. */
+@media (max-width: 1500px) {
+  .v1-split-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.85fr);
+  }
+}
+
+
+/* ----- source : pages.css ----- */
+/* =========================================================
+   ECRANS — ajustements propres a une page
+   ========================================================= */
+
+.v1-page__eyebrow {
+  color: var(--mk-color-primary-600);
+  font-size: var(--mk-font-size-xs);
+  font-weight: var(--mk-font-weight-bold);
+  margin-bottom: var(--mk-space-1);
+}
+
+.dashboard__header h2,
+.v1-page__header h2 {
+  color: var(--mk-text-main);
+}
+
+.status-card,
+.dashboard__status-card,
+.qr-admin-preview,
+.qr-admin-panel {
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-lg);
+  background: var(--mk-surface-card);
+}
+
+.patient-details .panel {
+  position: sticky;
+  top: 0;
+}
+
+.panel__content {
+  padding: var(--mk-space-4);
+}
+
+.panel__header {
+  padding: var(--mk-space-4);
+  border-bottom: 1px solid var(--mk-border-color);
+}
+
+.panel__header .mk-icon {
+  color: var(--mk-color-primary-600);
+}
+
+/* ---------------------------------------------------------
+   PAGES D'ACCES (connexion, activation, inscription publique)
+   Le fond n'est plus un aplat : deux halos tres doux, l'un
+   violet, l'autre cyan, donnent de la profondeur a la carte
+   sans distraire du formulaire.
+   --------------------------------------------------------- */
+.auth-page,
+.platform-page,
+.registration-page {
+  background:
+    radial-gradient(circle at 12% 8%, var(--mk-color-primary-100), transparent 26rem),
+    radial-gradient(circle at 88% 92%, var(--mk-color-accent-100), transparent 24rem),
+    var(--mk-surface-page);
+}
+
+.auth-card {
+  border-radius: var(--mk-radius-2xl);
+  box-shadow: var(--mk-shadow-xl);
+}
+
+.auth-brand__mark {
+  background: linear-gradient(
+    135deg,
+    var(--mk-color-primary-500),
+    var(--mk-color-primary-700)
+  );
+  box-shadow: var(--mk-shadow-primary);
+}
+
+/* ---------------------------------------------------------
+   HISTORIQUE DES VISITES
+   --------------------------------------------------------- */
+.visit-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.visit-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-3);
+  padding: var(--mk-space-2) var(--mk-space-3);
+  border: 1px solid var(--mk-border-color);
+  border-radius: var(--mk-radius-xs);
+  background: var(--mk-surface-page);
+  font-size: var(--mk-font-size-sm);
+}
+
+
+/* ----- source : motion.css ----- */
+/* =========================================================
+   MOUVEMENT
+   Regle unique : le mouvement porte une information.
+   Il signale qu'une donnee arrive, change ou est en cours.
+   Aucune animation n'est decorative.
+
+   Tout est desactive si le systeme demande moins d'animations
+   (voir le bloc prefers-reduced-motion en fin de fichier).
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. SQUELETTES DE CHARGEMENT
+   Remplacent les textes « Chargement... » : la page montre
+   la forme de ce qui arrive au lieu d'un mot.
+   --------------------------------------------------------- */
+@keyframes mk-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.mk-skeleton {
+  --mk-skeleton-base: var(--mk-color-neutral-100);
+  --mk-skeleton-shine: var(--mk-color-neutral-200);
+
+  border-radius: var(--mk-radius-xs);
+  background-image: linear-gradient(
+    90deg,
+    var(--mk-skeleton-base) 25%,
+    var(--mk-skeleton-shine) 37%,
+    var(--mk-skeleton-base) 63%
+  );
+  background-size: 200% 100%;
+  animation: mk-shimmer 1.4s ease-in-out infinite;
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mk-skeleton--text { height: 0.75rem; width: 100%; }
+.mk-skeleton--title { height: 1rem; width: 45%; }
+.mk-skeleton--pill { height: 1.5rem; width: 5rem; border-radius: var(--mk-radius-pill); }
+.mk-skeleton--circle { border-radius: 50%; }
+
+/* Ligne de tableau en cours de chargement */
+.mk-skeleton-row > td { padding-block: var(--mk-space-3); }
+.mk-skeleton-row .mk-skeleton { display: block; }
+
+/* ---------------------------------------------------------
+   2. ARRIVEE DES CONTENUS
+   Les lignes d'une liste apparaissent en cascade tres courte.
+   L'oeil comprend qu'il s'agit d'une nouvelle donnee.
+   --------------------------------------------------------- */
+@keyframes mk-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes mk-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mk-enter {
+  animation: mk-fade-up var(--mk-duration-normal) var(--mk-ease-out) both;
+}
+
+/* Cascade : chaque ligne demarre 22 ms apres la precedente,
+   plafonnee pour que les longues listes restent instantanees. */
+.mk-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+.mk-stagger > *:nth-child(2)  { animation-delay: 22ms; }
+.mk-stagger > *:nth-child(3)  { animation-delay: 44ms; }
+.mk-stagger > *:nth-child(4)  { animation-delay: 66ms; }
+.mk-stagger > *:nth-child(5)  { animation-delay: 88ms; }
+.mk-stagger > *:nth-child(6)  { animation-delay: 110ms; }
+.mk-stagger > *:nth-child(7)  { animation-delay: 132ms; }
+.mk-stagger > *:nth-child(8)  { animation-delay: 154ms; }
+.mk-stagger > *:nth-child(n+9) { animation-delay: 176ms; }
+
+/* ---------------------------------------------------------
+   3. SURLIGNAGE D'UNE DONNEE QUI VIENT DE CHANGER
+   Une inscription qui arrive, un statut qui bascule :
+   la ligne s'eclaire brievement en cyan puis redevient normale.
+   --------------------------------------------------------- */
+@keyframes mk-highlight {
+  0%   { background-color: var(--mk-alpha-accent-40); }
+  100% { background-color: transparent; }
+}
+
+.mk-just-changed,
+tr.mk-just-changed > td {
+  animation: mk-highlight var(--mk-duration-highlight) var(--mk-ease-out) both;
+}
+
+/* ---------------------------------------------------------
+   4. SIGNAL DE VIE
+   Le point qui bat sur « Liste active » : discret, lent,
+   il indique que la file est reellement en cours.
+   --------------------------------------------------------- */
+@keyframes mk-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--mk-alpha-accent-40); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.mk-live-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: mk-pulse-ring 2.2s var(--mk-ease-out) infinite;
+}
+
+/* ---------------------------------------------------------
+   5. CHIFFRES QUI CHANGENT
+   Le compteur ne saute pas d'une valeur a l'autre :
+   il defile brievement vers le haut.
+   --------------------------------------------------------- */
+@keyframes mk-count-up {
+  from { opacity: 0; transform: translateY(45%); }
+  to   { opacity: 1; transform: none; }
+}
+
+.mk-count {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-count.is-changing {
+  animation: mk-count-up var(--mk-duration-normal) var(--mk-ease-spring) both;
+}
+
+/* ---------------------------------------------------------
+   6. ATTENTE D'UNE ACTION
+   Un bouton qui travaille montre un anneau qui tourne,
+   sans changer de largeur (evite le saut de mise en page).
+   --------------------------------------------------------- */
+@keyframes mk-spin { to { transform: rotate(360deg); } }
+
+.mk-is-busy {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.mk-is-busy::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: -0.525rem 0 0 -0.525rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--mk-color-neutral-0);
+  animation: mk-spin 620ms linear infinite;
+}
+
+/* ---------------------------------------------------------
+   7. FENETRES ET MESSAGES
+   --------------------------------------------------------- */
+@keyframes mk-dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes mk-toast-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.marki-modal[aria-hidden="false"] .marki-modal__backdrop,
+.team-modal.is-open .team-modal__backdrop {
+  animation: mk-fade-in var(--mk-duration-fast) var(--mk-ease-out) both;
+}
+
+.marki-modal[aria-hidden="false"] .marki-modal__dialog,
+.team-modal.is-open .team-modal__dialog {
+  animation: mk-dialog-in var(--mk-duration-normal) var(--mk-ease-out) both;
+}
+
+.marki-toast {
+  animation: mk-toast-in var(--mk-duration-normal) var(--mk-ease-spring) both;
+}
+
+/* ---------------------------------------------------------
+   8. REACTIONS AU POINTEUR
+   Court, net, jamais elastique sur les elements frequents.
+   --------------------------------------------------------- */
+.v1-button,
+.auth-button,
+.platform-button,
+.btn-primary,
+.btn-action-icon,
+.sidebar__item,
+.counter,
+.display-option {
+  transition:
+    background-color var(--mk-transition-fast),
+    border-color var(--mk-transition-fast),
+    color var(--mk-transition-fast),
+    box-shadow var(--mk-transition-fast),
+    transform var(--mk-transition-fast);
+}
+
+.v1-button:active:not(:disabled),
+.auth-button:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-action-icon:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ---------------------------------------------------------
+   9. RESPECT DU REGLAGE SYSTEME
+   Si l'utilisateur demande moins d'animations, tout s'arrete.
+   Les etats reste lisibles : seul le mouvement disparait.
+   --------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Le squelette reste visible, simplement immobile. */
+  .mk-skeleton {
+    background-image: none;
+    background-color: var(--mk-color-neutral-100);
+  }
+
+  /* Le point « en direct » reste present, sans battement. */
+  .mk-live-dot { animation: none; }
+}
+
+
+/* ----- source : responsive.css ----- */
+/* =========================================================
+   ADAPTATION AUX ECRANS
+   Les jetons de structure changent de valeur ; les regles
+   de composants, elles, ne sont pas reecrites.
+   ========================================================= */
+
+/* Tres grand ecran : on laisse la liste respirer sans
+   etirer la nav ni les colonnes de texte. */
+@media (min-width: 1800px) {
+  :root {
+    --mk-sidebar-width: 17rem;
+  }
+
+  .main-content {
+    padding-inline: var(--mk-space-8);
+  }
+}
+
+/* Ordinateur portable */
+@media (max-width: 1440px) {
+  :root {
+    --mk-header-height: 4.25rem;
+    --mk-sidebar-width: 15rem;
+  }
+
+  .day-list-layout {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --mk-sidebar-width: 13.5rem;
+  }
+
+  .main-content {
+    padding: var(--mk-space-4);
+  }
+
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tablette : la fiche patient passe sous la liste, qui est
+   le contenu principal. */
+@media (max-width: 1024px) {
+  .day-list-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .patient-details .panel {
+    position: static;
+  }
+
+  .v1-split-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .v1-card,
+  .team-card,
+  .qr-admin-card,
+  .panel {
+    border-radius: var(--mk-radius-md);
+  }
+
+  .v1-collapsible-section__actions {
+    align-items: stretch;
+  }
+
+  /* La nav devient une barre horizontale defilante. */
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: var(--mk-space-2);
+    border-right: 0;
+    border-bottom: 1px solid var(--mk-border-color);
+    overflow-x: auto;
+  }
+
+  .sidebar__menu {
+    flex-direction: row;
+    gap: var(--mk-space-1);
+  }
+
+  .sidebar__item {
+    white-space: nowrap;
+  }
+
+  /* Le bandeau vertical devient un souligne. */
+  .sidebar__item::before {
+    top: auto;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    border-radius: var(--mk-radius-pill) var(--mk-radius-pill) 0 0;
+    transform: translateX(-50%);
+    transition: width var(--mk-transition-normal);
+  }
+
+  .sidebar__item.active::before {
+    width: 1.5rem;
+    height: 3px;
+  }
+}
+
+/* Telephone */
+@media (max-width: 640px) {
+  :root {
+    /* Cible tactile plus genereuse au doigt. */
+    --mk-control-height: 2.75rem;
+    --mk-control-height-sm: 2.25rem;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    padding: var(--mk-space-3) var(--mk-space-4);
+  }
+
+  .header__datetime {
+    padding: var(--mk-space-1) var(--mk-space-2);
+  }
+
+  .v1-page__header h2,
+  .day-list-page__heading h2 {
+    font-size: var(--mk-font-size-lg);
+  }
+
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .day-list-page__top-actions {
+    width: 100%;
+  }
+
+  .day-list-page__top-actions .btn-primary,
+  .day-list-page__top-actions .btn-toggle-list {
+    flex: 1 1 auto;
+  }
+
+  .v1-button,
+  .auth-button,
+  .platform-button {
+    width: 100%;
+  }
+
+  .team-modal__dialog,
+  .marki-modal__dialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--mk-radius-lg);
+  }
+
+  .day-list-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .status-counters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Impression : la liste du jour doit tenir sur le papier
+   sans les commandes d'interface. */
+@media print {
+  .sidebar,
+  .header__right,
+  .day-list-toolbar,
+  .day-list-footer,
+  .table-actions,
+  .marki-toast-container {
+    display: none !important;
+  }
+
+  .app,
+  .main-content {
+    height: auto;
+    overflow: visible;
+  }
+
+  .waiting-list,
+  .v1-card {
+    border: 0;
+    box-shadow: none;
+  }
+}

@@ -1,68 +1,100 @@
-/* components/header.scss */
+/* components/header.scss
+   -----------------------------------------------------------
+   Hauteur ramenee de ~112 px a la valeur du jeton
+   --mk-header-height : autant de place rendue a la liste,
+   qui est le contenu reellement consulte toute la journee.
+   ----------------------------------------------------------- */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-md $spacing-xl;
-  border-bottom: 1px solid $border-color;
+  gap: var(--mk-space-4);
+  min-height: var(--mk-header-height);
+  padding: var(--mk-space-3) var(--mk-space-6);
   background-color: $bg-primary;
-  
+  border-bottom: 1px solid $border-color;
+
   &__profile {
     display: flex;
     align-items: center;
-    gap: $spacing-md;
-    
+    gap: var(--mk-space-3);
+    min-width: 0;
+
     .avatar {
-      width: 48px;
-      height: 48px;
-      padding: $spacing-xs;
-      background-color: $primary;
-      border-radius: $radius;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: bold;
-      
+      flex: none;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      overflow: hidden;
+      color: var(--mk-text-on-brand);
+      font-weight: var(--mk-font-weight-bold);
+      // Degrade court de la marque : donne du relief a la
+      // vignette sans la transformer en element decoratif.
+      background: linear-gradient(
+        135deg,
+        var(--mk-color-primary-500),
+        var(--mk-color-primary-700)
+      );
+      border-radius: var(--mk-radius-md);
+      box-shadow: var(--mk-shadow-primary);
+
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: $radius;
       }
     }
-    
+
     .profile-info {
+      min-width: 0;
+
       h1 {
-        font-size: 1.25rem;
-        font-weight: 600;
+        font-size: var(--mk-font-size-md);
+        font-weight: var(--mk-font-weight-semibold);
         color: $text-primary;
         margin-bottom: 0;
+        line-height: var(--mk-line-tight);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      
+
       p {
-        font-size: 0.875rem;
+        font-size: var(--mk-font-size-sm);
         color: $text-secondary;
         margin: 0;
+        line-height: var(--mk-line-snug);
       }
     }
   }
-  
+
   &__datetime {
-    text-align: right;
-    
+    display: flex;
+    align-items: baseline;
+    gap: var(--mk-space-2);
+    padding: var(--mk-space-1) var(--mk-space-3);
+    border: 1px solid var(--mk-border-color);
+    border-radius: var(--mk-radius-pill);
+    background: var(--mk-surface-page);
+
     .date {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: $text-primary;
+      font-size: var(--mk-font-size-sm);
+      font-weight: var(--mk-font-weight-medium);
+      color: $text-secondary;
       margin-bottom: 0;
     }
-    
+
     .time {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: $primary;
+      // L'heure est l'information la plus consultee de l'en-tete :
+      // elle garde la couleur de marque, mais dans un corps sobre.
+      font-size: var(--mk-font-size-md);
+      font-weight: var(--mk-font-weight-bold);
+      color: var(--mk-color-primary-700);
       margin: 0;
+      font-variant-numeric: tabular-nums;
     }
   }
 }

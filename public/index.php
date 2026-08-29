@@ -37,18 +37,22 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
     </script>
     <title>MARKI — Gestion des patients</title>
 
-    <link rel="stylesheet" href="assets/css/styles.css?v=20260803-final-webfix">
-    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260803-final-webfix">
-    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260803-final-webfix">
-    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260803-final-webfix">
-    <link rel="stylesheet" href="assets/css/public-registration-admin.css?v=20260803-final-webfix">
-    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260803-final-webfix">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <script src="assets/js/auth-client.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/phone-input.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/password-toggle.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/algeria-locations.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/app.js?v=20260803-final-webfix" defer></script>
+    <link rel="stylesheet" href="assets/css/styles.css?v=20260829-brand1">
+    <link rel="stylesheet" href="assets/css/v1-tabs.css?v=20260829-fix6">
+    <link rel="stylesheet" href="assets/css/session-ui.css?v=20260829-fix6">
+    <link rel="stylesheet" href="assets/css/password-toggle.css?v=20260829-fix6">
+    <link rel="stylesheet" href="assets/css/public-registration-admin.css?v=20260829-fix6">
+    <link rel="stylesheet" href="assets/css/desktop-density.css?v=20260829-fix6">
+
+    <script src="assets/js/auth-client.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/phone-input.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/password-toggle.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/algeria-locations.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/app.js?v=20260829-fix6" defer></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
         integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA=="
@@ -56,14 +60,17 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
         referrerpolicy="no-referrer"
         defer
     ></script>
-    <script src="assets/js/v1-tabs.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/public-registration-admin.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/team.js?v=20260803-final-webfix" defer></script>
-    <script src="assets/js/header.js?v=20260803-final-webfix" defer></script>
-    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260803-design-ready1">
+    <script src="assets/js/v1-tabs.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/public-registration-admin.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/team.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/header.js?v=20260829-fix6" defer></script>
+    <script src="assets/js/marki-motion.js?v=20260829-fix6" defer></script>
+    <link rel="stylesheet" href="assets/design-system/marki-theme.css?v=20260829-fix6">
 </head>
 
 <body>
+    <?php require __DIR__ . '/../app/partials/icons_sprite.php'; ?>
+
     <div class="app">
         <header class="header" data-timezone="<?= e($context['timezone']) ?>">
             <div class="header__profile">
@@ -117,44 +124,61 @@ $basePath = rtrim((string) $context['config']['app']['base_path'], '/');
         </header>
 
         <div class="layout">
-            <nav class="sidebar" aria-label="Navigation principale">
-                <ul class="sidebar__menu">
-                    <?php if ($capabilities['queue.view'] ?? false): ?>
-                        <li class="sidebar__item active" data-page="dashboard" tabindex="0" role="button">
-                            <i class="icon">
-                                <img src="assets/icons/icons_nav/dashboard03.svg" alt="">
-                            </i>
-                            <span>Liste du jour</span>
-                        </li>
-                    <?php endif; ?>
+            <nav class="sidebar" id="app-sidebar" aria-label="Navigation principale">
+                <div class="sidebar__inner">
+                    <ul class="sidebar__menu">
+                        <?php if ($capabilities['queue.view'] ?? false): ?>
+                            <li class="sidebar__item active" data-page="dashboard" tabindex="0" role="button" title="Liste du jour">
+                                <i class="icon">
+                                    <svg class="mk-icon mk-icon--lg" aria-hidden="true"><use href="#mk-queue"></use></svg>
+                                </i>
+                                <span>Liste du jour</span>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php if ($capabilities['patients.view'] ?? false): ?>
-                        <li class="sidebar__item" data-page="patients" tabindex="0" role="button">
-                            <i class="icon">
-                                <img src="assets/icons/icons_nav/patient01.png" alt="">
-                            </i>
-                            <span>Mes Patients</span>
-                        </li>
-                    <?php endif; ?>
+                        <?php if ($capabilities['patients.view'] ?? false): ?>
+                            <li class="sidebar__item" data-page="patients" tabindex="0" role="button" title="Mes Patients">
+                                <i class="icon">
+                                    <svg class="mk-icon mk-icon--lg" aria-hidden="true"><use href="#mk-patients"></use></svg>
+                                </i>
+                                <span>Mes Patients</span>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php if ($capabilities['lists.view'] ?? false): ?>
-                        <li class="sidebar__item" data-page="lists" tabindex="0" role="button">
-                            <i class="icon">
-                                <img src="assets/icons/icons_nav/listPatients.png" alt="">
-                            </i>
-                            <span>Toutes les listes</span>
-                        </li>
-                    <?php endif; ?>
+                        <?php if ($capabilities['lists.view'] ?? false): ?>
+                            <li class="sidebar__item" data-page="lists" tabindex="0" role="button" title="Toutes les listes">
+                                <i class="icon">
+                                    <svg class="mk-icon mk-icon--lg" aria-hidden="true"><use href="#mk-archive"></use></svg>
+                                </i>
+                                <span>Toutes les listes</span>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php if ($capabilities['settings.view'] ?? false): ?>
-                        <li class="sidebar__item" data-page="settings" tabindex="0" role="button">
-                            <i class="icon">
-                                <img src="assets/icons/icons_nav/parametres.png" alt="">
-                            </i>
-                            <span>Paramètres</span>
-                        </li>
-                    <?php endif; ?>
-                </ul>
+                        <?php if ($capabilities['settings.view'] ?? false): ?>
+                            <li class="sidebar__item" data-page="settings" tabindex="0" role="button" title="Paramètres">
+                                <i class="icon">
+                                    <svg class="mk-icon mk-icon--lg" aria-hidden="true"><use href="#mk-settings"></use></svg>
+                                </i>
+                                <span>Paramètres</span>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+
+                    <div class="sidebar__footer">
+                        <button
+                            type="button"
+                            class="sidebar__toggle"
+                            id="sidebarToggleBtn"
+                            aria-label="Réduire ou agrandir la barre latérale"
+                            title="Réduire le menu"
+                        >
+                            <span class="sidebar__toggle-icon">
+                                <svg class="mk-icon" aria-hidden="true"><use href="#mk-chevron-left"></use></svg>
+                            </span>
+                            <span class="sidebar__toggle-text">Réduire le menu</span>
+                        </button>
+                    </div>
+                </div>
             </nav>
 
             <main class="main-content" id="main-content">

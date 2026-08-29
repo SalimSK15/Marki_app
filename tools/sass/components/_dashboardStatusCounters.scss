@@ -67,18 +67,18 @@
   &.done strong { color: $done; }
 
   &.canceled {
-    background-color: #f7f8fa;
+    background-color: var(--mk-color-neutral-50);
 
     strong {
-      color: #5f6874;
+      color: var(--mk-color-neutral-600);
     }
   }
 }
 
 .counter__fallback-icon {
   border-radius: 50%;
-  background-color: #e9ecef;
-  color: #5f6874;
+  background-color: var(--mk-color-neutral-200);
+  color: var(--mk-color-neutral-600);
   display: inline-flex;
   align-items: center;
   justify-content: center;

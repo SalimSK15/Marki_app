@@ -98,16 +98,16 @@
   }
 
   .sidebar {
-    width: 17%;
-    min-width: 185px;
-    max-width: 245px;
-    padding: 1rem 0.7rem 0.7rem;
+    /* La largeur vient du jeton --mk-sidebar-width, ajuste plus bas
+       selon la taille d'ecran. Plus de pourcentage : au-dela de
+       1500 px la nav occupait pres de 400 px pour quatre entrees. */
+    padding: var(--mk-space-3) var(--mk-space-2);
   }
 
   .sidebar__item {
     gap: 0.7rem;
     padding: 0.7rem 0.75rem;
-    border-radius: 15px 0 15px 0;
+    border-radius: var(--mk-radius-md);
     font-size: 0.92rem;
   }
 
@@ -484,7 +484,7 @@
     max-width: none;
     padding: 0.45rem 0.6rem;
     border-right: 0;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--mk-color-neutral-200);
     overflow-x: auto;
     overscroll-behavior-inline: contain;
   }

@@ -1,69 +1,95 @@
-/* base/variables.scss */ 
+/* =========================================================
+   base/_variables.scss
 
-// Couleurs dérivées
-$primary: rgb(138, 43, 226); // RGB pour 8A2BE2 (violet)
-$primary-light: rgba($primary, 0.1);
-$primary-dark: rgba($primary, 0.9);
+   Ce fichier ne definit plus aucune couleur.
+   Il ne fait que donner un nom Sass court aux tokens CSS
+   definis dans public/assets/design-system/tokens.css.
 
-$secondary: rgb(135, 206, 235); // RGB pour 87CEEB (bleu ciel)
-$secondary-light: rgba($secondary, 0.1);
-$secondary-dark: rgba($secondary, 0.9);
+   Consequence : changer l'identite visuelle de MARKI ne se
+   fait QUE dans tokens.css. Ce fichier n'a plus a etre touche.
 
-// Statuts (basés sur les captures d'écran)
-$waiting: $primary;
-$waiting-light: $primary-light;
-$absent: #EF4444;
-$absent-light: #FEE2E2;
-$done: #10B981;
-$done-light: #D1FAE5;
+   Regle : ne jamais utiliser rgba(), darken() ou lighten()
+   sur ces variables — elles contiennent var(...), que Sass
+   ne sait pas manipuler. Utiliser les tokens --mk-alpha-*.
+   ========================================================= */
 
-// Texte
-$text-primary: #1F2937;
-$text-secondary: #6B7280;
-$text-color: #333;
+// --- Marque ------------------------------------------------
+$primary: var(--mk-color-primary-600);
+$primary-light: var(--mk-alpha-primary-12);
+$primary-dark: var(--mk-color-primary-700);
+$primary-soft: var(--mk-color-primary-50);
 
-// Fond
-$bg-primary: #FFFFFF;
-$bg-secondary: #F9FAFB;
-$bg-tertiary: #F3F4F6;
-$bg-op-90: rgba($bg-tertiary,0.7);
+// --- Accent (cyan medical : ce qui est en cours) ------------
+$secondary: var(--mk-color-accent-500);
+$secondary-light: var(--mk-color-accent-100);
+$secondary-dark: var(--mk-color-accent-600);
 
-// Bordures
-$border-color: #E5E7EB;
+// --- Statuts -----------------------------------------------
+$waiting: var(--mk-color-waiting);
+$waiting-light: var(--mk-color-waiting-soft);
+$waiting-text: var(--mk-color-waiting-text);
 
-// Ombres
-$shadow-subtle: 0 2px 10px rgba(0, 0, 0, 0.05);
-$shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+$absent: var(--mk-color-danger);
+$absent-light: var(--mk-color-danger-soft);
+$absent-text: var(--mk-color-danger-text);
 
-// Espacement
-$spacing-xs: 0.25rem;
-$spacing-sm: 0.5rem;
-$spacing-md: 1rem;
-$spacing-lg: 1.5rem;
-$spacing-xl: 2rem;
+$done: var(--mk-color-success);
+$done-light: var(--mk-color-success-soft);
+$done-text: var(--mk-color-success-text);
 
-// Rayons de bordure
-$radius-sm: 0.25rem;
-$radius: 0.5rem;
-$radius-lg: 1rem;
-$radius-full: 9999px;
+$canceled: var(--mk-color-muted);
+$canceled-light: var(--mk-color-muted-soft);
+$canceled-text: var(--mk-color-muted-text);
 
-// Taille de police pour le corps du texte
-$font-size-body: 16px;
-// Taille de police pour les titres principaux (h1)
-$font-size-h1: 2.5rem; // 40px
-// Taille de police pour les titres secondaires (h2)
-$font-size-h2: 2rem; // 32px
-// Taille de police pour les titres tertiaires (h3)
-$font-size-h3: 1.75rem; // 28px
-// Taille de police pour les sous-titres (h4)
-$font-size-h4: 1.5rem; // 24px
-// Taille de police pour les paragraphes
-$font-size-paragraph: 1rem; // 16px
-// Taille de police pour les petits textes
-$font-size-small: 0.875rem; // 14px
-// Taille de police pour les légendes
-$font-size-caption: 0.75rem; // 12px
+// --- Texte -------------------------------------------------
+$text-primary: var(--mk-text-main);
+$text-secondary: var(--mk-text-muted);
+$text-body: var(--mk-text-body);
+$text-color: var(--mk-text-main);
 
-// Transitions
-$transition-all: all 300ms ease-in-out;
+// --- Fonds -------------------------------------------------
+$bg-primary: var(--mk-surface-card);
+$bg-secondary: var(--mk-surface-page);
+$bg-tertiary: var(--mk-surface-sunken);
+$bg-op-90: var(--mk-surface-sunken);
+
+// --- Bordures ----------------------------------------------
+$border-color: var(--mk-border-color);
+$border-color-strong: var(--mk-border-color-strong);
+
+// --- Ombres ------------------------------------------------
+$shadow-subtle: var(--mk-shadow-xs);
+$shadow: var(--mk-shadow-sm);
+$shadow-md: var(--mk-shadow-md);
+$shadow-lg: var(--mk-shadow-lg);
+$ring: var(--mk-ring);
+
+// --- Espacement --------------------------------------------
+$spacing-xs: var(--mk-space-1);
+$spacing-sm: var(--mk-space-2);
+$spacing-md: var(--mk-space-4);
+$spacing-lg: var(--mk-space-6);
+$spacing-xl: var(--mk-space-8);
+
+// --- Rayons ------------------------------------------------
+$radius-sm: var(--mk-radius-xs);
+$radius: var(--mk-radius-sm);
+$radius-md: var(--mk-radius-md);
+$radius-lg: var(--mk-radius-lg);
+$radius-xl: var(--mk-radius-xl);
+$radius-full: var(--mk-radius-pill);
+
+// --- Typographie -------------------------------------------
+$font-family: var(--mk-font-family);
+$font-size-body: var(--mk-font-size-md);
+$font-size-h1: var(--mk-font-size-2xl);
+$font-size-h2: var(--mk-font-size-xl);
+$font-size-h3: var(--mk-font-size-lg);
+$font-size-h4: var(--mk-font-size-md);
+$font-size-paragraph: var(--mk-font-size-md);
+$font-size-small: var(--mk-font-size-base);
+$font-size-caption: var(--mk-font-size-xs);
+
+// --- Transitions -------------------------------------------
+$transition-fast: var(--mk-transition-fast);
+$transition-all: all var(--mk-transition-normal);

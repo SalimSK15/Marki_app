@@ -1,5 +1,8 @@
 /* base/fonts.scss */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+// Inter est desormais hebergee par MARKI : voir
+// public/assets/fonts/inter.css, charge par marki-theme.css.
+// L'appel a fonts.googleapis.com etait de toute facon bloque
+// par la politique de securite (style-src 'self').
 
 // Variables de police
 $font-family-primary: "Inter", sans-serif;
