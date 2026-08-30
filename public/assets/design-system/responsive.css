@@ -883,6 +883,58 @@
     border-radius: var(--mk-radius-pill);
   }
 
+  .waiting-list tbody tr.patient-row--rejoined-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--mk-space-2) !important;
+    padding: var(--mk-space-2) var(--mk-space-3) !important;
+    border: 1px dashed var(--mk-border-color, #cbd5e1) !important;
+    border-radius: var(--mk-radius-md, 10px) !important;
+    background: var(--mk-color-neutral-50, #f8fafc) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    grid-column: 1 / -1 !important;
+    height: auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td.patient-num-cell {
+    flex: 0 0 auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td.rejoined-info-cell {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-icon {
+    flex: 0 0 auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-text {
+    flex: 1 1 auto !important;
+    font-size: var(--mk-font-size-xs, 0.82rem) !important;
+    line-height: 1.35 !important;
+    color: var(--mk-text-muted, #64748b) !important;
+    white-space: normal !important;
+    word-break: normal !important;
+  }
+
   .waiting-list .table-empty-state-cell {
     display: table-cell !important;
     width: 100% !important;

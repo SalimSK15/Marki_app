@@ -57,13 +57,13 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
         <section class="public-registration-card" aria-labelledby="registration-title">
             <div class="public-registration-card__hero">
                 <div class="public-registration-card__icon" aria-hidden="true">
-                    <svg class="mk-icon mk-icon--lg"><use href="#mk-user-plus"></use></svg>
+                    <svg class="mk-icon mk-icon--md"><use href="#mk-user-plus"></use></svg>
                 </div>
-                <div>
-                    <p class="public-registration-eyebrow">Liste d’attente</p>
-                    <h1 id="registration-title">S’inscrire en ligne</h1>
+                <div class="public-registration-card__hero-text">
+                    <p class="public-registration-eyebrow">Salle d’attente</p>
+                    <h1 id="registration-title">Rejoindre la file</h1>
                     <p id="registration-introduction">
-                        Chargement des informations du cabinet…
+                        Prenez votre numéro de passage en quelques secondes.
                     </p>
                 </div>
             </div>
@@ -108,7 +108,7 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
                                 name="full_name"
                                 autocomplete="name"
                                 maxlength="191"
-                                placeholder="Nom et prénom du patient"
+                                placeholder="Votre nom et prénom"
                                 required
                             >
                             <svg class="mk-icon mk-icon--sm public-input-icon" aria-hidden="true"><use href="#mk-user"></use></svg>
@@ -118,7 +118,7 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
 
                     <div class="public-registration-field">
                         <label for="registration-phone">
-                            Téléphone mobile <span aria-hidden="true">*</span>
+                            Numéro de téléphone <span aria-hidden="true">*</span>
                         </label>
                         <div class="public-input-wrapper">
                             <input
@@ -128,13 +128,13 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
                                 inputmode="numeric"
                                 autocomplete="tel"
                                 maxlength="13"
-                                placeholder="0550 80 30 90"
+                                placeholder="05XX / 06XX / 07XX"
                                 data-dz-mobile
                                 required
                             >
                             <svg class="mk-icon mk-icon--sm public-input-icon" aria-hidden="true"><use href="#mk-phone"></use></svg>
                         </div>
-                        <small class="public-registration-hint">Format algérien : 05XX / 06XX / 07XX</small>
+                        <small class="public-registration-hint">Format : 0550 80 30 90</small>
                         <small class="public-registration-error" data-error-for="phone"></small>
                     </div>
 

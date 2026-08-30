@@ -96,9 +96,12 @@
 .qr-code-canvas canvas,
 .qr-code-canvas img {
   display: block;
-  width: 236px !important;
-  height: 236px !important;
-  image-rendering: pixelated;
+  width: 100%;
+  max-width: 236px;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 10px;
 }
 
 .qr-code-canvas__error {

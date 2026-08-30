@@ -238,7 +238,7 @@ body.is-sidebar-collapsed .sidebar .sidebar__toggle-icon,
 .main-content {
   flex: 1;
   min-width: 0;
-  padding: var(--mk-space-5) var(--mk-space-6);
+  padding: var(--mk-space-5) var(--mk-space-6) clamp(2rem, 4vh, 3.5rem);
   background: var(--mk-surface-page);
   overflow-y: auto;
 }

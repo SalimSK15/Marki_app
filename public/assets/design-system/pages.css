@@ -109,6 +109,7 @@
 .day-list-page {
   max-width: 96rem;
   margin-inline: auto;
+  padding-bottom: clamp(2rem, 4vh, 3.5rem);
 }
 
 .v1-page__header,

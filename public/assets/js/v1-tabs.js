@@ -998,11 +998,11 @@
                 }
 
                 rowsHtml.push(`
-                  <tr class="patient-row--rejoined-info" aria-label="Information de réintégration">
-                    <td>
+                  <tr class="patient-row patient-row--rejoined-info" aria-label="Information de réintégration">
+                    <td class="patient-num-cell">
                       <span class="rejoined-info-num">${missing}</span>
                     </td>
-                    <td colspan="5">
+                    <td colspan="5" class="rejoined-info-cell">
                       <div class="rejoined-info-content">
                         <span class="rejoined-info-icon" aria-hidden="true">
                           <svg class="mk-icon mk-icon--xs"><use href="#mk-undo"></use></svg>
