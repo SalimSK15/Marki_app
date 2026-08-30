@@ -778,64 +778,13 @@
   };
 
   /* =======================================================
-     TOUTES LES LISTES (VUE LISTE & VUE CALENDRIER MENSUEL)
+     TOUTES LES LISTES (VUE TABLEAU / HISTORIQUE)
      ======================================================= */
-
-  const MONTH_NAMES = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
-
-  const calendarState = {
-    viewMode: 'list', // 'list' | 'calendar'
-    currentYear: new Date().getFullYear(),
-    currentMonth: new Date().getMonth(), // 0 = Janvier
-    queuesByDate: {},
-    isLoading: false,
-    requestId: 0
-  };
 
   function initListsPage() {
     const form = document.getElementById('queues-history-filters');
     const reset = document.getElementById('queues-reset-filters');
     const pageSize = document.getElementById('queues-page-size');
-
-    // Switcher Liste / Calendrier
-    const viewListBtn = document.getElementById('queues-view-list-btn');
-    const viewCalBtn = document.getElementById('queues-view-calendar-btn');
-
-    viewListBtn?.addEventListener('click', () => switchListsView('list'));
-    viewCalBtn?.addEventListener('click', () => switchListsView('calendar'));
-
-    // Navigation mois calendrier
-    const prevBtn = document.getElementById('queues-cal-prev-btn');
-    const nextBtn = document.getElementById('queues-cal-next-btn');
-    const todayBtn = document.getElementById('queues-cal-today-btn');
-
-    prevBtn?.addEventListener('click', () => {
-      calendarState.currentMonth--;
-      if (calendarState.currentMonth < 0) {
-        calendarState.currentMonth = 11;
-        calendarState.currentYear--;
-      }
-      loadCalendarMonthData();
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      calendarState.currentMonth++;
-      if (calendarState.currentMonth > 11) {
-        calendarState.currentMonth = 0;
-        calendarState.currentYear++;
-      }
-      loadCalendarMonthData();
-    });
-
-    todayBtn?.addEventListener('click', () => {
-      const now = new Date();
-      calendarState.currentYear = now.getFullYear();
-      calendarState.currentMonth = now.getMonth();
-      loadCalendarMonthData();
-    });
 
     if (!form || !pageSize) return;
 
@@ -852,11 +801,7 @@
       queuesState.perPage = Number(pageSize.value) || 12;
       queuesState.page = 1;
 
-      if (calendarState.viewMode === 'calendar') {
-        loadCalendarMonthData();
-      } else {
-        loadQueuesHistory();
-      }
+      loadQueuesHistory();
     });
 
     pageSize.addEventListener('change', () => {
@@ -872,224 +817,10 @@
       setInputValue('queues-date-to', '');
       setInputValue('queues-day-status', 'all');
 
-      if (calendarState.viewMode === 'calendar') {
-        loadCalendarMonthData();
-      } else {
-        loadQueuesHistory();
-      }
+      loadQueuesHistory();
     });
 
-    if (calendarState.viewMode === 'calendar') {
-      switchListsView('calendar');
-    } else {
-      loadQueuesHistory();
-    }
-  }
-
-  function switchListsView(mode) {
-    calendarState.viewMode = mode;
-
-    const listBtn = document.getElementById('queues-view-list-btn');
-    const calBtn = document.getElementById('queues-view-calendar-btn');
-    const listSection = document.getElementById('queues-list-view-section');
-    const calSection = document.getElementById('queues-calendar-view-section');
-
-    if (!listBtn || !calBtn || !listSection || !calSection) return;
-
-    const isCal = mode === 'calendar';
-    listBtn.classList.toggle('is-active', !isCal);
-    listBtn.setAttribute('aria-selected', String(!isCal));
-    calBtn.classList.toggle('is-active', isCal);
-    calBtn.setAttribute('aria-selected', String(isCal));
-
-    listSection.hidden = isCal;
-    calSection.hidden = !isCal;
-
-    // Ajuster visibilité des champs de dates dans le filtre
-    const dateFromField = document.getElementById('queues-date-from')?.closest('.v1-field');
-    const dateToField = document.getElementById('queues-date-to')?.closest('.v1-field');
-    const pageSizeField = document.getElementById('queues-page-size')?.closest('.v1-field');
-    if (dateFromField) dateFromField.style.display = isCal ? 'none' : '';
-    if (dateToField) dateToField.style.display = isCal ? 'none' : '';
-    if (pageSizeField) pageSizeField.style.display = isCal ? 'none' : '';
-
-    if (isCal) {
-      loadCalendarMonthData();
-    } else {
-      loadQueuesHistory();
-    }
-  }
-
-  async function loadCalendarMonthData() {
-    const grid = document.getElementById('queues-calendar-grid');
-    const title = document.getElementById('queues-calendar-title');
-    const message = document.getElementById('queues-history-message');
-    if (!grid) return;
-
-    const year = calendarState.currentYear;
-    const month = calendarState.currentMonth;
-    if (title) {
-      title.textContent = `${MONTH_NAMES[month]} ${year}`;
-    }
-
-    const lastDayDate = new Date(year, month + 1, 0);
-    const totalDays = lastDayDate.getDate();
-
-    const dateFromStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const dateToStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
-
-    grid.innerHTML = '<div class="v1-calendar-loading">Chargement du calendrier…</div>';
-    const requestId = ++calendarState.requestId;
-
-    try {
-      const params = new URLSearchParams({
-        date_from: dateFromStr,
-        date_to: dateToStr,
-        day_status: queuesState.dayStatus,
-        page: '1',
-        per_page: '50'
-      });
-
-      const response = await requestJson(`${API.queues}?${params.toString()}`);
-      if (requestId !== calendarState.requestId) return;
-
-      const items = response.data?.items || [];
-      calendarState.queuesByDate = {};
-      items.forEach(q => {
-        calendarState.queuesByDate[q.queue_date] = q;
-      });
-
-      renderCalendarGrid(year, month, items);
-    } catch (error) {
-      console.error('Erreur chargement calendrier :', error);
-      grid.innerHTML = '<div class="v1-calendar-error">Impossible de charger les journées du mois.</div>';
-      setMessage(message, error.message, 'error');
-    }
-  }
-
-  function renderCalendarGrid(year, month, items) {
-    const grid = document.getElementById('queues-calendar-grid');
-    if (!grid) return;
-
-    const firstDayDate = new Date(year, month, 1);
-    const lastDayDate = new Date(year, month + 1, 0);
-    const totalDays = lastDayDate.getDate();
-
-    // Lundi = 0 ... Dimanche = 6
-    const startDayOfWeek = (firstDayDate.getDay() + 6) % 7;
-
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-    let cellsHtml = '';
-
-    // 1. Jours du mois précédent
-    const prevMonthLastDate = new Date(year, month, 0).getDate();
-    for (let i = startDayOfWeek - 1; i >= 0; i--) {
-      const dayNum = prevMonthLastDate - i;
-      cellsHtml += `
-        <div class="v1-cal-cell is-outside-month">
-          <span class="v1-cal-date-num">${dayNum}</span>
-        </div>
-      `;
-    }
-
-    // 2. Jours du mois courant
-    for (let d = 1; d <= totalDays; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const isToday = dateStr === todayStr;
-      const queue = calendarState.queuesByDate[dateStr];
-
-      if (queue) {
-        const isSelected = Number(queue.id) === Number(queuesState.selectedId);
-        const total = Number(queue.total_entries || 0);
-        const statusClass = queue.day_status === 'active'
-          ? 'is-status-active'
-          : queue.day_status === 'completed'
-            ? 'is-status-completed'
-            : 'is-status-paused';
-
-        const statusLabel = queue.day_status === 'active'
-          ? 'Active'
-          : queue.day_status === 'completed'
-            ? 'Clôturée'
-            : 'En pause';
-
-        cellsHtml += `
-          <div
-            class="v1-cal-cell has-queue ${statusClass} ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}"
-            data-queue-id="${queue.id}"
-            data-queue-date="${dateStr}"
-            tabindex="0"
-            role="button"
-            title="Consulter la journée du ${formatDate(dateStr)}"
-          >
-            <div class="v1-cal-cell__top">
-              <span class="v1-cal-date-num ${isToday ? 'is-today-badge' : ''}">${d}</span>
-              <span class="v1-cal-status-pill">${statusLabel}</span>
-            </div>
-
-            <div class="v1-cal-total-box">
-              <span class="v1-cal-total-count">${total}</span>
-              <span class="v1-cal-total-label">${total > 1 ? 'patients' : 'patient'}</span>
-            </div>
-
-            <div class="v1-cal-mini-stats">
-              <span class="v1-cal-stat v1-cal-stat--done" title="${queue.done_count} terminés">✓ ${queue.done_count}</span>
-              <span class="v1-cal-stat v1-cal-stat--waiting" title="${queue.waiting_count} en attente">⏳ ${queue.waiting_count}</span>
-              ${Number(queue.no_show_count) > 0 ? `<span class="v1-cal-stat v1-cal-stat--absent" title="${queue.no_show_count} absents">✕ ${queue.no_show_count}</span>` : ''}
-            </div>
-          </div>
-        `;
-      } else {
-        cellsHtml += `
-          <div class="v1-cal-cell is-empty ${isToday ? 'is-today' : ''}" data-date="${dateStr}">
-            <div class="v1-cal-cell__top">
-              <span class="v1-cal-date-num ${isToday ? 'is-today-badge' : ''}">${d}</span>
-            </div>
-            <div class="v1-cal-no-queue">—</div>
-          </div>
-        `;
-      }
-    }
-
-    // 3. Jours du mois suivant pour compléter les 7 colonnes
-    const totalFilled = startDayOfWeek + totalDays;
-    const remaining = (7 - (totalFilled % 7)) % 7;
-    for (let j = 1; j <= remaining; j++) {
-      cellsHtml += `
-        <div class="v1-cal-cell is-outside-month">
-          <span class="v1-cal-date-num">${j}</span>
-        </div>
-      `;
-    }
-
-    grid.innerHTML = cellsHtml;
-
-    // Branchement des clics sur les cases calendrier
-    grid.querySelectorAll('.v1-cal-cell.has-queue').forEach(cell => {
-      const qId = Number(cell.dataset.queueId);
-      const open = () => {
-        grid.querySelectorAll('.v1-cal-cell').forEach(c => c.classList.remove('is-selected'));
-        cell.classList.add('is-selected');
-        selectQueue(qId);
-      };
-      cell.addEventListener('click', open);
-      cell.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          open();
-        }
-      });
-    });
-
-    if (items.length > 0) {
-      if (queuesState.selectedId && items.some(it => Number(it.id) === Number(queuesState.selectedId))) {
-        loadQueueDetails(queuesState.selectedId);
-      } else {
-        selectQueue(items[0].id);
-      }
-    }
+    loadQueuesHistory();
   }
 
   async function loadQueuesHistory() {
@@ -1198,13 +929,6 @@
       row.classList.toggle(
         'is-selected',
         Number(row.dataset.queueId) === queuesState.selectedId
-      );
-    });
-
-    document.querySelectorAll('#queues-calendar-grid .v1-cal-cell[data-queue-id]').forEach(cell => {
-      cell.classList.toggle(
-        'is-selected',
-        Number(cell.dataset.queueId) === queuesState.selectedId
       );
     });
 

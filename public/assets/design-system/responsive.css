@@ -681,25 +681,6 @@
     grid-row: 1 / span 2;
   }
 
-  .v1-view-switcher {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .v1-view-btn {
-    justify-content: center;
-  }
-
-  .v1-calendar-wrap {
-    overflow-x: auto;
-  }
-
-  .v1-calendar-grid,
-  .v1-calendar-weekdays {
-    min-width: 36rem;
-  }
-
   /* Tableau principal : les colonnes essentielles tiennent vraiment. */
   .waiting-list table {
     min-width: 0 !important;
