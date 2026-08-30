@@ -235,7 +235,7 @@
       setMessage(error.message, 'error');
     } finally {
       elements.confirmCancel.disabled = false;
-      elements.confirmCancel.textContent = 'Annuler mon inscription';
+      elements.confirmCancel.textContent = 'Confirmer l’annulation';
     }
   }
 

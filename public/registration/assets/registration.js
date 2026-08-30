@@ -300,7 +300,7 @@
 
     if (elements.submit) {
       elements.submit.disabled = true;
-      elements.submit.textContent = 'Inscription en cours…';
+      elements.submit.innerHTML = '<span class="public-registration-spinner" style="width:18px;height:18px;border-width:2px;" aria-hidden="true"></span><span>Inscription en cours…</span>';
     }
 
     try {
@@ -316,7 +316,7 @@
       const data = await readJson(response);
 
       if (!response.ok || !data?.ok) {
-        if (data?.error_code === 'PHONE_SHARED_CONFIRMATION_REQUIRED') {
+        if (data?.data?.allow_shared_phone_prompt) {
           setHidden(elements.sharedBox, false);
           if (elements.sharedMessage) elements.sharedMessage.textContent = data.message;
           state.allowSharedPhone = true;
@@ -338,7 +338,7 @@
       state.submitting = false;
       if (elements.submit) {
         elements.submit.disabled = false;
-        elements.submit.textContent = 'Rejoindre la liste d’attente';
+        elements.submit.innerHTML = '<svg class="mk-icon" aria-hidden="true"><use href="#mk-user-plus"></use></svg><span>Rejoindre la liste d’attente</span>';
       }
     }
   }
