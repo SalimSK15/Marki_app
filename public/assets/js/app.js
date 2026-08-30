@@ -2926,8 +2926,15 @@ function updatePatientDetails(entry) {
   sourceEl.textContent = formatSourceLabel(entry.source);
   statusEl.innerHTML = renderDetailStatusPill(entry.status, isCurrentPatient);
 
-  notesEl.textContent = entry.patient_notes?.trim()
-    || 'Aucune note disponible pour le moment.';
+  const notesCard = document.getElementById('patient-details-notes-card') || notesEl.closest('.patient-detail-card--notes');
+  const patientNote = (entry.patient_notes || '').trim();
+  if (patientNote) {
+    notesEl.textContent = patientNote;
+    if (notesCard) notesCard.hidden = false;
+  } else {
+    notesEl.textContent = '';
+    if (notesCard) notesCard.hidden = true;
+  }
 
   historyEl.innerHTML = renderPatientHistory(
     entry.recent_visits
