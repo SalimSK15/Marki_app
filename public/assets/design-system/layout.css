@@ -17,6 +17,11 @@
   z-index: var(--mk-z-sticky);
   background: var(--mk-surface-card);
   border-color: var(--mk-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  gap: 1rem;
 }
 
 /* Filet de marque sous l'en-tete : dégradé signature du logo */

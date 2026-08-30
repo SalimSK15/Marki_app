@@ -294,12 +294,12 @@
 
                     <thead>
                         <tr>
-                            <th>N° D’ARRIVÉE</th>
-                            <th>PATIENT</th>
-                            <th>TÉLÉPHONE</th>
-                            <th>HEURE</th>
-                            <th>STATUT</th>
-                            <th>ACTIONS</th>
+                            <th class="table-header-num">N°</th>
+                            <th class="table-header-patient">PATIENT</th>
+                            <th class="table-header-phone col-phone-header">TÉLÉPHONE</th>
+                            <th class="table-header-time">HEURE</th>
+                            <th class="table-header-status">STATUT</th>
+                            <th class="table-header-actions">ACTIONS</th>
                         </tr>
                     </thead>
 
@@ -558,9 +558,13 @@
                     </label>
 
                     <input
-                        type="date"
+                        type="text"
                         id="addPatientBirthDate"
                         name="birth_date"
+                        inputmode="numeric"
+                        maxlength="10"
+                        placeholder="JJ/MM/AAAA"
+                        autocomplete="bday"
                     >
                 </div>
 

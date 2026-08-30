@@ -425,20 +425,22 @@
   .header {
     position: relative;
     z-index: 20;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.75rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 0.7rem 0.8rem;
   }
 
   .header__profile {
     min-width: 0;
-    flex: 1 1 250px;
+    flex: 1 1 auto;
   }
 
   .header__profile .avatar {
     width: 40px;
     height: 40px;
+    flex: none;
   }
 
   .header__profile .profile-info {
@@ -454,7 +456,7 @@
 
   .header__right {
     width: auto;
-    flex: 1 1 300px;
+    flex: 0 0 auto;
     justify-content: flex-end;
     gap: 0.75rem;
   }

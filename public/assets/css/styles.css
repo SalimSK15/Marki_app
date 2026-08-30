@@ -476,22 +476,32 @@ p {
 }
 
 .day-list-page__top-actions .btn-primary:disabled,
+.btn-primary:disabled,
 .btn-toggle-list:disabled {
-  background-color: var(--mk-color-neutral-300);
-  color: var(--mk-text-muted);
+  background: var(--mk-color-neutral-100);
+  background-image: none;
+  color: var(--mk-color-neutral-400);
+  border: 1px solid var(--mk-color-neutral-200);
   box-shadow: none;
-  opacity: 1;
+  opacity: 0.85;
   cursor: not-allowed;
   transform: none;
 }
 .day-list-page__top-actions .btn-primary:disabled:hover,
+.btn-primary:disabled:hover,
 .btn-toggle-list:disabled:hover {
-  background-color: var(--mk-color-neutral-300);
+  background: var(--mk-color-neutral-100);
+  background-image: none;
+  color: var(--mk-color-neutral-400);
   transform: none;
+  box-shadow: none;
 }
 
+.day-list-page__top-actions .btn-primary:disabled .mk-icon,
+.btn-primary:disabled .mk-icon,
 .day-list-page__top-actions .btn-primary:disabled img {
-  opacity: 0.5;
+  color: var(--mk-color-neutral-400);
+  opacity: 0.75;
 }
 
 .queue-day-restore-button {
@@ -633,8 +643,6 @@ p {
 }
 
 /* Toolbar controls managed by design-system components.css */
-  transform: none;
-}
 
 .btn-current-patient__icon {
   font-size: 1.15rem;
@@ -731,6 +739,61 @@ p {
   box-shadow: inset 4px 0 0 var(--mk-color-primary-600), inset 0 0 0 1px var(--mk-alpha-primary-24);
 }
 
+.patient-row--rejoined-info {
+  background-color: var(--mk-color-neutral-25, #f8fafc) !important;
+  opacity: 0.9;
+  cursor: default;
+}
+
+.patient-row--rejoined-info td {
+  padding-top: 0.45rem !important;
+  padding-bottom: 0.45rem !important;
+  border-bottom: 1px dashed var(--mk-color-neutral-200) !important;
+}
+
+.rejoined-info-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mk-color-neutral-400);
+  background: var(--mk-color-neutral-100);
+  border: 1px dashed var(--mk-color-neutral-300);
+}
+
+.rejoined-info-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--mk-color-neutral-600);
+  font-size: 0.82rem;
+}
+
+.rejoined-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--mk-color-accent-600);
+  background: var(--mk-color-accent-50);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.rejoined-info-text {
+  line-height: 1.35;
+}
+
+.rejoined-info-text strong {
+  color: var(--mk-color-accent-700);
+  font-weight: 700;
+}
+
 .patient-name-cell,
 .patient-phone-cell {
   overflow: hidden;
@@ -752,6 +815,11 @@ p {
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
+}
+.status-pill--in_progress,
+.status-pill--current {
+  background-color: var(--mk-color-accent-50);
+  color: var(--mk-color-accent-600);
 }
 .status-pill--waiting {
   background-color: var(--mk-color-waiting-soft);

@@ -41,6 +41,31 @@
     if (element) element.hidden = hidden;
   }
 
+  function frenchBirthDateToIso(value) {
+    const normalized = String(value || '').trim();
+    if (!normalized) return '';
+    const match = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const iso = `${match[3]}-${match[2]}-${match[1]}`;
+    const date = new Date(`${iso}T00:00:00`);
+    return !Number.isNaN(date.getTime())
+      && date.getFullYear() === Number(match[3])
+      && date.getMonth() + 1 === Number(match[2])
+      && date.getDate() === Number(match[1])
+        ? iso
+        : null;
+  }
+
+  function bindFrenchBirthDateInput(input) {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const digits = input.value.replace(/\D/g, '').slice(0, 8);
+      input.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)]
+        .filter(Boolean)
+        .join('/');
+    });
+  }
+
   const STORAGE_PREFIX = 'marki:public-registration:';
 
   function storageKey() {
@@ -249,7 +274,7 @@
       token: state.token,
       full_name: elements.fullName?.value.trim() || '',
       phone: elements.phone?.value.trim() || '',
-      birth_date: elements.birthDate?.value || '',
+      birth_date: frenchBirthDateToIso(elements.birthDate?.value) || '',
       privacy_consent: Boolean(elements.consent?.checked),
       allow_shared_phone: state.allowSharedPhone
     };
@@ -267,6 +292,10 @@
 
     clearErrors();
     setMessage();
+    if (frenchBirthDateToIso(elements.birthDate?.value) === null) {
+      showErrors({ birth_date: 'Utilisez le format JJ/MM/AAAA.' });
+      return;
+    }
     state.submitting = true;
 
     if (elements.submit) {
@@ -330,6 +359,8 @@
         }
       });
     });
+
+  bindFrenchBirthDateInput(elements.birthDate);
 
   (async function initializeRegistration() {
     setHidden(elements.loading, false);

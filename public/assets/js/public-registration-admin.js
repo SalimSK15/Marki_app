@@ -86,6 +86,11 @@
     }
   }
 
+  const MONTHS_FR = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+
   function formatDateTime(value) {
     if (!value) return '—';
 
@@ -95,7 +100,12 @@
 
     if (!match) return String(value);
 
-    return `${match[3]}/${match[2]}/${match[1]} à ${match[4]}:${match[5]}`;
+    const day = parseInt(match[3], 10);
+    const monthIndex = parseInt(match[2], 10) - 1;
+    const year = match[1];
+    const monthName = MONTHS_FR[monthIndex] || match[2];
+
+    return `${day} ${monthName} ${year} à ${match[4]}:${match[5]}`;
   }
 
   function clearFieldErrors() {
@@ -187,6 +197,12 @@
     }
     if (byId('qr-admin-doctor-name')) {
       byId('qr-admin-doctor-name').textContent = data.doctor?.name || '—';
+    }
+    if (byId('qr-admin-doctor-initials')) {
+      const names = String(data.doctor?.name || '').replace(/^Dr\s+/i, '').trim().split(/\s+/).filter(Boolean);
+      byId('qr-admin-doctor-initials').textContent = names.length
+        ? `${names[0][0] || ''}${names.length > 1 ? names[names.length - 1][0] : ''}`.toUpperCase()
+        : 'DR';
     }
     if (byId('qr-admin-clinic-name')) {
       byId('qr-admin-clinic-name').textContent = data.clinic?.name || '—';
@@ -437,15 +453,65 @@
 
   function openPublicLink() {
     const url = byId('qr-public-url')?.value || '';
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    if (!url) return;
+
+    try {
+      const publicUrl = new URL(url, window.location.href);
+      const testUrl = `${publicUrl.pathname}${publicUrl.search}${publicUrl.hash}`;
+      window.open(testUrl, '_blank', 'noopener,noreferrer');
+    } catch (_) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   }
 
   function qrImageDataUrl() {
     const container = byId('qr-code-canvas');
-    const canvas = container?.querySelector('canvas');
-    if (canvas) return canvas.toDataURL('image/png');
+    const source = container?.querySelector('canvas');
+    if (!source) return container?.querySelector('img')?.src || '';
 
-    return container?.querySelector('img')?.src || '';
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 640;
+    exportCanvas.height = 760;
+    const context = exportCanvas.getContext('2d');
+    if (!context) return source.toDataURL('image/png');
+
+    const gradient = context.createLinearGradient(0, 0, 640, 760);
+    gradient.addColorStop(0, '#f0f9ff');
+    gradient.addColorStop(1, '#f5f3ff');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 640, 760);
+
+    context.fillStyle = '#7c3aed';
+    context.beginPath();
+    context.arc(82, 70, 34, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.font = '700 30px Arial';
+    context.textAlign = 'center';
+    context.fillText('M', 82, 80);
+    context.fillStyle = '#0b132b';
+    context.font = '800 30px Arial';
+    context.textAlign = 'left';
+    context.fillText('MARKI', 132, 80);
+
+    context.fillStyle = '#ffffff';
+    context.shadowColor = 'rgba(76, 29, 149, .18)';
+    context.shadowBlur = 28;
+    context.fillRect(52, 128, 536, 536);
+    context.shadowBlur = 0;
+    context.imageSmoothingEnabled = false;
+    context.drawImage(source, 78, 154, 484, 484);
+
+    const doctor = state.data?.doctor?.name || 'Votre médecin';
+    context.fillStyle = '#0b132b';
+    context.font = '800 30px Arial';
+    context.textAlign = 'center';
+    context.fillText(doctor, 320, 712, 540);
+    context.fillStyle = '#64748b';
+    context.font = '500 20px Arial';
+    context.fillText('Scannez pour rejoindre la liste d’attente', 320, 744, 560);
+
+    return exportCanvas.toDataURL('image/png');
   }
 
   function downloadQr() {

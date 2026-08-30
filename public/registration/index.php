@@ -121,9 +121,12 @@ $basePath = rtrim((string) ($public['config']['app']['base_path'] ?? ''), '/');
                             <span id="registration-birth-date-required" aria-hidden="true" hidden>*</span>
                         </label>
                         <input
-                            type="date"
+                            type="text"
                             id="registration-birth-date"
                             name="birth_date"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="JJ/MM/AAAA"
                             autocomplete="bday"
                         >
                         <small class="public-registration-error" data-error-for="birth_date"></small>

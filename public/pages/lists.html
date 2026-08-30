@@ -5,6 +5,17 @@
       <h2 id="lists-page-title">Toutes les listes</h2>
       <p>Consultez les journées précédentes, leurs compteurs et le détail complet des patients traités.</p>
     </div>
+
+    <div class="v1-view-switcher" role="tablist" aria-label="Mode d'affichage">
+      <button type="button" class="v1-view-btn is-active" id="queues-view-list-btn" role="tab" aria-selected="true" title="Afficher en liste">
+        <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-queue"></use></svg>
+        <span>Vue Liste</span>
+      </button>
+      <button type="button" class="v1-view-btn" id="queues-view-calendar-btn" role="tab" aria-selected="false" title="Afficher en calendrier">
+        <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-calendar"></use></svg>
+        <span>Vue Calendrier</span>
+      </button>
+    </div>
   </header>
 
   <form id="queues-history-filters" class="v1-toolbar v1-toolbar--filters">
@@ -46,7 +57,8 @@
   <div id="queues-history-message" class="v1-message" role="status" aria-live="polite"></div>
 
   <div class="v1-split-layout v1-split-layout--history">
-    <section class="v1-card v1-card--table" aria-labelledby="queues-history-title">
+    <!-- 1. VUE TABLEAU / LISTE -->
+    <section class="v1-card v1-card--table" id="queues-list-view-section" aria-labelledby="queues-history-title">
       <div class="v1-card__header">
         <div>
           <h3 id="queues-history-title">Journées</h3>
@@ -80,6 +92,41 @@
         <div id="queues-pagination-summary" class="v1-pagination-summary"></div>
         <nav id="queues-pagination" class="v1-pagination" aria-label="Pagination des listes"></nav>
       </footer>
+    </section>
+
+    <!-- 2. VUE CALENDRIER MENSUEL -->
+    <section class="v1-card v1-card--calendar" id="queues-calendar-view-section" aria-labelledby="queues-calendar-title" hidden>
+      <div class="v1-card__header v1-calendar-header">
+        <div>
+          <p class="v1-page__eyebrow">Vue mensuelle</p>
+          <h3 id="queues-calendar-title" class="v1-calendar-title">Calendrier</h3>
+        </div>
+
+        <div class="v1-calendar-nav">
+          <button type="button" class="v1-button v1-button--ghost v1-button--sm" id="queues-cal-prev-btn" title="Mois précédent" aria-label="Mois précédent">
+            <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-chevron-left"></use></svg>
+          </button>
+          <button type="button" class="v1-button v1-button--ghost v1-button--sm" id="queues-cal-today-btn">Aujourd’hui</button>
+          <button type="button" class="v1-button v1-button--ghost v1-button--sm" id="queues-cal-next-btn" title="Mois suivant" aria-label="Mois suivant">
+            <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-chevron-right"></use></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="v1-calendar-wrap">
+        <div class="v1-calendar-weekdays">
+          <span>Lun</span>
+          <span>Mar</span>
+          <span>Mer</span>
+          <span>Jeu</span>
+          <span>Ven</span>
+          <span>Sam</span>
+          <span>Dim</span>
+        </div>
+        <div class="v1-calendar-grid" id="queues-calendar-grid">
+          <!-- Les cases du calendrier mensuel sont générées ici -->
+        </div>
+      </div>
     </section>
 
     <aside class="v1-card v1-queue-detail" aria-labelledby="queue-detail-title">

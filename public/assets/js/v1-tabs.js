@@ -101,13 +101,58 @@
     }
   }
 
+  const MONTHS_FR = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+
   function formatDate(value) {
     if (!value) return '-';
 
     const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!match) return escapeHtml(value);
 
+    const day = parseInt(match[3], 10);
+    const monthIndex = parseInt(match[2], 10) - 1;
+    const year = match[1];
+    const monthName = MONTHS_FR[monthIndex] || match[2];
+
+    return `${day} ${monthName} ${year}`;
+  }
+
+  function formatDateToDigits(value) {
+    if (!value) return '';
+
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return String(value);
+
     return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  function frenchDateToIso(value) {
+    const normalized = String(value || '').trim();
+    if (!normalized) return '';
+    const match = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const iso = `${match[3]}-${match[2]}-${match[1]}`;
+    const date = new Date(`${iso}T00:00:00`);
+    return !Number.isNaN(date.getTime())
+      && date.getFullYear() === Number(match[3])
+      && date.getMonth() + 1 === Number(match[2])
+      && date.getDate() === Number(match[1])
+        ? iso
+        : null;
+  }
+
+  function bindFrenchDateInput(input) {
+    if (!input || input.dataset.frenchDateBound === '1') return;
+    input.dataset.frenchDateBound = '1';
+    input.addEventListener('input', () => {
+      const digits = input.value.replace(/\D/g, '').slice(0, 8);
+      input.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)]
+        .filter(Boolean)
+        .join('/');
+    });
   }
 
   function formatDateTime(value) {
@@ -119,7 +164,12 @@
 
     if (!match) return escapeHtml(value);
 
-    return `${match[3]}/${match[2]}/${match[1]} à ${match[4]}:${match[5]}`;
+    const day = parseInt(match[3], 10);
+    const monthIndex = parseInt(match[2], 10) - 1;
+    const year = match[1];
+    const monthName = MONTHS_FR[monthIndex] || match[2];
+
+    return `${day} ${monthName} ${year} à ${match[4]}:${match[5]}`;
   }
 
   /*
@@ -298,6 +348,8 @@
     const pageSize = document.getElementById('patients-page-size');
     const form = document.getElementById('patient-profile-form');
     const addButton = document.getElementById('patient-add-to-today-button');
+    const editButton = document.getElementById('patient-profile-edit-button');
+    const editModal = document.getElementById('patient-profile-edit-modal');
 
     if (!searchInput || !pageSize) return;
 
@@ -329,7 +381,15 @@
     });
 
     form?.addEventListener('submit', savePatientProfile);
+    bindFrenchDateInput(document.getElementById('patient-profile-birth-date'));
     addButton?.addEventListener('click', addPatientToTodayQueue);
+    editButton?.addEventListener('click', openPatientProfileModal);
+    document.querySelectorAll('[data-close-patient-profile-modal]').forEach(button => {
+      button.addEventListener('click', closePatientProfileModal);
+    });
+    editModal?.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closePatientProfileModal();
+    });
 
     if (requestedPatientId > 0) {
       focusPatientFromNavigation(requestedPatientId, searchInput);
@@ -421,8 +481,15 @@
           tabindex="0"
         >
           <td>
-            <span class="v1-table__patient-name">${escapeHtml(patient.full_name)}</span>
-            <span class="v1-table__subtext">Ajouté le ${formatDate(patient.created_at)}</span>
+            <div class="v1-table__patient-cell">
+              <span class="v1-table__patient-avatar-mini" aria-hidden="true">
+                <svg class="mk-icon mk-icon--sm"><use href="#mk-user"></use></svg>
+              </span>
+              <div class="v1-table__patient-info">
+                <span class="v1-table__patient-name">${escapeHtml(patient.full_name)}</span>
+                <span class="v1-table__subtext">Ajouté le ${formatDate(patient.created_at)}</span>
+              </div>
+            </div>
           </td>
           <td>${escapeHtml(formatPhoneForDisplay(patient.phone) || '-')}</td>
           <td>${formatDate(patient.birth_date)}</td>
@@ -480,12 +547,13 @@
     const content = document.getElementById('patient-profile-content');
     const title = document.getElementById('patient-profile-title');
     const formMessage = document.getElementById('patient-profile-form-message');
+    const editButton = document.getElementById('patient-profile-edit-button');
 
     if (!content || !empty) return;
 
-    empty.hidden = false;
-    empty.textContent = 'Chargement de la fiche…';
+    empty.hidden = true;
     content.hidden = true;
+    if (editButton) editButton.hidden = true;
     setMessage(formMessage);
 
     try {
@@ -501,26 +569,67 @@
       patientsState.selectedId = Number(patient.id);
 
       if (title) title.textContent = patient.full_name;
+      setProfileText('patient-view-full-name', patient.full_name, 'Patient');
+      setProfileText('patient-view-phone', formatPhoneForDisplay(patient.phone), 'Téléphone non renseigné');
+      setProfileText('patient-view-birth-date', patient.birth_date ? formatDate(patient.birth_date) : '', 'Non renseignée');
+      setProfileText('patient-view-email', patient.email, 'Non renseigné');
+      setProfileText('patient-view-address', patient.address, 'Non renseignée');
+      setProfileText('patient-view-notes', patient.notes_non_medical, 'Aucune note');
+      setProfileText('patient-profile-avatar', patientInitials(patient.full_name), '—');
       setInputValue('patient-profile-id', patient.id);
       setInputValue('patient-profile-full-name', patient.full_name);
       setInputValue('patient-profile-phone', formatPhoneForDisplay(patient.phone));
-      window.MarkiPhone?.bind(content);
-      setInputValue('patient-profile-birth-date', patient.birth_date);
+      window.MarkiPhone?.bind(document.getElementById('patient-profile-edit-modal'));
+      setInputValue('patient-profile-birth-date', patient.birth_date ? formatDateToDigits(patient.birth_date) : '');
       setInputValue('patient-profile-email', patient.email);
       setInputValue('patient-profile-address', patient.address);
       setInputValue('patient-profile-notes', patient.notes_non_medical);
 
       renderPatientVisits(patient.recent_visits || []);
-      renderPatientEntries(patient.recent_entries || []);
 
       empty.hidden = true;
       content.hidden = false;
+      if (editButton) editButton.hidden = false;
     } catch (error) {
       console.error('Fiche patient :', error);
       empty.hidden = false;
       empty.textContent = error.message;
       content.hidden = true;
+      if (editButton) editButton.hidden = true;
     }
+  }
+
+  function setProfileText(id, value, fallback) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = String(value || '').trim() || fallback;
+  }
+
+  function patientInitials(fullName) {
+    const names = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (!names.length) return '—';
+    return `${names[0][0] || ''}${names.length > 1 ? names[names.length - 1][0] : ''}`.toUpperCase();
+  }
+
+  function openPatientProfileModal() {
+    const modal = document.getElementById('patient-profile-edit-modal');
+    const patientId = Number(document.getElementById('patient-profile-id')?.value || 0);
+    if (!modal || patientId <= 0) return;
+
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('v1-profile-modal-open');
+    requestAnimationFrame(() => document.getElementById('patient-profile-full-name')?.focus());
+  }
+
+  function closePatientProfileModal() {
+    const modal = document.getElementById('patient-profile-edit-modal');
+    if (!modal || modal.hidden) return;
+
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('v1-profile-modal-open');
+    setMessage(document.getElementById('patient-profile-form-message'));
+    document.getElementById('patient-profile-edit-button')?.focus();
   }
 
   function setInputValue(id, value) {
@@ -533,6 +642,7 @@
     const empty = document.getElementById('patient-profile-empty');
     const content = document.getElementById('patient-profile-content');
     const title = document.getElementById('patient-profile-title');
+    const editButton = document.getElementById('patient-profile-edit-button');
 
     if (title) title.textContent = 'Sélectionnez un patient';
     if (empty) {
@@ -540,6 +650,8 @@
       empty.textContent = 'Cliquez sur un patient pour afficher sa fiche et son historique.';
     }
     if (content) content.hidden = true;
+    if (editButton) editButton.hidden = true;
+    closePatientProfileModal();
   }
 
   function renderPatientVisits(visits) {
@@ -569,29 +681,6 @@
     }).join('');
   }
 
-  function renderPatientEntries(entries) {
-    const container = document.getElementById('patient-queues-list');
-    const count = document.getElementById('patient-queues-count');
-    if (!container) return;
-
-    if (count) count.textContent = String(entries.length);
-
-    if (!entries.length) {
-      container.innerHTML = '<div class="v1-empty-panel">Aucun passage dans une liste.</div>';
-      return;
-    }
-
-    container.innerHTML = entries.map(entry => `
-      <article class="v1-timeline__item">
-        <div>
-          <strong>${formatDate(entry.queue_date)}${entry.position_number ? ` — N° d’arrivée ${entry.position_number}` : ''}</strong>
-          <p>Inscription : ${formatDateTime(entry.created_at)}</p>
-        </div>
-        ${renderStatus(entry.status)}
-      </article>
-    `).join('');
-  }
-
   async function savePatientProfile(event) {
     event.preventDefault();
 
@@ -604,6 +693,13 @@
 
     const payload = Object.fromEntries(new FormData(form).entries());
     payload.patient_id = patientId;
+    const birthDate = frenchDateToIso(payload.birth_date);
+    if (birthDate === null) {
+      setMessage(message, 'Saisissez la date de naissance au format JJ/MM/AAAA.', 'error');
+      document.getElementById('patient-profile-birth-date')?.focus();
+      return;
+    }
+    payload.birth_date = birthDate;
 
     setMessage(message);
     if (button) {
@@ -621,6 +717,7 @@
       setMessage(message, response.message || 'Fiche patient mise à jour.', 'success');
       await loadPatients();
       await loadPatientProfile(patientId);
+      closePatientProfileModal();
     } catch (error) {
       console.error('Mise à jour patient :', error);
       setMessage(message, error.message, 'error');
@@ -634,7 +731,7 @@
 
   async function addPatientToTodayQueue() {
     const button = document.getElementById('patient-add-to-today-button');
-    const message = document.getElementById('patient-profile-form-message');
+    const message = document.getElementById('patients-page-message');
     const patientId = Number(document.getElementById('patient-profile-id')?.value || 0);
 
     if (patientId <= 0) return;
@@ -681,13 +778,64 @@
   };
 
   /* =======================================================
-     TOUTES LES LISTES
+     TOUTES LES LISTES (VUE LISTE & VUE CALENDRIER MENSUEL)
      ======================================================= */
+
+  const MONTH_NAMES = [
+    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  ];
+
+  const calendarState = {
+    viewMode: 'list', // 'list' | 'calendar'
+    currentYear: new Date().getFullYear(),
+    currentMonth: new Date().getMonth(), // 0 = Janvier
+    queuesByDate: {},
+    isLoading: false,
+    requestId: 0
+  };
 
   function initListsPage() {
     const form = document.getElementById('queues-history-filters');
     const reset = document.getElementById('queues-reset-filters');
     const pageSize = document.getElementById('queues-page-size');
+
+    // Switcher Liste / Calendrier
+    const viewListBtn = document.getElementById('queues-view-list-btn');
+    const viewCalBtn = document.getElementById('queues-view-calendar-btn');
+
+    viewListBtn?.addEventListener('click', () => switchListsView('list'));
+    viewCalBtn?.addEventListener('click', () => switchListsView('calendar'));
+
+    // Navigation mois calendrier
+    const prevBtn = document.getElementById('queues-cal-prev-btn');
+    const nextBtn = document.getElementById('queues-cal-next-btn');
+    const todayBtn = document.getElementById('queues-cal-today-btn');
+
+    prevBtn?.addEventListener('click', () => {
+      calendarState.currentMonth--;
+      if (calendarState.currentMonth < 0) {
+        calendarState.currentMonth = 11;
+        calendarState.currentYear--;
+      }
+      loadCalendarMonthData();
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      calendarState.currentMonth++;
+      if (calendarState.currentMonth > 11) {
+        calendarState.currentMonth = 0;
+        calendarState.currentYear++;
+      }
+      loadCalendarMonthData();
+    });
+
+    todayBtn?.addEventListener('click', () => {
+      const now = new Date();
+      calendarState.currentYear = now.getFullYear();
+      calendarState.currentMonth = now.getMonth();
+      loadCalendarMonthData();
+    });
 
     if (!form || !pageSize) return;
 
@@ -703,7 +851,12 @@
       queuesState.dayStatus = document.getElementById('queues-day-status')?.value || 'all';
       queuesState.perPage = Number(pageSize.value) || 12;
       queuesState.page = 1;
-      loadQueuesHistory();
+
+      if (calendarState.viewMode === 'calendar') {
+        loadCalendarMonthData();
+      } else {
+        loadQueuesHistory();
+      }
     });
 
     pageSize.addEventListener('change', () => {
@@ -718,10 +871,225 @@
       setInputValue('queues-date-from', '');
       setInputValue('queues-date-to', '');
       setInputValue('queues-day-status', 'all');
-      loadQueuesHistory();
+
+      if (calendarState.viewMode === 'calendar') {
+        loadCalendarMonthData();
+      } else {
+        loadQueuesHistory();
+      }
     });
 
-    loadQueuesHistory();
+    if (calendarState.viewMode === 'calendar') {
+      switchListsView('calendar');
+    } else {
+      loadQueuesHistory();
+    }
+  }
+
+  function switchListsView(mode) {
+    calendarState.viewMode = mode;
+
+    const listBtn = document.getElementById('queues-view-list-btn');
+    const calBtn = document.getElementById('queues-view-calendar-btn');
+    const listSection = document.getElementById('queues-list-view-section');
+    const calSection = document.getElementById('queues-calendar-view-section');
+
+    if (!listBtn || !calBtn || !listSection || !calSection) return;
+
+    const isCal = mode === 'calendar';
+    listBtn.classList.toggle('is-active', !isCal);
+    listBtn.setAttribute('aria-selected', String(!isCal));
+    calBtn.classList.toggle('is-active', isCal);
+    calBtn.setAttribute('aria-selected', String(isCal));
+
+    listSection.hidden = isCal;
+    calSection.hidden = !isCal;
+
+    // Ajuster visibilité des champs de dates dans le filtre
+    const dateFromField = document.getElementById('queues-date-from')?.closest('.v1-field');
+    const dateToField = document.getElementById('queues-date-to')?.closest('.v1-field');
+    const pageSizeField = document.getElementById('queues-page-size')?.closest('.v1-field');
+    if (dateFromField) dateFromField.style.display = isCal ? 'none' : '';
+    if (dateToField) dateToField.style.display = isCal ? 'none' : '';
+    if (pageSizeField) pageSizeField.style.display = isCal ? 'none' : '';
+
+    if (isCal) {
+      loadCalendarMonthData();
+    } else {
+      loadQueuesHistory();
+    }
+  }
+
+  async function loadCalendarMonthData() {
+    const grid = document.getElementById('queues-calendar-grid');
+    const title = document.getElementById('queues-calendar-title');
+    const message = document.getElementById('queues-history-message');
+    if (!grid) return;
+
+    const year = calendarState.currentYear;
+    const month = calendarState.currentMonth;
+    if (title) {
+      title.textContent = `${MONTH_NAMES[month]} ${year}`;
+    }
+
+    const lastDayDate = new Date(year, month + 1, 0);
+    const totalDays = lastDayDate.getDate();
+
+    const dateFromStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const dateToStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
+
+    grid.innerHTML = '<div class="v1-calendar-loading">Chargement du calendrier…</div>';
+    const requestId = ++calendarState.requestId;
+
+    try {
+      const params = new URLSearchParams({
+        date_from: dateFromStr,
+        date_to: dateToStr,
+        day_status: queuesState.dayStatus,
+        page: '1',
+        per_page: '50'
+      });
+
+      const response = await requestJson(`${API.queues}?${params.toString()}`);
+      if (requestId !== calendarState.requestId) return;
+
+      const items = response.data?.items || [];
+      calendarState.queuesByDate = {};
+      items.forEach(q => {
+        calendarState.queuesByDate[q.queue_date] = q;
+      });
+
+      renderCalendarGrid(year, month, items);
+    } catch (error) {
+      console.error('Erreur chargement calendrier :', error);
+      grid.innerHTML = '<div class="v1-calendar-error">Impossible de charger les journées du mois.</div>';
+      setMessage(message, error.message, 'error');
+    }
+  }
+
+  function renderCalendarGrid(year, month, items) {
+    const grid = document.getElementById('queues-calendar-grid');
+    if (!grid) return;
+
+    const firstDayDate = new Date(year, month, 1);
+    const lastDayDate = new Date(year, month + 1, 0);
+    const totalDays = lastDayDate.getDate();
+
+    // Lundi = 0 ... Dimanche = 6
+    const startDayOfWeek = (firstDayDate.getDay() + 6) % 7;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let cellsHtml = '';
+
+    // 1. Jours du mois précédent
+    const prevMonthLastDate = new Date(year, month, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const dayNum = prevMonthLastDate - i;
+      cellsHtml += `
+        <div class="v1-cal-cell is-outside-month">
+          <span class="v1-cal-date-num">${dayNum}</span>
+        </div>
+      `;
+    }
+
+    // 2. Jours du mois courant
+    for (let d = 1; d <= totalDays; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isToday = dateStr === todayStr;
+      const queue = calendarState.queuesByDate[dateStr];
+
+      if (queue) {
+        const isSelected = Number(queue.id) === Number(queuesState.selectedId);
+        const total = Number(queue.total_entries || 0);
+        const statusClass = queue.day_status === 'active'
+          ? 'is-status-active'
+          : queue.day_status === 'completed'
+            ? 'is-status-completed'
+            : 'is-status-paused';
+
+        const statusLabel = queue.day_status === 'active'
+          ? 'Active'
+          : queue.day_status === 'completed'
+            ? 'Clôturée'
+            : 'En pause';
+
+        cellsHtml += `
+          <div
+            class="v1-cal-cell has-queue ${statusClass} ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}"
+            data-queue-id="${queue.id}"
+            data-queue-date="${dateStr}"
+            tabindex="0"
+            role="button"
+            title="Consulter la journée du ${formatDate(dateStr)}"
+          >
+            <div class="v1-cal-cell__top">
+              <span class="v1-cal-date-num ${isToday ? 'is-today-badge' : ''}">${d}</span>
+              <span class="v1-cal-status-pill">${statusLabel}</span>
+            </div>
+
+            <div class="v1-cal-total-box">
+              <span class="v1-cal-total-count">${total}</span>
+              <span class="v1-cal-total-label">${total > 1 ? 'patients' : 'patient'}</span>
+            </div>
+
+            <div class="v1-cal-mini-stats">
+              <span class="v1-cal-stat v1-cal-stat--done" title="${queue.done_count} terminés">✓ ${queue.done_count}</span>
+              <span class="v1-cal-stat v1-cal-stat--waiting" title="${queue.waiting_count} en attente">⏳ ${queue.waiting_count}</span>
+              ${Number(queue.no_show_count) > 0 ? `<span class="v1-cal-stat v1-cal-stat--absent" title="${queue.no_show_count} absents">✕ ${queue.no_show_count}</span>` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        cellsHtml += `
+          <div class="v1-cal-cell is-empty ${isToday ? 'is-today' : ''}" data-date="${dateStr}">
+            <div class="v1-cal-cell__top">
+              <span class="v1-cal-date-num ${isToday ? 'is-today-badge' : ''}">${d}</span>
+            </div>
+            <div class="v1-cal-no-queue">—</div>
+          </div>
+        `;
+      }
+    }
+
+    // 3. Jours du mois suivant pour compléter les 7 colonnes
+    const totalFilled = startDayOfWeek + totalDays;
+    const remaining = (7 - (totalFilled % 7)) % 7;
+    for (let j = 1; j <= remaining; j++) {
+      cellsHtml += `
+        <div class="v1-cal-cell is-outside-month">
+          <span class="v1-cal-date-num">${j}</span>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = cellsHtml;
+
+    // Branchement des clics sur les cases calendrier
+    grid.querySelectorAll('.v1-cal-cell.has-queue').forEach(cell => {
+      const qId = Number(cell.dataset.queueId);
+      const open = () => {
+        grid.querySelectorAll('.v1-cal-cell').forEach(c => c.classList.remove('is-selected'));
+        cell.classList.add('is-selected');
+        selectQueue(qId);
+      };
+      cell.addEventListener('click', open);
+      cell.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      });
+    });
+
+    if (items.length > 0) {
+      if (queuesState.selectedId && items.some(it => Number(it.id) === Number(queuesState.selectedId))) {
+        loadQueueDetails(queuesState.selectedId);
+      } else {
+        selectQueue(items[0].id);
+      }
+    }
   }
 
   async function loadQueuesHistory() {
@@ -833,6 +1201,13 @@
       );
     });
 
+    document.querySelectorAll('#queues-calendar-grid .v1-cal-cell[data-queue-id]').forEach(cell => {
+      cell.classList.toggle(
+        'is-selected',
+        Number(cell.dataset.queueId) === queuesState.selectedId
+      );
+    });
+
     await loadQueueDetails(queueId);
   }
 
@@ -880,16 +1255,57 @@
       if (!entries.length) {
         body.innerHTML = '<tr><td colspan="6" class="v1-empty-cell">Aucun patient pour cette journée.</td></tr>';
       } else {
-        body.innerHTML = entries.map(entry => `
-          <tr>
-            <td>${entry.position_number ?? '-'}</td>
-            <td><strong>${escapeHtml(entry.display_name)}</strong></td>
-            <td>${escapeHtml(formatPhoneForDisplay(entry.phone) || '-')}</td>
-            <td>${renderStatus(entry.status)}</td>
-            <td>${escapeHtml(entry.created_by_name || '-')}</td>
-            <td>${escapeHtml(entry.updated_by_name || '-')}</td>
-          </tr>
-        `).join('');
+        const allRejoined = entries.filter(e => Boolean(e.last_rejoined_at));
+        const rowsHtml = [];
+        let prevNumber = 0;
+        const usedRejoinedIds = new Set();
+
+        entries.forEach((entry, index) => {
+          const currentNum = Number(entry.position_number);
+          if (!isNaN(currentNum)) {
+            const startGap = index === 0 ? 1 : prevNumber + 1;
+            if (currentNum > startGap) {
+              for (let missing = startGap; missing < currentNum; missing++) {
+                const matchRejoined = allRejoined.find(r => !usedRejoinedIds.has(r.id) && Number(r.position_number) > missing);
+                let explanationText = 'Ce patient a été marqué comme absent puis réintégré tout en bas de la liste.';
+                if (matchRejoined) {
+                  usedRejoinedIds.add(matchRejoined.id);
+                  explanationText = `Ce patient a été marqué comme absent puis réintégré tout en bas de la liste (actuellement <strong>N° ${matchRejoined.position_number}</strong> — ${escapeHtml(matchRejoined.display_name)}).`;
+                }
+
+                rowsHtml.push(`
+                  <tr class="patient-row--rejoined-info" aria-label="Information de réintégration">
+                    <td>
+                      <span class="rejoined-info-num">${missing}</span>
+                    </td>
+                    <td colspan="5">
+                      <div class="rejoined-info-content">
+                        <span class="rejoined-info-icon" aria-hidden="true">
+                          <svg class="mk-icon mk-icon--xs"><use href="#mk-undo"></use></svg>
+                        </span>
+                        <span class="rejoined-info-text">${explanationText}</span>
+                      </div>
+                    </td>
+                  </tr>
+                `);
+              }
+            }
+            prevNumber = currentNum;
+          }
+
+          rowsHtml.push(`
+            <tr>
+              <td>${entry.position_number ?? '-'}</td>
+              <td><strong>${escapeHtml(entry.display_name)}</strong></td>
+              <td>${escapeHtml(formatPhoneForDisplay(entry.phone) || '-')}</td>
+              <td>${renderStatus(entry.status)}</td>
+              <td>${escapeHtml(entry.created_by_name || '-')}</td>
+              <td>${escapeHtml(entry.updated_by_name || '-')}</td>
+            </tr>
+          `);
+        });
+
+        body.innerHTML = rowsHtml.join('');
       }
 
       empty.hidden = true;
@@ -943,7 +1359,7 @@
         if (!section) return;
 
         button.dataset.sectionToggleBound = '1';
-        setSettingsSectionExpanded(section, button, false);
+        setSettingsSectionExpanded(section, button, section.id === 'public-registration-section');
 
         button.addEventListener('click', () => {
           const expanded = button.getAttribute('aria-expanded') === 'true';
@@ -953,11 +1369,27 @@
   }
 
   async function initSettingsPage() {
-    const form = document.getElementById('settings-form');
-    if (!form || form.dataset.markiInitialized === '1') return;
+    const clinicForm = document.getElementById('clinic-settings-form');
+    const doctorForm = document.getElementById('doctor-settings-form');
+    const page = document.querySelector('.v1-settings-page');
+    if (!page || page.dataset.markiInitialized === '1') return;
 
-    form.dataset.markiInitialized = '1';
-    form.addEventListener('submit', saveSettings);
+    page.dataset.markiInitialized = '1';
+    const settingsGrid = page.querySelector('.v1-settings-grid');
+    const qrSection = document.getElementById('public-registration-section');
+    if (settingsGrid && qrSection) settingsGrid.before(qrSection);
+    clinicForm?.addEventListener('submit', saveSettings);
+    doctorForm?.addEventListener('submit', saveSettings);
+    document.getElementById('clinic-settings-edit-button')?.addEventListener('click', () => openSettingsModal('clinic-settings-modal'));
+    document.getElementById('doctor-settings-edit-button')?.addEventListener('click', () => openSettingsModal('doctor-settings-modal'));
+    document.querySelectorAll('[data-close-settings-modal]').forEach(button => {
+      button.addEventListener('click', closeSettingsModals);
+    });
+    document.querySelectorAll('.v1-settings-modal').forEach(modal => {
+      modal.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeSettingsModals();
+      });
+    });
     bindSettingsEnhancements();
     bindSettingsCollapsibleSections();
 
@@ -976,13 +1408,10 @@
 
   async function loadSettings() {
     const message = document.getElementById('settings-page-message');
-    const form = document.getElementById('settings-form');
-    const button = document.getElementById('settings-save-button');
-
-    if (!form) return;
+    const buttons = document.querySelectorAll('#clinic-settings-save-button, #doctor-settings-save-button');
 
     setMessage(message, 'Chargement des paramètres…', 'info');
-    if (button) button.disabled = true;
+    buttons.forEach(button => { button.disabled = true; });
 
     try {
       const response = await requestJson(API.settings);
@@ -997,7 +1426,7 @@
       setMessage(message, `${error.message}${detail}${reference}`, 'error');
       return false;
     } finally {
-      if (button) button.disabled = false;
+      buttons.forEach(button => { button.disabled = false; });
     }
   }
 
@@ -1029,6 +1458,25 @@
     setInputValue('settings-doctor-specialty', doctor.specialty);
     setInputValue('settings-doctor-license', doctor.license_number);
     setInputValue('settings-doctor-address', doctor.address);
+
+    const clinicTypes = {
+      solo: 'Cabinet individuel',
+      clinic: 'Clinique',
+      hospital_simple: 'Établissement médical'
+    };
+    const clinicAddress = [clinic.address, clinic.city].filter(Boolean).join(', ');
+    setProfileText('settings-view-clinic-name', clinic.name, 'Structure sans nom');
+    setProfileText('settings-view-clinic-type', clinicTypes[clinic.type] || 'Structure médicale', 'Structure médicale');
+    setProfileText('settings-view-clinic-phone', window.MarkiPhone
+      ? window.MarkiPhone.formatAdaptivePhone(clinic.phone)
+      : formatPhoneForDisplay(clinic.phone), 'Non renseigné');
+    setProfileText('settings-view-clinic-wilaya', clinic.wilaya, 'Non renseignée');
+    setProfileText('settings-view-clinic-address', clinicAddress, 'Non renseignée');
+    setProfileText('settings-view-clinic-timezone', timezone, 'Africa/Algiers');
+    setProfileText('settings-view-doctor-name', doctor.display_name, 'Médecin');
+    setProfileText('settings-view-doctor-specialty', doctor.specialty, 'Spécialité non renseignée');
+    setProfileText('settings-view-doctor-license', doctor.license_number, 'Non renseigné');
+    setProfileText('settings-view-doctor-address', doctor.address, 'Non renseignée');
   }
 
   function updateTimezoneFlag(timezone) {
@@ -1042,6 +1490,25 @@
       'America/New_York': 'us.svg'
     };
     flag.src = `assets/icons/flags/${files[timezone] || 'dz.svg'}`;
+    const viewFlag = document.getElementById('settings-view-timezone-flag');
+    if (viewFlag) viewFlag.src = flag.src;
+  }
+
+  function openSettingsModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('v1-profile-modal-open');
+    requestAnimationFrame(() => modal.querySelector('input, select')?.focus());
+  }
+
+  function closeSettingsModals() {
+    document.querySelectorAll('.v1-settings-modal').forEach(modal => {
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+    });
+    document.body.classList.remove('v1-profile-modal-open');
   }
 
   function bindSettingsEnhancements() {
@@ -1056,46 +1523,32 @@
     const canManageDoctor = Boolean(permissions.can_manage_doctor);
     const clinicCard = document.getElementById('clinic-settings-card');
     const doctorCard = document.getElementById('doctor-settings-card');
-    const saveButton = document.getElementById('settings-save-button');
-    const actions = document.getElementById('settings-actions');
-    const note = document.getElementById('settings-context-note');
+    const clinicEditButton = document.getElementById('clinic-settings-edit-button');
+    const doctorEditButton = document.getElementById('doctor-settings-edit-button');
 
     clinicCard?.classList.toggle('is-readonly', !canManageClinic);
     doctorCard?.classList.toggle('is-readonly', !canManageDoctor);
 
-    clinicCard?.querySelectorAll('input, select, textarea').forEach(field => {
+    document.getElementById('clinic-settings-form')?.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(field => {
       field.disabled = !canManageClinic;
     });
 
-    doctorCard?.querySelectorAll('input, select, textarea').forEach(field => {
+    document.getElementById('doctor-settings-form')?.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(field => {
       field.disabled = !canManageDoctor;
     });
-
-    const canSave = canManageClinic || canManageDoctor;
-
-    if (saveButton) {
-      saveButton.hidden = !canSave;
-      saveButton.disabled = !canSave;
-    }
-
-    if (actions) {
-      actions.classList.toggle('is-readonly', !canSave);
-    }
-
-    if (note) {
-      note.textContent = canSave
-        ? 'Vérifiez les informations avant de les enregistrer.'
-        : 'Ces informations sont disponibles en lecture seule.';
-    }
+    if (clinicEditButton) clinicEditButton.hidden = !canManageClinic;
+    if (doctorEditButton) doctorEditButton.hidden = !canManageDoctor;
   }
 
   async function saveSettings(event) {
     event.preventDefault();
 
-    const form = event.currentTarget;
     const message = document.getElementById('settings-page-message');
-    const button = document.getElementById('settings-save-button');
-    const payload = Object.fromEntries(new FormData(form).entries());
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    const payload = {
+      ...Object.fromEntries(new FormData(document.getElementById('clinic-settings-form')).entries()),
+      ...Object.fromEntries(new FormData(document.getElementById('doctor-settings-form')).entries())
+    };
 
     setMessage(message);
     if (button) {
@@ -1113,6 +1566,7 @@
       fillSettingsForm(response.data?.clinic || {}, response.data?.doctor || {});
       applySettingsPermissions(response.data?.permissions || {});
       setMessage(message);
+      closeSettingsModals();
 
       if (typeof window.showToast === 'function') {
         window.showToast(
@@ -1126,7 +1580,7 @@
     } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = 'Enregistrer les paramètres';
+        button.textContent = 'Enregistrer les modifications';
       }
     }
   }

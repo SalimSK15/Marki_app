@@ -32,69 +32,30 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 
   <div id="settings-page-message" class="v1-message" role="status" aria-live="polite"></div>
 
-  <form id="settings-form" class="v1-settings-grid" novalidate>
+  <div class="v1-settings-grid">
     <section class="v1-card" id="clinic-settings-card" aria-labelledby="clinic-settings-title">
       <div class="v1-card__header">
         <div>
           <p class="v1-page__eyebrow">Structure</p>
           <h3 id="clinic-settings-title">Cabinet ou clinique</h3>
         </div>
+        <button type="button" class="v1-button v1-button--secondary v1-settings-edit-button" id="clinic-settings-edit-button">
+          <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-pencil"></use></svg>
+          <span>Modifier</span>
+        </button>
       </div>
 
-      <div class="v1-form__grid">
-        <label class="v1-field v1-field--wide">
-          <span>Nom de la structure <strong class="required-mark" aria-hidden="true">*</strong></span>
-          <input type="text" id="settings-clinic-name" name="clinic_name" required>
-        </label>
-
-        <label class="v1-field">
-          <span>Type de structure</span>
-          <select id="settings-clinic-type" name="clinic_type">
-            <option value="solo">Cabinet individuel</option>
-            <option value="clinic">Clinique</option>
-            <option value="hospital_simple">Établissement médical</option>
-          </select>
-        </label>
-
-        <label class="v1-field">
-          <span>Téléphone de la structure</span>
-          <input type="tel" id="settings-clinic-phone" name="clinic_phone" inputmode="tel" data-dz-phone-auto>
-        </label>
-
-        <label class="v1-field v1-field--wide">
-          <span>Adresse</span>
-          <input type="text" id="settings-clinic-address" name="clinic_address" autocomplete="street-address">
-        </label>
-
-        <div class="v1-location-fields" data-algeria-location-group>
-          <label class="v1-field">
-            <span>Wilaya / région</span>
-            <select id="settings-clinic-wilaya" name="clinic_wilaya" data-algeria-wilaya>
-              <option value="">Choisir une wilaya</option>
-            </select>
-          </label>
-
-          <label class="v1-field">
-            <span>Ville / commune</span>
-            <input type="text" id="settings-clinic-city" name="clinic_city" list="settings-clinic-city-options" data-algeria-city autocomplete="address-level2">
-            <datalist id="settings-clinic-city-options"></datalist>
-          </label>
+      <div class="v1-settings-summary">
+        <div class="v1-settings-identity v1-settings-identity--clinic">
+          <span class="v1-settings-identity__icon" aria-hidden="true"><svg class="mk-icon"><use href="#mk-settings"></use></svg></span>
+          <div><strong id="settings-view-clinic-name">—</strong><span id="settings-view-clinic-type">—</span></div>
         </div>
-
-        <label class="v1-field v1-field--wide">
-          <span>Fuseau horaire <strong class="required-mark" aria-hidden="true">*</strong></span>
-          <span class="timezone-select-wrap">
-            <img id="settings-timezone-flag" class="timezone-flag" src="assets/icons/flags/dz.svg" alt="">
-            <select id="settings-clinic-timezone" name="clinic_timezone" required>
-              <option value="Africa/Algiers">Algérie — Africa/Algiers</option>
-              <option value="America/Toronto">Canada — America/Toronto</option>
-              <option value="Europe/Paris">France — Europe/Paris</option>
-              <option value="Africa/Tunis">Tunisie — Africa/Tunis</option>
-              <option value="America/New_York">États-Unis — America/New_York</option>
-            </select>
-          </span>
-          <small>Les dates et les heures seront affichées selon le fuseau choisi.</small>
-        </label>
+        <dl class="v1-profile-details">
+          <div class="v1-profile-detail"><dt>Téléphone</dt><dd id="settings-view-clinic-phone">Non renseigné</dd></div>
+          <div class="v1-profile-detail v1-profile-detail--email"><dt>Wilaya / région</dt><dd id="settings-view-clinic-wilaya">Non renseignée</dd></div>
+          <div class="v1-profile-detail v1-profile-detail--address"><dt>Adresse</dt><dd id="settings-view-clinic-address">Non renseignée</dd></div>
+          <div class="v1-profile-detail v1-profile-detail--notes"><dt>Fuseau horaire</dt><dd class="v1-settings-timezone"><img id="settings-view-timezone-flag" src="assets/icons/flags/dz.svg" alt=""><span id="settings-view-clinic-timezone">—</span></dd></div>
+        </dl>
       </div>
     </section>
 
@@ -104,38 +65,58 @@ if (session_status() === PHP_SESSION_ACTIVE) {
           <p class="v1-page__eyebrow">Profil professionnel</p>
           <h3 id="doctor-settings-title">Profil du médecin</h3>
         </div>
+        <button type="button" class="v1-button v1-button--secondary v1-settings-edit-button" id="doctor-settings-edit-button">
+          <svg class="mk-icon mk-icon--sm" aria-hidden="true"><use href="#mk-pencil"></use></svg>
+          <span>Modifier</span>
+        </button>
       </div>
 
-      <div class="v1-form__grid">
-        <label class="v1-field v1-field--wide">
-          <span>Nom affiché <strong class="required-mark" aria-hidden="true">*</strong></span>
-          <input type="text" id="settings-doctor-name" name="doctor_display_name" required>
-        </label>
-
-        <label class="v1-field v1-field--wide">
-          <span>Spécialité</span>
-          <input type="text" id="settings-doctor-specialty" name="doctor_specialty">
-        </label>
-
-        <label class="v1-field v1-field--wide">
-          <span>Numéro d’agrément / licence</span>
-          <input type="text" id="settings-doctor-license" name="doctor_license_number">
-        </label>
-
-        <label class="v1-field v1-field--wide">
-          <span>Adresse professionnelle</span>
-          <input type="text" id="settings-doctor-address" name="doctor_address">
-        </label>
+      <div class="v1-settings-summary">
+        <div class="v1-settings-identity v1-settings-identity--doctor">
+          <span class="v1-settings-identity__icon" aria-hidden="true"><svg class="mk-icon"><use href="#mk-user"></use></svg></span>
+          <div><strong id="settings-view-doctor-name">—</strong><span id="settings-view-doctor-specialty">Spécialité non renseignée</span></div>
+        </div>
+        <dl class="v1-profile-details">
+          <div class="v1-profile-detail"><dt>Numéro d’agrément / licence</dt><dd id="settings-view-doctor-license">Non renseigné</dd></div>
+          <div class="v1-profile-detail v1-profile-detail--address"><dt>Adresse professionnelle</dt><dd id="settings-view-doctor-address">Non renseignée</dd></div>
+        </dl>
       </div>
     </section>
+  </div>
 
-    <div class="v1-settings-actions" id="settings-actions">
-      <p id="settings-context-note">Vérifiez les informations avant de les enregistrer.</p>
-      <button type="submit" class="v1-button v1-button--primary" id="settings-save-button">
-        Enregistrer les paramètres
-      </button>
-    </div>
-  </form>
+  <div class="v1-profile-modal v1-settings-modal" id="clinic-settings-modal" hidden aria-hidden="true">
+    <button type="button" class="v1-profile-modal__backdrop" data-close-settings-modal aria-label="Fermer"></button>
+    <section class="v1-profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="clinic-settings-modal-title">
+      <header class="v1-profile-modal__header"><div><p class="v1-page__eyebrow">Structure</p><h3 id="clinic-settings-modal-title">Modifier le cabinet</h3><p>Mettez à jour les informations générales de votre structure.</p></div><button type="button" class="v1-profile-modal__close" data-close-settings-modal aria-label="Fermer"><svg class="mk-icon"><use href="#mk-close"></use></svg></button></header>
+      <form id="clinic-settings-form" class="v1-form v1-profile-modal__form" novalidate>
+        <div class="v1-form__grid">
+          <label class="v1-field v1-field--wide"><span>Nom de la structure <strong class="required-mark" aria-hidden="true">*</strong></span><input type="text" id="settings-clinic-name" name="clinic_name" required></label>
+          <label class="v1-field"><span>Type de structure</span><select id="settings-clinic-type" name="clinic_type"><option value="solo">Cabinet individuel</option><option value="clinic">Clinique</option><option value="hospital_simple">Établissement médical</option></select></label>
+          <label class="v1-field"><span>Téléphone de la structure</span><input type="tel" id="settings-clinic-phone" name="clinic_phone" inputmode="tel" data-dz-phone-auto></label>
+          <label class="v1-field v1-field--wide"><span>Adresse</span><input type="text" id="settings-clinic-address" name="clinic_address" autocomplete="street-address"></label>
+          <div class="v1-location-fields" data-algeria-location-group><label class="v1-field"><span>Wilaya / région</span><select id="settings-clinic-wilaya" name="clinic_wilaya" data-algeria-wilaya><option value="">Choisir une wilaya</option></select></label><label class="v1-field"><span>Ville / commune</span><input type="text" id="settings-clinic-city" name="clinic_city" list="settings-clinic-city-options" data-algeria-city autocomplete="address-level2"><datalist id="settings-clinic-city-options"></datalist></label></div>
+          <label class="v1-field v1-field--wide"><span>Fuseau horaire <strong class="required-mark" aria-hidden="true">*</strong></span><span class="timezone-select-wrap"><img id="settings-timezone-flag" class="timezone-flag" src="assets/icons/flags/dz.svg" alt=""><select id="settings-clinic-timezone" name="clinic_timezone" required><option value="Africa/Algiers">Algérie — Africa/Algiers</option><option value="America/Toronto">Canada — America/Toronto</option><option value="Europe/Paris">France — Europe/Paris</option><option value="Africa/Tunis">Tunisie — Africa/Tunis</option><option value="America/New_York">États-Unis — America/New_York</option></select></span><small>Les dates et les heures seront affichées selon le fuseau choisi.</small></label>
+        </div>
+        <div class="v1-form__actions v1-profile-modal__actions"><button type="button" class="v1-button v1-button--ghost" data-close-settings-modal>Annuler</button><button type="submit" class="v1-button v1-button--primary" id="clinic-settings-save-button">Enregistrer les modifications</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="v1-profile-modal v1-settings-modal" id="doctor-settings-modal" hidden aria-hidden="true">
+    <button type="button" class="v1-profile-modal__backdrop" data-close-settings-modal aria-label="Fermer"></button>
+    <section class="v1-profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="doctor-settings-modal-title">
+      <header class="v1-profile-modal__header"><div><p class="v1-page__eyebrow">Profil professionnel</p><h3 id="doctor-settings-modal-title">Modifier le profil du médecin</h3><p>Actualisez les informations professionnelles affichées dans MARKI.</p></div><button type="button" class="v1-profile-modal__close" data-close-settings-modal aria-label="Fermer"><svg class="mk-icon"><use href="#mk-close"></use></svg></button></header>
+      <form id="doctor-settings-form" class="v1-form v1-profile-modal__form" novalidate>
+        <div class="v1-form__grid">
+          <label class="v1-field v1-field--wide"><span>Nom affiché <strong class="required-mark" aria-hidden="true">*</strong></span><input type="text" id="settings-doctor-name" name="doctor_display_name" required></label>
+          <label class="v1-field v1-field--wide"><span>Spécialité</span><input type="text" id="settings-doctor-specialty" name="doctor_specialty"></label>
+          <label class="v1-field v1-field--wide"><span>Numéro d’agrément / licence</span><input type="text" id="settings-doctor-license" name="doctor_license_number"></label>
+          <label class="v1-field v1-field--wide"><span>Adresse professionnelle</span><input type="text" id="settings-doctor-address" name="doctor_address"></label>
+        </div>
+        <div class="v1-form__actions v1-profile-modal__actions"><button type="button" class="v1-button v1-button--ghost" data-close-settings-modal>Annuler</button><button type="submit" class="v1-button v1-button--primary" id="doctor-settings-save-button">Enregistrer les modifications</button></div>
+      </form>
+    </section>
+  </div>
 
   <?php if ($canManageQr): ?>
   <section id="public-registration-section" class="v1-card qr-admin-card v1-collapsible-section is-collapsed" aria-labelledby="public-registration-title">
@@ -178,8 +159,11 @@ if (session_status() === PHP_SESSION_ACTIVE) {
           <span id="qr-token-version" class="v1-soft-badge">Version —</span>
         </div>
 
-        <div id="qr-code-canvas" class="qr-code-canvas" aria-label="QR code d’inscription"></div>
-        <p class="qr-admin-doctor" id="qr-admin-doctor-name">—</p>
+        <div class="qr-code-brand-frame">
+          <div class="qr-code-brand-frame__brand"><span class="qr-code-brand-frame__mark" aria-hidden="true">M</span><span>MARKI</span></div>
+          <div id="qr-code-canvas" class="qr-code-canvas" aria-label="QR code d’inscription"></div>
+          <div class="qr-code-brand-frame__doctor"><span id="qr-admin-doctor-initials" aria-hidden="true">DR</span><strong id="qr-admin-doctor-name">—</strong></div>
+        </div>
         <p class="qr-admin-clinic" id="qr-admin-clinic-name">—</p>
         <p class="qr-admin-scan-hint">Scannez pour rejoindre la liste d’attente</p>
 
