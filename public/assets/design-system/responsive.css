@@ -69,80 +69,201 @@
   .v1-collapsible-section__actions {
     align-items: stretch;
   }
-
-  /* La nav devient une barre horizontale defilante. */
-  .layout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    padding: var(--mk-space-2);
-    border-right: 0;
-    border-bottom: 1px solid var(--mk-border-color);
-    overflow-x: auto;
-  }
-
-  .sidebar__menu {
-    flex-direction: row;
-    gap: var(--mk-space-1);
-  }
-
-  .sidebar__item {
-    white-space: nowrap;
-  }
-
-  /* Le bandeau vertical devient un souligne. */
-  .sidebar__item::before {
-    top: auto;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 3px;
-    border-radius: var(--mk-radius-pill) var(--mk-radius-pill) 0 0;
-    transform: translateX(-50%);
-    transition: width var(--mk-transition-normal);
-  }
-
-  .sidebar__item.active::before {
-    width: 1.5rem;
-    height: 3px;
-  }
 }
 
-/* Telephone */
-@media (max-width: 640px) {
+/* =========================================================
+   ADAPTATION MOBILE (< 768px)
+   ========================================================= */
+@media (max-width: 768px) {
   :root {
-    /* Cible tactile plus genereuse au doigt. */
     --mk-control-height: 2.75rem;
     --mk-control-height-sm: 2.25rem;
   }
 
+  /* 1. La sidebar desktop est masquée au profit de la bottom nav */
+  .sidebar {
+    display: none !important;
+  }
+
+  .layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .main-content {
+    padding: 0.85rem 0.85rem calc(4.85rem + env(safe-area-inset-bottom, 0px)) 0.85rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 2. En-tête mobile : Médecin à gauche, Profil à droite sur la même ligne */
   .header {
-    flex-wrap: wrap;
-    padding: var(--mk-space-3) var(--mk-space-4);
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0.65rem 0.85rem;
+    min-height: 3.6rem;
+  }
+
+  .header__profile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.65rem;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .header__profile .avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+  }
+
+  .profile-info {
+    min-width: 0;
+  }
+
+  .profile-info h1 {
+    font-size: 0.92rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-info p {
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-doctor-switcher select {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .header__right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto;
   }
 
   .header__datetime {
-    padding: var(--mk-space-1) var(--mk-space-2);
+    display: none !important;
   }
 
-  .v1-page__header h2,
+  .account-menu summary {
+    padding: 0.35rem 0.65rem;
+  }
+
+  .account-menu__name {
+    font-size: 0.8rem;
+  }
+
+  /* 3. Haut du tableau de bord : Titre à gauche, Actions à droite */
+  .day-list-page__top {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 0.5rem;
+  }
+
+  .day-list-page__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
   .day-list-page__heading h2 {
-    font-size: var(--mk-font-size-lg);
+    font-size: 1.15rem;
+    white-space: nowrap;
+  }
+
+  .day-list-page__heading p {
+    display: none;
+  }
+
+  .day-list-page__top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+    width: auto !important;
+  }
+
+  /* 1. Le bouton "Nouveau patient" est masqué en haut sur mobile (géré par le FAB central) */
+  #openAddPatientModalBtn {
+    display: none !important;
+  }
+
+  .registration-status-badge,
+  .btn-toggle-list {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.72rem;
+  }
+
+  /* 4. Organisation : La LISTE vient EN PREMIER, les détails en bas */
+  .day-list-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  .day-list-main {
+    order: 1 !important; /* File du jour EN PREMIER */
+    width: 100%;
+  }
+
+  .patient-details {
+    order: 2 !important; /* Détails du patient EN BAS */
+    width: 100%;
   }
 
   .status-counters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
   }
 
-  .day-list-page__top-actions {
-    width: 100%;
+  .counter {
+    padding: 0.85rem 0.95rem;
+    gap: 0.65rem;
   }
 
-  .day-list-page__top-actions .btn-primary,
-  .day-list-page__top-actions .btn-toggle-list {
-    flex: 1 1 auto;
+  .counter__icon-box {
+    width: 2.65rem;
+    height: 2.65rem;
+  }
+
+  /* 5. Modales en Bottom Sheet tactile sur smartphone */
+  .marki-modal,
+  .team-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .marki-modal__dialog,
+  .team-modal__dialog,
+  .patient-modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+    max-height: 88dvh;
+    margin: 0 !important;
+    box-shadow: 0 -10px 40px rgba(11, 19, 43, 0.2);
+    animation: slideUpMobile 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .day-list-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
 
   .v1-button,
@@ -150,23 +271,816 @@
   .platform-button {
     width: 100%;
   }
+}
 
-  .team-modal__dialog,
-  .marki-modal__dialog {
-    width: calc(100vw - 1rem);
-    max-height: calc(100dvh - 1rem);
+/* =========================================================
+   MOBILE-FIRST POLISH — les pages secondaires deviennent des
+   vues tactiles, pas des tableaux desktop miniaturises.
+   ========================================================= */
+@media (max-width: 768px) {
+  .main-content {
+    padding: var(--mk-space-4) var(--mk-space-3) calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    gap: var(--mk-space-2);
+    padding: var(--mk-space-2) var(--mk-space-3);
+    background: color-mix(in srgb, var(--mk-surface-card) 92%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-sizing: border-box;
+    max-width: 100vw;
+    overflow: visible;
+  }
+
+  .header__profile {
+    gap: var(--mk-space-2);
+    position: relative;
+    z-index: 2;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: calc(100vw - 6.5rem);
+  }
+
+  .header__profile .avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .profile-info h1,
+  .profile-info > p {
+    display: none;
+  }
+
+  .profile-info,
+  .header-doctor-switcher {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .header-doctor-switcher select {
+    width: 100%;
+    max-width: 12.5rem;
+    min-height: 2.5rem;
+    padding-inline: var(--mk-space-3) 2rem;
+    border: 1px solid var(--mk-border-color-brand);
+    border-radius: var(--mk-radius-pill);
+    color: var(--mk-text-main);
+    background: var(--mk-surface-card);
+    box-shadow: var(--mk-shadow-xs);
+    font-weight: var(--mk-font-weight-semibold);
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .header__right {
+    position: relative;
+    z-index: 3;
+    width: auto !important;
+    max-width: 4.75rem;
+    flex: 0 0 4.75rem !important;
+    justify-content: flex-end !important;
+  }
+
+  .account-menu {
+    width: 4.75rem !important;
+    min-width: 4.75rem !important;
+    max-width: 4.75rem !important;
+    flex: 0 0 4.75rem !important;
+  }
+
+  .account-menu summary {
+    width: 4.75rem !important;
+    min-width: 4.75rem !important;
+    max-width: 4.75rem !important;
+    min-height: 2.5rem;
+    padding: 0 var(--mk-space-2);
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--mk-radius-pill);
+    background: var(--mk-surface-brand-soft);
+    border-color: var(--mk-border-color-brand);
+    cursor: pointer;
+  }
+
+  .account-menu summary::before {
+    content: "Profil";
+    color: var(--mk-color-primary-700);
+    font-size: var(--mk-font-size-xs);
+    font-weight: var(--mk-font-weight-bold);
+  }
+
+  .account-menu__name,
+  .account-menu__role {
+    display: none;
+  }
+
+  .account-menu__panel {
+    position: fixed;
+    inset-inline: var(--mk-space-3);
+    top: 3.75rem;
+    width: auto;
+    z-index: calc(var(--mk-z-sticky) + 2);
+  }
+
+  .v1-page,
+  .day-list-page {
+    gap: var(--mk-space-4);
+  }
+
+  .v1-page__header,
+  .day-list-page__top {
+    margin-bottom: 0;
+    padding-bottom: var(--mk-space-3);
+  }
+
+  .v1-page__header h2,
+  .day-list-page__heading h2 {
+    font-size: 1.35rem;
+  }
+
+  .v1-page__header p:last-child {
+    font-size: var(--mk-font-size-sm);
+    line-height: var(--mk-line-snug);
+  }
+
+  .v1-toolbar {
+    padding: var(--mk-space-3);
+    gap: var(--mk-space-3);
     border-radius: var(--mk-radius-lg);
   }
 
-  .day-list-footer {
-    flex-direction: column;
-    align-items: flex-start;
+  .v1-toolbar .v1-search,
+  .v1-toolbar .v1-select-field,
+  .v1-toolbar .v1-field {
+    width: 100%;
   }
+
+  .v1-search input,
+  .search-box input {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .v1-card,
+  .panel,
+  .waiting-list,
+  .counter {
+    border-radius: var(--mk-radius-lg);
+  }
+
+  .v1-card__header {
+    padding: var(--mk-space-4);
+  }
+
+  .v1-card__header h3 {
+    font-size: var(--mk-font-size-md);
+  }
+
+  .v1-card__footer {
+    padding: var(--mk-space-3) var(--mk-space-4);
+  }
+
+  .v1-pagination {
+    justify-content: center;
+  }
+
+  .v1-pagination button {
+    min-width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--mk-radius-md);
+  }
+
+  .v1-patient-profile,
+  .v1-queue-detail {
+    position: static;
+    max-height: none;
+  }
+
+  #patient-profile-content,
+  #queue-detail-content {
+    padding: var(--mk-space-4);
+  }
+
+  .v1-form__grid,
+  .v1-definition-grid,
+  .v1-location-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v1-form__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v1-field input,
+  .v1-field select,
+  .v1-field textarea,
+  .v1-select-field select {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .v1-settings-grid {
+    gap: var(--mk-space-4);
+  }
+
+  .v1-settings-grid > .v1-card .v1-form__grid {
+    padding: var(--mk-space-4);
+  }
+
+  .v1-settings-actions {
+    position: static;
+    padding: var(--mk-space-3);
+  }
+
+  .v1-settings-actions p {
+    display: none;
+  }
+
+  .v1-collapsible-section > .v1-card__header,
+  .qr-admin-card__header,
+  .team-card__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .v1-collapsible-section__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .v1-section-toggle {
+    width: auto !important;
+  }
+
+  .mobile-bottom-nav {
+    background: color-mix(in srgb, var(--mk-surface-card) 94%, transparent);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 -0.5rem 2rem var(--mk-alpha-primary-12);
+  }
+}
+
+@media (max-width: 620px) {
+  .v1-toolbar__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .v1-toolbar__actions .v1-button {
+    width: 100%;
+  }
+
+  /* Mes Patients : chaque ligne devient une carte a deux colonnes. */
+  .v1-patients-page .v1-table-wrap {
+    overflow: visible;
+    padding: var(--mk-space-2);
+  }
+
+  .v1-patients-page .v1-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .v1-patients-page .v1-table thead {
+    display: none;
+  }
+
+  .v1-patients-page .v1-table tbody {
+    display: grid;
+    gap: var(--mk-space-2);
+  }
+
+  .v1-patients-page .v1-table tbody tr[data-patient-id] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--mk-space-1) var(--mk-space-3);
+    padding: var(--mk-space-3);
+    border: 1px solid var(--mk-border-color);
+    border-radius: var(--mk-radius-md);
+    background: var(--mk-surface-card);
+    box-shadow: var(--mk-shadow-xs);
+  }
+
+  .v1-patients-page .v1-table tbody tr.is-selected {
+    border-color: var(--mk-border-color-brand);
+    box-shadow: inset 3px 0 0 var(--mk-color-primary-600), var(--mk-shadow-sm);
+  }
+
+  .v1-patients-page .v1-table tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .v1-patients-page .v1-table tbody td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .v1-patients-page .v1-table tbody td:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+    color: var(--mk-text-body);
+    font-weight: var(--mk-font-weight-semibold);
+  }
+
+  .v1-patients-page .v1-table tbody td:nth-child(2)::before {
+    content: "Tel. ";
+    color: var(--mk-text-muted);
+    font-size: var(--mk-font-size-xs);
+  }
+
+  .v1-patients-page .v1-table tbody td:nth-child(3),
+  .v1-patients-page .v1-table tbody td:nth-child(4),
+  .v1-patients-page .v1-table tbody td:nth-child(5) {
+    display: none;
+  }
+
+  .v1-patients-page .v1-table tbody td:last-child {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .v1-patients-page .v1-icon-button,
+  .v1-lists-page .v1-icon-button {
+    min-width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--mk-radius-pill);
+  }
+
+  /* Historique : resume utile en cartes, details complets dessous. */
+  .v1-lists-page .v1-table-wrap:not(.v1-table-wrap--detail) {
+    overflow: visible;
+    padding: var(--mk-space-2);
+  }
+
+  .v1-lists-page .v1-table--history {
+    display: block;
+    min-width: 0;
+  }
+
+  .v1-lists-page .v1-table--history thead {
+    display: none;
+  }
+
+  .v1-lists-page .v1-table--history tbody {
+    display: grid;
+    gap: var(--mk-space-2);
+  }
+
+  .v1-lists-page .v1-table--history tbody tr[data-queue-id] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--mk-space-2);
+    padding: var(--mk-space-3);
+    border: 1px solid var(--mk-border-color);
+    border-radius: var(--mk-radius-md);
+    background: var(--mk-surface-card);
+  }
+
+  .v1-lists-page .v1-table--history tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .v1-lists-page .v1-table--history tbody td:first-child {
+    grid-column: 1;
+    font-size: var(--mk-font-size-md);
+  }
+
+  .v1-lists-page .v1-table--history tbody td:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .v1-lists-page .v1-table--history tbody td:nth-child(3) {
+    grid-column: 1;
+    color: var(--mk-text-muted);
+  }
+
+  .v1-lists-page .v1-table--history tbody td:nth-child(3)::before {
+    content: "Patients : ";
+    font-size: var(--mk-font-size-xs);
+  }
+
+  .v1-lists-page .v1-table--history tbody td:nth-child(n+4):nth-child(-n+7) {
+    display: none;
+  }
+
+  .v1-lists-page .v1-table--history tbody td:last-child {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  /* Tableau principal : les colonnes essentielles tiennent vraiment. */
+  .waiting-list table {
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  .waiting-list .table-header-phone,
+  .waiting-list .patient-phone-cell,
+  .waiting-list .table-header-status,
+  .waiting-list tbody td:nth-child(5) {
+    display: none !important;
+  }
+
+  .waiting-list .table-header-num,
+  .waiting-list .patient-num-cell {
+    width: 2.5rem;
+  }
+
+  .waiting-list .table-header-time,
+  .waiting-list .patient-time-cell {
+    width: 3.5rem;
+  }
+
+  .waiting-list .table-header-actions,
+  .waiting-list tbody td:last-child {
+    width: 6.5rem;
+  }
+
+  .waiting-list th,
+  .waiting-list td {
+    padding-inline: var(--mk-space-2) !important;
+  }
+
+  .waiting-list .table-empty-state-cell {
+    width: 100%;
+  }
+
+  .day-list-page__top {
+    align-items: flex-start !important;
+    flex-wrap: wrap;
+  }
+
+  .day-list-page__top-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100% !important;
+  }
+
+  .registration-status-badge,
+  .btn-toggle-list {
+    width: 100%;
+    min-height: 2.5rem;
+    justify-content: center;
+  }
+
+  .day-list-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .filter-box,
+  .filter-box select,
+  .btn-current-patient {
+    width: 100%;
+  }
+
+  .status-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .counter__sparkline,
+  .counter__dots {
+    display: none;
+  }
+
+  /* Liste du jour : cartes compactes, actions dans une bande dediee.
+     Cela supprime la colonne blanche lorsque seule l'action Modifier existe. */
+  .waiting-list {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible;
+    padding: var(--mk-space-2);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .waiting-list table,
+  .waiting-list tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .waiting-list table colgroup,
+  .waiting-list table thead {
+    display: none;
+  }
+
+  .waiting-list tbody {
+    display: grid;
+    gap: var(--mk-space-2);
+  }
+
+  .waiting-list tbody tr[data-entry-id] {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: var(--mk-space-1) var(--mk-space-2);
+    padding: var(--mk-space-3);
+    border: 1px solid var(--mk-border-color);
+    border-radius: var(--mk-radius-lg);
+    background: var(--mk-surface-card);
+    box-shadow: var(--mk-shadow-sm);
+    height: auto !important;
+  }
+
+  .waiting-list tbody tr[data-entry-id].is-current {
+    border-color: var(--mk-border-color-brand);
+    box-shadow: inset 3px 0 0 var(--mk-color-primary-600), var(--mk-shadow-md);
+  }
+
+  .waiting-list tbody tr[data-entry-id] > td {
+    display: block !important;
+    width: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .waiting-list tbody tr[data-entry-id] > .patient-phone-cell {
+    display: none !important;
+  }
+
+  .waiting-list tbody tr[data-entry-id] .patient-num-cell {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem !important;
+    height: 2.35rem;
+    border-radius: var(--mk-radius-pill);
+    color: var(--mk-color-primary-700);
+    background: var(--mk-surface-brand-soft);
+    font-size: var(--mk-font-size-md);
+    font-weight: var(--mk-font-weight-bold);
+  }
+
+  .waiting-list tbody tr[data-entry-id] .patient-name-cell {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    align-self: center;
+  }
+
+  .waiting-list tbody tr[data-entry-id] .patient-name-text {
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--mk-font-size-md);
+  }
+
+  .waiting-list tbody tr[data-entry-id] .patient-time-cell {
+    grid-column: 2;
+    grid-row: 2;
+    color: var(--mk-text-muted);
+    font-size: var(--mk-font-size-xs);
+    font-weight: var(--mk-font-weight-medium);
+  }
+
+  .waiting-list tbody tr[data-entry-id] .patient-time-cell::before {
+    content: "Arrivee ";
+  }
+
+  .waiting-list tbody tr[data-entry-id] > td:nth-child(5) {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    display: flex !important;
+    align-items: center;
+  }
+
+  .waiting-list tbody tr[data-entry-id] > td:last-child {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: var(--mk-space-2);
+    padding-top: var(--mk-space-2) !important;
+    border-top: 1px solid var(--mk-border-color) !important;
+  }
+
+  .waiting-list tbody tr[data-entry-id] .table-actions {
+    justify-content: flex-end;
+    gap: var(--mk-space-2);
+    min-height: 2.5rem;
+  }
+
+  .waiting-list tbody tr[data-entry-id] .btn-action-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--mk-radius-pill);
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--mk-space-2) !important;
+    padding: var(--mk-space-2) var(--mk-space-3) !important;
+    border: 1px dashed var(--mk-border-color, #cbd5e1) !important;
+    border-radius: var(--mk-radius-md, 10px) !important;
+    background: var(--mk-color-neutral-50, #f8fafc) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    grid-column: 1 / -1 !important;
+    height: auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td.patient-num-cell {
+    flex: 0 0 auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info > td.rejoined-info-cell {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-icon {
+    flex: 0 0 auto !important;
+  }
+
+  .waiting-list tbody tr.patient-row--rejoined-info .rejoined-info-text {
+    flex: 1 1 auto !important;
+    font-size: var(--mk-font-size-xs, 0.82rem) !important;
+    line-height: 1.35 !important;
+    color: var(--mk-text-muted, #64748b) !important;
+    white-space: normal !important;
+    word-break: normal !important;
+  }
+
+  .waiting-list .table-empty-state-cell {
+    display: table-cell !important;
+    width: 100% !important;
+    min-height: 16rem;
+    border: 1px solid var(--mk-border-color) !important;
+    border-radius: var(--mk-radius-lg);
+    background: var(--mk-surface-card);
+  }
+}
+
+/* Optimisation des colonnes du tableau sur smartphone */
+@media (max-width: 640px) {
+  .v1-settings-page .v1-card__header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .v1-settings-edit-button {
+    width: auto !important;
+    min-height: 2.5rem;
+    padding-inline: var(--mk-space-3);
+  }
+
+  .v1-settings-summary {
+    padding: var(--mk-space-3);
+  }
+
+  .v1-patients-page .v1-patient-profile .v1-card__header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .v1-profile-edit-button {
+    width: auto !important;
+    min-height: 2.5rem;
+    padding-inline: var(--mk-space-3);
+  }
+
+  .v1-profile-summary {
+    padding: var(--mk-space-3);
+  }
+
+  .v1-profile-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v1-profile-detail--address,
+  .v1-profile-detail--notes {
+    grid-column: auto;
+  }
+
+  .v1-profile-modal {
+    align-items: end;
+    padding: 0;
+  }
+
+  .v1-profile-modal__dialog {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
+  }
+
+  .v1-profile-modal__header,
+  .v1-profile-modal__form {
+    padding: var(--mk-space-4);
+  }
+
+  .v1-profile-modal__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .col-phone,
+  .col-phone-header,
+  .patient-phone-cell {
+    display: none !important;
+  }
+
+  .patient-num-cell,
+  .table-header-num {
+    width: 2.5rem;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .patient-name-cell {
+    min-width: 7.5rem;
+  }
+
+  .patient-name-text {
+    font-weight: 600;
+    color: #0b132b;
+    line-height: 1.25;
+  }
+
+  .patient-desc-subtext {
+    display: block;
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 400;
+    margin-top: 2px;
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .patient-time-cell {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  .table-actions {
+    gap: 0.25rem;
+  }
+
+  .btn-action-icon {
+    width: 1.95rem;
+    height: 1.95rem;
+  }
+
+  .btn-action-icon .mk-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+@keyframes slideUpMobile {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 @media (max-width: 420px) {
   .status-counters {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .counter {
+    padding: var(--mk-space-3);
+  }
+
+  .counter__icon-box {
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
 

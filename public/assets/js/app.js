@@ -169,6 +169,32 @@ function getAddPatientModalElements() {
     )
   };
 }
+
+function frenchBirthDateToIso(value) {
+  const normalized = String(value || '').trim();
+  if (!normalized) return '';
+  const match = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  const iso = `${match[3]}-${match[2]}-${match[1]}`;
+  const date = new Date(`${iso}T00:00:00`);
+  return !Number.isNaN(date.getTime())
+    && date.getFullYear() === Number(match[3])
+    && date.getMonth() + 1 === Number(match[2])
+    && date.getDate() === Number(match[1])
+      ? iso
+      : null;
+}
+
+function bindFrenchBirthDateInput(input) {
+  if (!input || input.dataset.frenchDateBound === '1') return;
+  input.dataset.frenchDateBound = '1';
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '').slice(0, 8);
+    input.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)]
+      .filter(Boolean)
+      .join('/');
+  });
+}
 /*
 |--------------------------------------------------------------------------
 | Normaliser un nom de personne côté front
@@ -558,7 +584,13 @@ async function handleAddPatientSubmit(event) {
   const mode = formModeInput?.value || 'create';
   const fullName = normalizePersonName(fullNameInput.value);
   const phone = normalizePhoneNumber(phoneInput.value);
-  const birthDate = birthDateInput?.value.trim() || '';
+  const birthDate = frenchBirthDateToIso(birthDateInput?.value);
+
+  if (birthDate === null) {
+    setAddPatientFormMessage('Saisissez la date de naissance au format JJ/MM/AAAA.', 'error');
+    birthDateInput?.focus();
+    return;
+  }
 
   fullNameInput.value = fullName;
   /*
@@ -1113,6 +1145,7 @@ function bindAddPatientModalEvents() {
     'change',
     clearPatientFormFeedback
   );
+  bindFrenchBirthDateInput(birthDateInput);
 }
 /*
 |--------------------------------------------------------------------------
@@ -1301,7 +1334,7 @@ function bindQueueDayControls() {
 // ==========================================================
 
 function setActiveMenuItem(page) {
-    document.querySelectorAll('.sidebar__item').forEach(item => {
+    document.querySelectorAll('.sidebar__item, .mobile-bottom-nav__item').forEach(item => {
         item.classList.remove('active');
 
         if (item.getAttribute('data-page') === page) {
@@ -2254,16 +2287,21 @@ function updateAddPatientButtonState(queue) {
   addPatientButton.disabled = !canRegister;
 
   const buttonLabel = addPatientButton.querySelector('span');
+  const buttonIconUse = addPatientButton.querySelector('use');
 
   if (buttonLabel) {
     if (queue?.day_status === 'completed') {
       buttonLabel.textContent = 'Journée clôturée';
+      if (buttonIconUse) buttonIconUse.setAttribute('href', '#mk-check-circle');
     } else if (queue?.day_status === 'paused') {
       buttonLabel.textContent = 'Liste en pause';
+      if (buttonIconUse) buttonIconUse.setAttribute('href', '#mk-pause');
     } else if (queue?.registration_status === 'closed') {
       buttonLabel.textContent = 'Inscriptions fermées';
+      if (buttonIconUse) buttonIconUse.setAttribute('href', '#mk-lock');
     } else {
       buttonLabel.textContent = '+ Nouveau patient';
+      if (buttonIconUse) buttonIconUse.setAttribute('href', '#mk-user-plus');
     }
   }
 
@@ -2428,7 +2466,46 @@ function renderDashboardTable(entries) {
   const canProcessPatients = dayStatus === 'active';
   const canEdit = dayStatus !== 'completed';
 
-  tableBody.innerHTML = entries.map(entry => {
+  const allRejoined = (dashboardState.entries || []).filter(e => Boolean(e.last_rejoined_at));
+  const isFullList = dashboardState.statusFilter === 'all' && !dashboardState.searchTerm;
+  const rowsHtml = [];
+  let prevNumber = 0;
+  const usedRejoinedIds = new Set();
+
+  entries.forEach((entry, index) => {
+    const currentNum = Number(entry.number);
+
+    if (isFullList && !isNaN(currentNum)) {
+      const startGap = index === 0 ? 1 : prevNumber + 1;
+      if (currentNum > startGap) {
+        for (let missing = startGap; missing < currentNum; missing++) {
+          const matchRejoined = allRejoined.find(r => !usedRejoinedIds.has(r.id) && Number(r.number) > missing);
+          let explanationText = 'Ce patient a été marqué comme absent puis réintégré tout en bas de la liste.';
+          if (matchRejoined) {
+            usedRejoinedIds.add(matchRejoined.id);
+            explanationText = `Ce patient a été marqué comme absent puis réintégré tout en bas de la liste (actuellement <strong>N° ${matchRejoined.number}</strong> — ${escapeHtml(matchRejoined.display_name)}).`;
+          }
+
+          rowsHtml.push(`
+            <tr class="patient-row patient-row--rejoined-info" aria-label="Information de réintégration">
+              <td class="patient-num-cell">
+                <span class="rejoined-info-num">${missing}</span>
+              </td>
+              <td colspan="5" class="rejoined-info-cell">
+                <div class="rejoined-info-content">
+                  <span class="rejoined-info-icon" aria-hidden="true">
+                    <svg class="mk-icon mk-icon--xs"><use href="#mk-undo"></use></svg>
+                  </span>
+                  <span class="rejoined-info-text">${explanationText}</span>
+                </div>
+              </td>
+            </tr>
+          `);
+        }
+      }
+      prevNumber = currentNum;
+    }
+
     const isCurrent = String(entry.id) === String(currentEntryId);
     const isSelected = String(entry.id) === String(
       dashboardState.selectedEntryId
@@ -2492,17 +2569,18 @@ function renderDashboardTable(entries) {
       `;
     }
 
-    return `
+    rowsHtml.push(`
       <tr class="${rowClasses}" data-entry-id="${entry.id}">
-        <td>${entry.number}</td>
+        <td class="patient-num-cell">${entry.number}</td>
         <td class="patient-name-cell">
-          ${escapeHtml(entry.display_name ?? '')}
+          <div class="patient-name-text">${escapeHtml(entry.display_name ?? '')}</div>
+          ${entry.patient_notes ? `<div class="patient-desc-subtext">${escapeHtml(entry.patient_notes)}</div>` : ''}
         </td>
         <td class="patient-phone-cell">
           ${escapeHtml(window.MarkiPhone ? window.MarkiPhone.formatMobile(entry.phone ?? '') : (entry.phone ?? '-'))}
         </td>
-        <td>${escapeHtml(entry.time ?? '-')}</td>
-        <td>${renderStatusPill(entry.status)}</td>
+        <td class="patient-time-cell">${escapeHtml(entry.time ?? '-')}</td>
+        <td>${renderStatusPill(entry.status, isCurrent)}</td>
         <td>
           <div class="table-actions">
             <button
@@ -2519,8 +2597,10 @@ function renderDashboardTable(entries) {
           </div>
         </td>
       </tr>
-    `;
-  }).join('');
+    `);
+  });
+
+  tableBody.innerHTML = rowsHtml.join('');
 
   bindPatientRowEvents(entries);
 }
@@ -2626,7 +2706,11 @@ function renderDashboardView() {
 | done = Terminé
 |--------------------------------------------------------------------------
 */
-function renderStatusPill(status) {
+function renderStatusPill(status, isCurrent = false) {
+    if (isCurrent || status === 'in_progress' || status === 'called') {
+        return '<span class="status-pill status-pill--in_progress">En cours</span>';
+    }
+
     if (status === 'waiting') {
         return '<span class="status-pill status-pill--waiting">En attente</span>';
     }
@@ -2643,12 +2727,13 @@ function renderStatusPill(status) {
         return '<span class="status-pill status-pill--canceled">Annulé</span>';
     }
 
-    if (status === 'called') {
-        return '<span class="status-pill status-pill--waiting">Appelé</span>';
-    }
-
     return `<span class="status-pill">${escapeHtml(status)}</span>`;
 }
+const MARKI_MONTHS_FR = [
+  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+];
+
 function formatBirthDate(value) {
     if (!value) return '-';
 
@@ -2656,7 +2741,9 @@ function formatBirthDate(value) {
     if (parts.length !== 3) return escapeHtml(String(value));
 
     const [year, month, day] = parts;
-    return `${day}/${month}/${year}`;
+    const monthIndex = parseInt(month, 10) - 1;
+    const monthName = MARKI_MONTHS_FR[monthIndex] || month;
+    return `${parseInt(day, 10)} ${monthName} ${year}`;
 }
 
 function formatSourceLabel(source) {
@@ -2668,8 +2755,8 @@ function formatSourceLabel(source) {
     return escapeHtml(String(source));
 }
 
-function renderDetailStatusPill(status) {
-    return renderStatusPill(status);
+function renderDetailStatusPill(status, isCurrent = false) {
+    return renderStatusPill(status, isCurrent);
 }
 
 function renderDefaultPatientHistory() {
@@ -2691,8 +2778,8 @@ function formatVisitDate(value) {
   }
 
   return new Intl.DateTimeFormat('fr-DZ', {
-    day: '2-digit',
-    month: '2-digit',
+    day: 'numeric',
+    month: 'long',
     year: 'numeric'
   }).format(date);
 }
@@ -2830,11 +2917,14 @@ function updatePatientDetails(entry) {
     }
   }
 
+  const currentWaiting = getCurrentWaitingEntry();
+  const isCurrentPatient = currentWaiting && String(entry.id) === String(currentWaiting.id);
+
   nameEl.textContent = entry.display_name || '-';
   phoneEl.textContent = window.MarkiPhone ? window.MarkiPhone.formatMobile(entry.phone || '') : (entry.phone || '-');
   birthDateEl.textContent = formatBirthDate(entry.birth_date);
   sourceEl.textContent = formatSourceLabel(entry.source);
-  statusEl.innerHTML = renderDetailStatusPill(entry.status);
+  statusEl.innerHTML = renderDetailStatusPill(entry.status, isCurrentPatient);
 
   notesEl.textContent = entry.patient_notes?.trim()
     || 'Aucune note disponible pour le moment.';
@@ -3073,12 +3163,19 @@ function escapeHtml(value) {
 // EVENTS MENU
 // ==========================================================
 
-document.querySelectorAll('.sidebar__item').forEach(item => {
+document.querySelectorAll('.sidebar__item, .mobile-bottom-nav__item').forEach(item => {
     item.addEventListener('click', function () {
         const page = this.getAttribute('data-page');
-        setActiveMenuItem(page);
-        loadPage(page);
+        if (page) {
+            setActiveMenuItem(page);
+            loadPage(page);
+        }
     });
+});
+
+document.getElementById('mobileFabAddPatient')?.addEventListener('click', function (event) {
+    event.preventDefault();
+    openAddPatientModal();
 });
 
 // ==========================================================
@@ -3146,7 +3243,7 @@ function setPatientModalMode(mode = 'create', entry = null) {
     }
 
     if (birthDateInput) {
-      birthDateInput.value = entry?.birth_date ?? '';
+      birthDateInput.value = formatBirthDate(entry?.birth_date).replace('-', '');
     }
 
     return;

@@ -77,8 +77,8 @@
     const date = new Date(normalized);
     if (Number.isNaN(date.getTime())) return value;
     return new Intl.DateTimeFormat('fr-DZ', {
-      day: '2-digit',
-      month: '2-digit',
+      day: 'numeric',
+      month: 'long',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -235,7 +235,7 @@
       setMessage(error.message, 'error');
     } finally {
       elements.confirmCancel.disabled = false;
-      elements.confirmCancel.textContent = 'Annuler mon inscription';
+      elements.confirmCancel.textContent = 'Confirmer l’annulation';
     }
   }
 
